@@ -1,0 +1,312 @@
+import { Tab } from '@headlessui/react';
+import { Applicant } from '../../../types/applicant';
+
+interface ProfileDetailsProps {
+  applicant: Applicant;
+}
+
+export const ProfileDetails = ({ applicant }: ProfileDetailsProps) => {
+  const tabs = [
+    { name: 'Personal Info', content: <PersonalInfo applicant={applicant} /> },
+    { name: 'Job Preferences', content: <JobPreferences applicant={applicant} /> },
+    { name: 'Education & Experience', content: <EducationExperience applicant={applicant} /> },
+    { name: 'Medical Info', content: <MedicalInfo applicant={applicant} /> },
+    { name: 'Emergency Contact', content: <EmergencyContact applicant={applicant} /> },
+  ];
+
+  return (
+    <div className="mt-8">
+      <Tab.Group>
+        <Tab.List className="border-b border-gray-200">
+          <div className="-mb-px flex space-x-8">
+            {tabs.map((tab) => (
+              <Tab
+                key={tab.name}
+                className={({ selected }) =>
+                  `whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium ${
+                    selected
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  }`
+                }
+              >
+                {tab.name}
+              </Tab>
+            ))}
+          </div>
+        </Tab.List>
+        <Tab.Panels className="mt-4">
+          {tabs.map((tab, idx) => (
+            <Tab.Panel
+              key={idx}
+              className="bg-white shadow sm:rounded-lg p-4 sm:p-6"
+            >
+              {tab.content}
+            </Tab.Panel>
+          ))}
+        </Tab.Panels>
+      </Tab.Group>
+    </div>
+  );
+};
+
+const PersonalInfo = ({ applicant }: ProfileDetailsProps) => (
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Date of Birth</dt>
+        <dd className="mt-1 text-sm text-gray-900">
+          {new Date(applicant.dateOfBirth).toLocaleDateString()}
+        </dd>
+      </div>
+      
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Place of Birth</dt>
+        <dd className="mt-1 text-sm text-gray-900">{applicant.placeOfBirth}</dd>
+      </div>
+      
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Nationality</dt>
+        <dd className="mt-1 text-sm text-gray-900">{applicant.nationality}</dd>
+      </div>
+      
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Civil Status</dt>
+        <dd className="mt-1 text-sm text-gray-900 capitalize">{applicant.civilStatus}</dd>
+      </div>
+      
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Gender</dt>
+        <dd className="mt-1 text-sm text-gray-900 capitalize">{applicant.gender}</dd>
+      </div>
+    </div>
+
+    <div>
+      <dt className="text-sm font-medium text-gray-500">Present Address</dt>
+      <dd className="mt-1 text-sm text-gray-900">{applicant.address.present}</dd>
+    </div>
+
+    <div>
+      <dt className="text-sm font-medium text-gray-500">Permanent Address</dt>
+      <dd className="mt-1 text-sm text-gray-900">{applicant.address.permanent}</dd>
+    </div>
+  </div>
+);
+
+const JobPreferences = ({ applicant }: ProfileDetailsProps) => (
+  <div className="space-y-6">
+    <div>
+      <dt className="text-sm font-medium text-gray-500">Preferred Countries</dt>
+      <dd className="mt-1 text-sm text-gray-900">
+        <ul className="list-disc list-inside">
+          {applicant.preferredCountries.map((country, index) => (
+            <li key={index}>{country}</li>
+          ))}
+        </ul>
+      </dd>
+    </div>
+
+    <div>
+      <dt className="text-sm font-medium text-gray-500">Preferred Positions</dt>
+      <dd className="mt-1 text-sm text-gray-900">
+        <ul className="list-disc list-inside">
+          {applicant.preferredPositions.map((position, index) => (
+            <li key={index}>{position}</li>
+          ))}
+        </ul>
+      </dd>
+    </div>
+
+    <div>
+      <dt className="text-sm font-medium text-gray-500">Expected Salary</dt>
+      <dd className="mt-1 text-sm text-gray-900">
+        {applicant.expectedSalary.amount} {applicant.expectedSalary.currency}
+      </dd>
+    </div>
+  </div>
+);
+
+const EducationExperience = ({ applicant }: ProfileDetailsProps) => (
+  <div className="space-y-8">
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Education</h4>
+      <div className="mt-4 space-y-4">
+        {applicant.education.map((edu, index) => (
+          <div key={index} className="border-b border-gray-200 pb-4">
+            <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-2">
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Level</dt>
+                <dd className="text-sm text-gray-900">{edu.level}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Course</dt>
+                <dd className="text-sm text-gray-900">{edu.course}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">School</dt>
+                <dd className="text-sm text-gray-900">{edu.school}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Year Completed</dt>
+                <dd className="text-sm text-gray-900">{edu.yearCompleted}</dd>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Work Experience</h4>
+      <div className="mt-4 space-y-4">
+        {applicant.workExperience.map((work, index) => (
+          <div key={index} className="border-b border-gray-200 pb-4">
+            <div className="grid grid-cols-1 gap-y-2 sm:grid-cols-2">
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Company</dt>
+                <dd className="text-sm text-gray-900">{work.company}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Position</dt>
+                <dd className="text-sm text-gray-900">{work.position}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Location</dt>
+                <dd className="text-sm text-gray-900">{work.location}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Duration</dt>
+                <dd className="text-sm text-gray-900">
+                  {new Date(work.startDate).toLocaleDateString()} - 
+                  {work.endDate ? new Date(work.endDate).toLocaleDateString() : 'Present'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Type</dt>
+                <dd className="text-sm text-gray-900">
+                  {work.isOverseas ? 'Overseas' : 'Local'}
+                </dd>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Skills</h4>
+      <dd className="mt-2 text-sm text-gray-900">
+        {applicant.skills.join(', ')}
+      </dd>
+    </div>
+
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Certifications</h4>
+      <dd className="mt-2 text-sm text-gray-900">
+        {applicant.certifications.join(', ')}
+      </dd>
+    </div>
+
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Languages</h4>
+      <div className="mt-2 space-y-2">
+        {applicant.languages.map((lang, index) => (
+          <div key={index} className="text-sm text-gray-900">
+            {lang.language} - {lang.proficiency}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const MedicalInfo = ({ applicant }: ProfileDetailsProps) => (
+  <div className="space-y-6">
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Medical Examination</h4>
+      <div className="mt-4 grid grid-cols-1 gap-y-2 sm:grid-cols-3">
+        <div>
+          <dt className="text-sm font-medium text-gray-500">Date</dt>
+          <dd className="text-sm text-gray-900">
+            {applicant.medicalStatus.examination.date
+              ? new Date(applicant.medicalStatus.examination.date).toLocaleDateString()
+              : 'Not yet examined'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-sm font-medium text-gray-500">Result</dt>
+          <dd className="text-sm text-gray-900 capitalize">
+            {applicant.medicalStatus.examination.result || 'Pending'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-sm font-medium text-gray-500">Facility</dt>
+          <dd className="text-sm text-gray-900">
+            {applicant.medicalStatus.examination.facility}
+          </dd>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Medical Conditions</h4>
+      <dd className="mt-2 text-sm text-gray-900">
+        {applicant.medicalStatus.conditions.length > 0
+          ? applicant.medicalStatus.conditions.join(', ')
+          : 'None declared'}
+      </dd>
+    </div>
+
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Allergies</h4>
+      <dd className="mt-2 text-sm text-gray-900">
+        {applicant.medicalStatus.allergies.length > 0
+          ? applicant.medicalStatus.allergies.join(', ')
+          : 'None declared'}
+      </dd>
+    </div>
+
+    <div>
+      <h4 className="text-sm font-medium text-gray-900">Vaccinations</h4>
+      <div className="mt-2 space-y-2">
+        {applicant.medicalStatus.vaccinations.map((vax, index) => (
+          <div key={index} className="text-sm text-gray-900">
+            {vax.name} - {new Date(vax.date).toLocaleDateString()}
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const EmergencyContact = ({ applicant }: ProfileDetailsProps) => (
+  <div className="space-y-4">
+    <div>
+      <dt className="text-sm font-medium text-gray-500">Name</dt>
+      <dd className="mt-1 text-sm text-gray-900">
+        {applicant.emergencyContact.name}
+      </dd>
+    </div>
+
+    <div>
+      <dt className="text-sm font-medium text-gray-500">Relationship</dt>
+      <dd className="mt-1 text-sm text-gray-900">
+        {applicant.emergencyContact.relationship}
+      </dd>
+    </div>
+
+    <div>
+      <dt className="text-sm font-medium text-gray-500">Contact Number</dt>
+      <dd className="mt-1 text-sm text-gray-900">
+        {applicant.emergencyContact.contactNumber}
+      </dd>
+    </div>
+
+    <div>
+      <dt className="text-sm font-medium text-gray-500">Address</dt>
+      <dd className="mt-1 text-sm text-gray-900">
+        {applicant.emergencyContact.address}
+      </dd>
+    </div>
+  </div>
+);

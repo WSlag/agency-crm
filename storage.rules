@@ -1,0 +1,96 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return request.auth.token.role == 'admin';
+    }
+
+    function isPresident() {
+      return request.auth.token.role == 'president';
+    }
+
+    function isHORecruitmentOfficer() {
+      return request.auth.token.role == 'ho_recruitment_officer';
+    }
+
+    function isBranchManager() {
+      return request.auth.token.role == 'branch_manager';
+    }
+
+    function belongsToBranch(branchId) {
+      return request.auth.token.branchId == branchId;
+    }
+
+    function isValidFileSize() {
+      return request.resource.size <= 10 * 1024 * 1024; // 10MB limit
+    }
+
+    function isValidContentType() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    }
+
+    // Applicant documents
+    match /applicants/{applicantId}/{document=**} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() ||
+         isPresident() ||
+         isHORecruitmentOfficer() ||
+         (isBranchManager() && belongsToBranch(resource.metadata.branchId)));
+      
+      allow write: if isAuthenticated() &&
+        isValidFileSize() &&
+        isValidContentType() &&
+        (isAdmin() ||
+         isHORecruitmentOfficer() ||
+         (isBranchManager() && belongsToBranch(resource.metadata.branchId)));
+    }
+
+    // Expense receipts
+    match /expenses/{expenseId}/{document=**} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() ||
+         isPresident() ||
+         (isBranchManager() && belongsToBranch(resource.metadata.branchId)));
+      
+      allow write: if isAuthenticated() &&
+        isValidFileSize() &&
+        isValidContentType() &&
+        (isAdmin() ||
+         (isBranchManager() && belongsToBranch(resource.metadata.branchId)));
+    }
+
+    // Profile pictures
+    match /profiles/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        isValidFileSize() &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // Temporary uploads (for processing)
+    match /temp/{userId}/{document=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow write: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        isValidFileSize() &&
+        isValidContentType();
+      // Auto-delete after 24 hours handled by Cloud Function
+    }
+
+    // Public assets (like logos)
+    match /public/{document=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isAdmin();
+    }
+  }
+}
