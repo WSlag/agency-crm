@@ -14,7 +14,7 @@ import {
   deleteDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { firestore } from '../config/firebase';
 import {
   Applicant,
   ApplicantFilter,

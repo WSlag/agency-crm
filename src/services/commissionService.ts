@@ -10,7 +10,7 @@ import {
   orderBy,
   Timestamp
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { firestore } from '../config/firebase';
 import { Commission, CommissionRule, COMMISSION_RULES } from '../types/commission';
 
 export class CommissionService {

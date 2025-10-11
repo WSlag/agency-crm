@@ -1,10 +1,10 @@
 import { ReportGenerator } from '../../services/reportGenerator';
-import { db } from '../../config/firebase';
+import { firestore } from '../../config/firebase';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 
 // Mock Firebase
 jest.mock('../../config/firebase', () => ({
-  db: {
+  firestore: {
     collection: jest.fn(),
   },
 }));

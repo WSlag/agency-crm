@@ -14,7 +14,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { firestore, storage } from '../config/firebase';
 import type {
   Report,
   ReportTemplate,
@@ -111,7 +111,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
       set({ loading: true, error: null });
       const { filter, sort, pagination } = get();
 
-      let q = collection(db, 'reports');
+      let q = collection(firestore, 'reports');
 
       // Apply filters
       if (filter.startDate) {
@@ -148,7 +148,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
   fetchReportById: async (id) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'reports', id);
+      const docRef = doc(firestore, 'reports', id);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -183,7 +183,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
       }
 
       // Create report document
-      const docRef = doc(collection(db, 'reports'));
+      const docRef = doc(collection(firestore, 'reports'));
       const timestamp = serverTimestamp();
 
       const reportData = {
@@ -199,7 +199,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
       await setDoc(docRef, reportData);
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'report_generated',
         entityId: docRef.id,
         entityType: 'report',
@@ -228,11 +228,11 @@ export const useReportStore = create<ReportState>((set, get) => ({
       if (report?.fileUrl) {
         // Delete report file from storage
         const storageRef = ref(storage, report.fileUrl);
-        await deleteDoc(doc(db, 'reports', id));
+        await deleteDoc(doc(firestore, 'reports', id));
       }
 
       // Delete report from Firestore
-      await deleteDoc(doc(db, 'reports', id));
+      await deleteDoc(doc(firestore, 'reports', id));
 
       set({
         reports: get().reports.filter((r) => r.id !== id),
@@ -252,7 +252,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
   fetchTemplates: async () => {
     try {
       set({ loading: true, error: null });
-      const snapshot = await getDocs(collection(db, 'report_templates'));
+      const snapshot = await getDocs(collection(firestore, 'report_templates'));
       const templates = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -270,7 +270,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
   fetchTemplateById: async (id) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'report_templates', id);
+      const docRef = doc(firestore, 'report_templates', id);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -304,7 +304,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      const docRef = doc(collection(db, 'report_templates'));
+      const docRef = doc(collection(firestore, 'report_templates'));
       const timestamp = serverTimestamp();
 
       const templateData = {
@@ -333,7 +333,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
 
-      await updateDoc(doc(db, 'report_templates', id), {
+      await updateDoc(doc(firestore, 'report_templates', id), {
         ...template,
         updatedAt: timestamp,
       });
@@ -351,7 +351,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
   deleteTemplate: async (id) => {
     try {
       set({ loading: true, error: null });
-      await deleteDoc(doc(db, 'report_templates', id));
+      await deleteDoc(doc(firestore, 'report_templates', id));
 
       set({
         templates: get().templates.filter((t) => t.id !== id),
@@ -371,7 +371,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
   fetchSchedules: async () => {
     try {
       set({ loading: true, error: null });
-      const snapshot = await getDocs(collection(db, 'report_schedules'));
+      const snapshot = await getDocs(collection(firestore, 'report_schedules'));
       const schedules = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -389,7 +389,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
   fetchScheduleById: async (id) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'report_schedules', id);
+      const docRef = doc(firestore, 'report_schedules', id);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -423,7 +423,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      const docRef = doc(collection(db, 'report_schedules'));
+      const docRef = doc(collection(firestore, 'report_schedules'));
       const timestamp = serverTimestamp();
 
       const scheduleData = {
@@ -452,7 +452,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
 
-      await updateDoc(doc(db, 'report_schedules', id), {
+      await updateDoc(doc(firestore, 'report_schedules', id), {
         ...schedule,
         updatedAt: timestamp,
       });
@@ -470,7 +470,7 @@ export const useReportStore = create<ReportState>((set, get) => ({
   deleteSchedule: async (id) => {
     try {
       set({ loading: true, error: null });
-      await deleteDoc(doc(db, 'report_schedules', id));
+      await deleteDoc(doc(firestore, 'report_schedules', id));
 
       set({
         schedules: get().schedules.filter((s) => s.id !== id),

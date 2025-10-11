@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { db } from '../config/firebase';
+import { firestore } from '../config/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { useAuthStore } from '../stores/authStore';
 
@@ -15,7 +15,7 @@ const FirebaseTest: React.FC = () => {
       }
 
       try {
-        await getDocs(collection(db, 'users'));
+        await getDocs(collection(firestore, 'users'));
         setStatus('✅ Firebase connection successful!');
       } catch (error) {
         console.error('Firebase connection error:', error);

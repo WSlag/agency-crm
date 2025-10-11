@@ -11,7 +11,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { firestore, storage } from '../config/firebase';
 import { Document, DocumentType, DocumentUploadResponse } from '../types/document';
 import { fileValidation } from '../utils/fileValidation';
 import { imageOptimization } from '../utils/imageOptimization';
@@ -53,7 +53,7 @@ export class DocumentService {
       }
 
       // Create document record
-      const docRef = await addDoc(collection(db, this.COLLECTION), {
+      const docRef = await addDoc(collection(firestore, this.COLLECTION), {
         applicantId,
         type,
         fileName: safeFilename,
@@ -82,7 +82,7 @@ export class DocumentService {
    */
   static async getDocument(documentId: string): Promise<Document | null> {
     try {
-      const docRef = doc(db, this.COLLECTION, documentId);
+      const docRef = doc(firestore, this.COLLECTION, documentId);
       const docSnap = await getDoc(docRef);
 
       if (!docSnap.exists()) {
@@ -105,7 +105,7 @@ export class DocumentService {
   static async getApplicantDocuments(applicantId: string): Promise<Document[]> {
     try {
       const q = query(
-        collection(db, this.COLLECTION),
+        collection(firestore, this.COLLECTION),
         where('applicantId', '==', applicantId),
         orderBy('uploadedAt', 'desc')
       );
@@ -130,7 +130,7 @@ export class DocumentService {
     status: 'verified' | 'rejected'
   ): Promise<void> {
     try {
-      const docRef = doc(db, this.COLLECTION, documentId);
+      const docRef = doc(firestore, this.COLLECTION, documentId);
       await updateDoc(docRef, {
         status,
         verifiedBy,
@@ -150,7 +150,7 @@ export class DocumentService {
     metadata: Record<string, any>
   ): Promise<void> {
     try {
-      const docRef = doc(db, this.COLLECTION, documentId);
+      const docRef = doc(firestore, this.COLLECTION, documentId);
       await updateDoc(docRef, { metadata });
     } catch (error) {
       console.error('Error updating document metadata:', error);
@@ -174,7 +174,7 @@ export class DocumentService {
       await deleteObject(storageRef);
 
       // Delete document record
-      const docRef = doc(db, this.COLLECTION, documentId);
+      const docRef = doc(firestore, this.COLLECTION, documentId);
       await updateDoc(docRef, {
         status: 'deleted',
         deletedAt: Timestamp.now()

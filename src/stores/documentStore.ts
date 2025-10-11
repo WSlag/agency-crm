@@ -20,7 +20,7 @@ import {
   getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { firestore, storage } from '../config/firebase';
 import {
   Document,
   DocumentFilter,
@@ -101,7 +101,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       set({ loading: true, error: null });
       const { filter, sort, pagination } = get();
 
-      let q = collection(db, 'documents');
+      let q = collection(firestore, 'documents');
 
       // Apply filters
       if (filter.applicantId) {
@@ -145,7 +145,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   fetchDocumentById: async (id) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'documents', id);
+      const docRef = doc(firestore, 'documents', id);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -180,7 +180,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const fileUrl = await getDownloadURL(storageRef);
 
       // Create document record in Firestore
-      const docRef = doc(collection(db, 'documents'));
+      const docRef = doc(collection(firestore, 'documents'));
       const timestamp = serverTimestamp();
 
       const config = DOCUMENT_CONFIG[documentType as keyof typeof DOCUMENT_CONFIG];
@@ -217,7 +217,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       await setDoc(docRef, documentData);
 
       // Create history record
-      await setDoc(doc(collection(db, 'document_history')), {
+      await setDoc(doc(collection(firestore, 'document_history')), {
         documentId: docRef.id,
         action: 'created',
         performedBy: 'system',
@@ -243,7 +243,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   updateDocument: async (id, data) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'documents', id);
+      const docRef = doc(firestore, 'documents', id);
       const timestamp = serverTimestamp();
 
       await updateDoc(docRef, {
@@ -252,7 +252,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       });
 
       // Create history record
-      await setDoc(doc(collection(db, 'document_history')), {
+      await setDoc(doc(collection(firestore, 'document_history')), {
         documentId: id,
         action: 'updated',
         performedBy: 'system',
@@ -287,7 +287,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
         await deleteObject(storageRef);
 
         // Delete document from Firestore
-        await deleteDoc(doc(db, 'documents', id));
+        await deleteDoc(doc(firestore, 'documents', id));
 
         set({
           documents: get().documents.filter((d) => d.id !== id),
@@ -311,7 +311,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const timestamp = serverTimestamp();
 
       // Update document status
-      await updateDoc(doc(db, 'documents', verification.documentId), {
+      await updateDoc(doc(firestore, 'documents', verification.documentId), {
         status: verification.status,
         verifiedBy: verification.verifiedBy,
         verifiedAt: timestamp,
@@ -319,13 +319,13 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       });
 
       // Create verification record
-      await setDoc(doc(collection(db, 'document_verifications')), {
+      await setDoc(doc(collection(firestore, 'document_verifications')), {
         ...verification,
         verifiedAt: timestamp,
       });
 
       // Create history record
-      await setDoc(doc(collection(db, 'document_history')), {
+      await setDoc(doc(collection(firestore, 'document_history')), {
         documentId: verification.documentId,
         action: verification.status === 'verified' ? 'verified' : 'rejected',
         performedBy: verification.verifiedBy,
@@ -352,14 +352,14 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
 
-      await updateDoc(doc(db, 'documents', documentId), {
+      await updateDoc(doc(firestore, 'documents', documentId), {
         status: 'rejected',
         rejectionReason: reason,
         updatedAt: timestamp,
       });
 
       // Create history record
-      await setDoc(doc(collection(db, 'document_history')), {
+      await setDoc(doc(collection(firestore, 'document_history')), {
         documentId,
         action: 'rejected',
         performedBy: 'system',
@@ -384,7 +384,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   fetchTemplates: async () => {
     try {
       set({ loading: true, error: null });
-      const snapshot = await getDocs(collection(db, 'document_templates'));
+      const snapshot = await getDocs(collection(firestore, 'document_templates'));
       const templates = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -401,7 +401,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   createTemplate: async (template) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(collection(db, 'document_templates'));
+      const docRef = doc(collection(firestore, 'document_templates'));
       const timestamp = serverTimestamp();
 
       await setDoc(docRef, {
@@ -425,7 +425,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   updateTemplate: async (id, data) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'document_templates', id);
+      const docRef = doc(firestore, 'document_templates', id);
       await updateDoc(docRef, {
         ...data,
         updatedAt: serverTimestamp(),
@@ -444,7 +444,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   deleteTemplate: async (id) => {
     try {
       set({ loading: true, error: null });
-      await deleteDoc(doc(db, 'document_templates', id));
+      await deleteDoc(doc(firestore, 'document_templates', id));
       set({
         documentTemplates: get().documentTemplates.filter((t) => t.id !== id),
       });
@@ -463,7 +463,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const q = query(
-        collection(db, 'document_history'),
+        collection(firestore, 'document_history'),
         where('documentId', '==', documentId),
         orderBy('performedAt', 'desc')
       );

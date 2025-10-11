@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { db, auth } from '../../../config/firebase';
+import { firestore, auth } from '../../../config/firebase';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { UserRole } from '../../../types';
 

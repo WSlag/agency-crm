@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../../../config/firebase';
+import { firestore } from '../../../config/firebase';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 
 const branchSchema = z.object({
@@ -41,7 +41,7 @@ export const BranchForm = () => {
     if (id) {
       const fetchBranch = async () => {
         try {
-          const branchDoc = await getDoc(doc(db, 'branches', id));
+          const branchDoc = await getDoc(doc(firestore, 'branches', id));
           if (branchDoc.exists()) {
             reset(branchDoc.data() as BranchFormData);
           } else {
@@ -63,14 +63,14 @@ export const BranchForm = () => {
 
       if (id) {
         // Update existing branch
-        const branchRef = doc(db, 'branches', id);
+        const branchRef = doc(firestore, 'branches', id);
         await updateDoc(branchRef, {
           ...data,
           updatedAt: new Date(),
         });
       } else {
         // Create new branch
-        const branchRef = doc(collection(db, 'branches'));
+        const branchRef = doc(collection(firestore, 'branches'));
         await setDoc(branchRef, {
           ...data,
           createdAt: new Date(),

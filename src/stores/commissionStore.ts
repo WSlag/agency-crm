@@ -14,17 +14,70 @@ import {
   deleteDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { firestore } from '../config/firebase';
 import {
   Commission,
-  CommissionFilter,
-  CommissionSort,
-  CommissionPagination,
-  CommissionVerification,
-  CommissionApproval,
-  CommissionPayment,
+  CommissionType,
+  CommissionStatus,
   COMMISSION_CONFIG,
 } from '../types/commission';
+
+interface CommissionFilter {
+  agentId?: string;
+  applicantId?: string;
+  branchId?: string;
+  commissionType?: CommissionType;
+  status?: CommissionStatus;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+interface CommissionSort {
+  field: keyof Commission;
+  direction: 'asc' | 'desc';
+}
+
+interface CommissionPagination {
+  page: number;
+  limit: number;
+  total: number;
+}
+
+interface CommissionVerification {
+  commissionId: string;
+  verifiedBy: string;
+  status: 'verified' | 'rejected';
+  notes: string;
+  checklistItems?: {
+    id: string;
+    name: string;
+    checked: boolean;
+    notes?: string;
+  }[];
+}
+
+interface CommissionApproval {
+  commissionId: string;
+  approvedBy: string;
+  status: 'approved' | 'rejected';
+  notes: string;
+  conditions?: {
+    name: string;
+    value: any;
+  }[];
+}
+
+interface CommissionPayment {
+  commissionId: string;
+  amount: number;
+  currency: string;
+  paymentMethod: 'cash' | 'bank_transfer' | 'check';
+  paymentReference?: string;
+  paidBy: string;
+  notes?: string;
+}
 
 interface CommissionState {
   commissions: Commission[];
@@ -59,7 +112,7 @@ interface CommissionState {
 
   // Commission Calculation
   calculateCommission: (
-    commissionType: keyof typeof COMMISSION_CONFIG,
+    commissionType: CommissionType,
     baseAmount: number,
     metadata: {
       applicantCount?: number;
@@ -72,7 +125,18 @@ interface CommissionState {
     baseAmount: number;
     bonusAmount: number;
     totalAmount: number;
-    calculationDetails: Commission['calculationDetails'];
+    calculationDetails: {
+      baseRate: number;
+      multipliers?: Array<{
+        name: string;
+        value: number;
+      }>;
+      deductions?: Array<{
+        name: string;
+        value: number;
+      }>;
+      bonusRate?: number;
+    };
   };
 }
 
@@ -119,8 +183,12 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       if (filter.status) {
         q = query(q, where('status', '==', filter.status));
       }
-      if (filter.currency) {
-        q = query(q, where('currency', '==', filter.currency));
+      if (filter.dateRange) {
+        q = query(
+          q,
+          where('createdAt', '>=', filter.dateRange.start),
+          where('createdAt', '<=', filter.dateRange.end)
+        );
       }
 
       // Apply sorting
@@ -184,7 +252,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
 
       const commissionData = {
         ...data,
-        status: 'pending',
+        status: 'pending' as CommissionStatus,
         createdAt: timestamp,
         updatedAt: timestamp,
       };
@@ -311,7 +379,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       const timestamp = serverTimestamp();
 
       await updateDoc(doc(db, 'commissions', commissionId), {
-        status: 'rejected',
+        status: 'rejected' as CommissionStatus,
         notes: reason,
         updatedAt: timestamp,
       });
@@ -384,7 +452,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
 
       // Update commission status
       await updateDoc(doc(db, 'commissions', payment.commissionId), {
-        status: 'paid',
+        status: 'paid' as CommissionStatus,
         paidBy: payment.paidBy,
         paidAt: timestamp,
         updatedAt: timestamp,
@@ -419,49 +487,48 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
   calculateCommission: (commissionType, baseAmount, metadata) => {
     const config = COMMISSION_CONFIG[commissionType];
     let bonusAmount = 0;
-    const calculationDetails: Commission['calculationDetails'] = {
+    const calculationDetails = {
       baseRate: config.baseRate,
-      multipliers: [],
-      deductions: [],
+      multipliers: [] as Array<{ name: string; value: number }>,
+      deductions: [] as Array<{ name: string; value: number }>,
     };
 
     // Calculate base commission
     let totalAmount = baseAmount * config.baseRate;
 
-    // Apply bonus thresholds if applicable
-    if (config.bonusThresholds) {
-      for (const threshold of config.bonusThresholds) {
-        if (
-          (commissionType === 'recruitment' && metadata.applicantCount && metadata.applicantCount >= threshold.threshold) ||
-          (commissionType === 'deployment' && metadata.applicantCount && metadata.applicantCount >= threshold.threshold) ||
-          (commissionType === 'retention' && metadata.retentionMonths && metadata.retentionMonths >= threshold.threshold)
-        ) {
-          calculationDetails.bonusRate = threshold.rate;
-          bonusAmount = baseAmount * (threshold.rate - config.baseRate);
-          break;
-        }
+    // Apply rules based on commission type
+    for (const rule of config.rules) {
+      if (
+        (rule.stage === 'medical' && metadata.applicantCount && metadata.applicantCount >= 1) ||
+        (rule.stage === 'deployed' && metadata.placementDays && metadata.placementDays <= 30)
+      ) {
+        const ruleAmount = (baseAmount * rule.percentage) / 100;
+        totalAmount += ruleAmount;
+        calculationDetails.multipliers.push({
+          name: `${rule.stage} bonus`,
+          value: rule.percentage / 100,
+        });
       }
     }
 
-    // Apply multipliers if applicable
-    if (config.multipliers) {
-      for (const multiplier of config.multipliers) {
-        if (
-          (multiplier.name === 'Urgent Placement' && metadata.placementDays && metadata.placementDays <= 30) ||
-          (multiplier.name === 'High Value' && metadata.salary && metadata.salary >= 100000) ||
-          (multiplier.name === 'Multiple Referrals' && metadata.referralCount && metadata.referralCount >= 3)
-        ) {
-          calculationDetails.multipliers?.push({
-            name: multiplier.name,
-            value: multiplier.value,
-          });
-          totalAmount *= multiplier.value;
-          bonusAmount *= multiplier.value;
-        }
-      }
+    // Apply minimum amount if configured
+    if (config.minAmount && totalAmount < config.minAmount) {
+      totalAmount = config.minAmount;
+      calculationDetails.multipliers.push({
+        name: 'Minimum amount adjustment',
+        value: config.minAmount / baseAmount,
+      });
     }
 
-    totalAmount += bonusAmount;
+    // Apply maximum amount if configured
+    if (config.maxAmount && totalAmount > config.maxAmount) {
+      const deduction = totalAmount - config.maxAmount;
+      totalAmount = config.maxAmount;
+      calculationDetails.deductions.push({
+        name: 'Maximum amount cap',
+        value: deduction,
+      });
+    }
 
     return {
       baseAmount: baseAmount * config.baseRate,

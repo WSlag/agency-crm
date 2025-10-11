@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../../config/firebase';
+import { firestore } from '../../../config/firebase';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { User, UserRole } from '../../../types';
 import { Link } from 'react-router-dom';

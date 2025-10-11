@@ -1,10 +1,10 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useCommissionStore } from '../../stores/commissionStore';
-import { db } from '../../config/firebase';
+import { firestore } from '../../config/firebase';
 
 // Mock Firebase
 jest.mock('../../config/firebase', () => ({
-  db: {
+  firestore: {
     collection: jest.fn(),
     doc: jest.fn(),
   },

@@ -6,7 +6,7 @@ import {
   orderBy,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { firestore } from '../config/firebase';
 import type { Expense } from '../types/expense';
 import type { Commission } from '../types/commission';
 
@@ -65,7 +65,7 @@ export class ReportGenerator {
     summary: ReportSummary;
   }> {
     try {
-      let q = collection(db, 'expenses');
+      let q = collection(firestore, 'expenses');
 
       // Apply filters
       const conditions = [];
@@ -128,7 +128,7 @@ export class ReportGenerator {
     summary: ReportSummary;
   }> {
     try {
-      let q = collection(db, 'commissions');
+      let q = collection(firestore, 'commissions');
 
       // Apply filters
       const conditions = [];

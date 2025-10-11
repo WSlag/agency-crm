@@ -20,7 +20,7 @@ import {
   getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
-import { db, storage } from '../config/firebase';
+import { firestore, storage } from '../config/firebase';
 import {
   Expense,
   ExpenseFilter,

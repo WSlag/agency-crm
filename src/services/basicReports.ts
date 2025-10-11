@@ -6,7 +6,7 @@ import {
   Timestamp,
   orderBy
 } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { firestore } from '../config/firebase';
 import { Commission } from '../types/commission';
 
 export interface ReportPeriod {

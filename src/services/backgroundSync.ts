@@ -1,5 +1,5 @@
 import { OfflineStorage } from './offlineStorage';
-import { db } from '../config/firebase';
+import { firestore } from '../config/firebase';
 import {
   collection,
   doc,

@@ -1,10 +1,10 @@
 import { renderHook, act } from '@testing-library/react-hooks';
 import { useExpenseStore } from '../../stores/expenseStore';
-import { db, storage } from '../../config/firebase';
+import { firestore, storage } from '../../config/firebase';
 
 // Mock Firebase
 jest.mock('../../config/firebase', () => ({
-  db: {
+  firestore: {
     collection: jest.fn(),
     doc: jest.fn(),
   },

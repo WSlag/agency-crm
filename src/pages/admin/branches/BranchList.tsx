@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../../../config/firebase';
+import { firestore } from '../../../config/firebase';
 import { DashboardLayout } from '../../../components/layout/DashboardLayout';
 import { Branch } from '../../../types';
 import { Link } from 'react-router-dom';
@@ -13,7 +13,7 @@ export const BranchList = () => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const branchesQuery = query(collection(db, 'branches'));
+        const branchesQuery = query(collection(firestore, 'branches'));
         const querySnapshot = await getDocs(branchesQuery);
         const branchesData = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -32,7 +32,7 @@ export const BranchList = () => {
 
   const handleStatusChange = async (branchId: string, newStatus: 'active' | 'inactive') => {
     try {
-      const branchRef = doc(db, 'branches', branchId);
+      const branchRef = doc(firestore, 'branches', branchId);
       await updateDoc(branchRef, {
         status: newStatus
       });
@@ -51,7 +51,7 @@ export const BranchList = () => {
     }
 
     try {
-      await deleteDoc(doc(db, 'branches', branchId));
+      await deleteDoc(doc(firestore, 'branches', branchId));
       setBranches(branches.filter(branch => branch.id !== branchId));
     } catch (err) {
       setError('Failed to delete branch');

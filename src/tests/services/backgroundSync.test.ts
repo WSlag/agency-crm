@@ -1,10 +1,10 @@
 import { BackgroundSync } from '../../services/backgroundSync';
 import { OfflineStorage } from '../../services/offlineStorage';
-import { db } from '../../config/firebase';
+import { firestore } from '../../config/firebase';
 
 // Mock Firebase
 jest.mock('../../config/firebase', () => ({
-  db: {
+  firestore: {
     collection: jest.fn(),
     doc: jest.fn(),
   },

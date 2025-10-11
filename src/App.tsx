@@ -17,11 +17,11 @@ import { Dashboard } from './pages/dashboard/Dashboard';
 import { FinancialDashboard } from './pages/dashboard/FinancialDashboard';
 
 // Document Management
-import { DocumentList } from './pages/documents/DocumentList';
-import { DocumentUpload } from './pages/documents/DocumentUpload';
-import { DocumentVerification } from './pages/documents/DocumentVerification';
-import { TemplateManagement } from './pages/documents/TemplateManagement';
-import { ExpiryDashboard } from './pages/documents/ExpiryDashboard';
+import { DocumentList } from './components/documents/DocumentList';
+import { DocumentUpload } from './components/documents/DocumentUpload';
+import { DocumentVerification } from './components/documents/DocumentVerification';
+import { TemplateManagement } from './components/documents/TemplateManagement';
+import { ExpiryDashboard } from './components/documents/ExpiryDashboard';
 
 // Financial Management
 import { ExpenseEntry } from './pages/expenses/ExpenseEntry';

@@ -1,5 +1,5 @@
 import { enableIndexedDbPersistence, getFirestore } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { firestore } from '../config/firebase';
 
 export class OfflineStore {
   private static instance: OfflineStore;
