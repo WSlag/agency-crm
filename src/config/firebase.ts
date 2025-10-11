@@ -1,36 +1,44 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getFunctions } from 'firebase/functions';
+import { getAnalytics } from 'firebase/analytics';
+import { environment, isProduction } from './environment';
 
-const firebaseConfig = {
-  // These will be replaced with actual values from your Firebase project
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
+const firebaseConfig = environment.firebase;
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 // Initialize Firebase services
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const firestore = getFirestore(app);
 export const storage = getStorage(app);
-export const functions = getFunctions(app);
 
-// Enable offline persistence for Firestore
-enableIndexedDbPersistence(db)
-  .catch((err) => {
+// Initialize Analytics only in production
+export const analytics = isProduction ? getAnalytics(app) : null;
+
+// Configure Firestore settings
+if (!isProduction) {
+  // Enable Firestore offline persistence for development and staging
+  firestore.enablePersistence({
+    synchronizeTabs: true,
+  }).catch((err) => {
     if (err.code === 'failed-precondition') {
       console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
     } else if (err.code === 'unimplemented') {
-      console.warn('The current browser does not support offline persistence.');
+      console.warn('The current browser does not support persistence.');
     }
   });
+}
 
-export default app;
+// Export a function to get the current Firebase instance
+export const getFirebaseInstance = () => {
+  return {
+    app,
+    auth,
+    firestore,
+    storage,
+    analytics,
+  };
+};

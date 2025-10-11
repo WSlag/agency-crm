@@ -1,321 +1,290 @@
-import React from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { reportSchema } from '../../schemas/report';
-import { useReportStore } from '../../stores/reportStore';
-import { useAuthStore } from '../../stores/authStore';
-import type { ReportType, ReportFormat, ReportFilter } from '../../types/report';
+import { z } from 'zod';
+import { ReportDefinition, ReportType, ReportFilter, ReportMetric } from '../../services/reports/reportService';
+
+const reportSchema = z.object({
+  name: z.string().min(1, 'Report name is required'),
+  type: z.enum([
+    'applicant_status',
+    'transfer_analytics',
+    'financial_summary',
+    'commission_report',
+    'document_verification',
+    'branch_performance',
+    'agent_performance'
+  ]),
+  description: z.string(),
+  filters: z.array(z.object({
+    field: z.string(),
+    operator: z.enum(['eq', 'gt', 'lt', 'gte', 'lte', 'in', 'between']),
+    value: z.any()
+  })),
+  metrics: z.array(z.object({
+    name: z.string(),
+    calculation: z.enum(['count', 'sum', 'average', 'min', 'max']),
+    field: z.string().optional(),
+    format: z.enum(['number', 'currency', 'percentage', 'date']).optional()
+  })),
+  groupBy: z.array(z.string()).optional(),
+  sortBy: z.array(z.object({
+    field: z.string(),
+    order: z.enum(['asc', 'desc'])
+  })).optional(),
+  schedule: z.object({
+    frequency: z.enum(['daily', 'weekly', 'monthly']),
+    recipients: z.array(z.string()),
+    format: z.enum(['pdf', 'excel'])
+  }).optional()
+});
+
+type ReportFormData = z.infer<typeof reportSchema>;
 
 interface ReportBuilderProps {
-  onGenerate?: (reportId: string) => void;
-  onCancel?: () => void;
+  onSubmit: (definition: ReportDefinition) => Promise<void>;
+  onCancel: () => void;
+  initialData?: Partial<ReportDefinition>;
 }
 
 export const ReportBuilder: React.FC<ReportBuilderProps> = ({
-  onGenerate,
+  onSubmit,
   onCancel,
+  initialData
 }) => {
-  const { user } = useAuthStore();
-  const { generateReport, loading, error } = useReportStore();
+  const [filters, setFilters] = useState<ReportFilter[]>(initialData?.filters || []);
+  const [metrics, setMetrics] = useState<ReportMetric[]>(initialData?.metrics || []);
 
-  const {
-    control,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<ReportFormData>({
     resolver: zodResolver(reportSchema),
-    defaultValues: {
-      name: '',
-      type: 'applicant' as ReportType,
-      format: 'pdf' as ReportFormat,
-      filters: {} as ReportFilter,
-    },
+    defaultValues: initialData
   });
 
   const reportType = watch('type');
 
-  const handleGenerate = async (data: any) => {
+  const handleAddFilter = () => {
+    setFilters([...filters, { field: '', operator: 'eq', value: '' }]);
+  };
+
+  const handleRemoveFilter = (index: number) => {
+    setFilters(filters.filter((_, i) => i !== index));
+  };
+
+  const handleAddMetric = () => {
+    setMetrics([...metrics, { name: '', calculation: 'count', field: '', format: 'number' }]);
+  };
+
+  const handleRemoveMetric = (index: number) => {
+    setMetrics(metrics.filter((_, i) => i !== index));
+  };
+
+  const onFormSubmit = async (data: ReportFormData) => {
     try {
-      const reportId = await generateReport(
-        data.name,
-        data.type,
-        data.format,
-        data.filters
-      );
-      onGenerate?.(reportId);
+      await onSubmit({
+        ...data,
+        id: initialData?.id || '',
+        createdAt: initialData?.createdAt || new Date(),
+        updatedAt: new Date(),
+        status: 'active'
+      });
     } catch (error) {
-      console.error('Failed to generate report:', error);
+      console.error('Error creating report:', error);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(handleGenerate)} className="space-y-6">
-      {/* Report Name */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Report Name
-        </label>
-        <Controller
-          name="name"
-          control={control}
-          render={({ field }) => (
+    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
+      <h2 className="text-2xl font-bold mb-6">Report Builder</h2>
+      
+      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+        {/* Basic Information */}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Report Name</label>
             <input
               type="text"
-              {...field}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              placeholder="Enter report name"
+              {...register('name')}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
             />
-          )}
-        />
-        {errors.name && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.name.message as string}
-          </p>
-        )}
-      </div>
-
-      {/* Report Type */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Report Type
-        </label>
-        <Controller
-          name="type"
-          control={control}
-          render={({ field }) => (
-            <select
-              {...field}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            >
-              <option value="applicant">Applicant Report</option>
-              <option value="commission">Commission Report</option>
-              <option value="expense">Expense Report</option>
-              <option value="deployment">Deployment Report</option>
-              <option value="transfer">Transfer Report</option>
-              <option value="agent">Agent Report</option>
-              <option value="branch">Branch Report</option>
-              <option value="officer">Officer Report</option>
-            </select>
-          )}
-        />
-        {errors.type && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.type.message as string}
-          </p>
-        )}
-      </div>
-
-      {/* Report Format */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Report Format
-        </label>
-        <Controller
-          name="format"
-          control={control}
-          render={({ field }) => (
-            <div className="mt-1 space-x-4">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  {...field}
-                  value="pdf"
-                  checked={field.value === 'pdf'}
-                  className="form-radio h-4 w-4 text-indigo-600"
-                />
-                <span className="ml-2">PDF</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  {...field}
-                  value="excel"
-                  checked={field.value === 'excel'}
-                  className="form-radio h-4 w-4 text-indigo-600"
-                />
-                <span className="ml-2">Excel</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  {...field}
-                  value="csv"
-                  checked={field.value === 'csv'}
-                  className="form-radio h-4 w-4 text-indigo-600"
-                />
-                <span className="ml-2">CSV</span>
-              </label>
-            </div>
-          )}
-        />
-        {errors.format && (
-          <p className="mt-1 text-sm text-red-600">
-            {errors.format.message as string}
-          </p>
-        )}
-      </div>
-
-      {/* Filters */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium text-gray-900">Filters</h3>
-
-        {/* Date Range */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Start Date
-            </label>
-            <Controller
-              name="filters.startDate"
-              control={control}
-              render={({ field }) => (
-                <input
-                  type="date"
-                  {...field}
-                  value={field.value?.toISOString().split('T')[0] || ''}
-                  onChange={(e) =>
-                    field.onChange(e.target.value ? new Date(e.target.value) : undefined)
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              )}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              End Date
-            </label>
-            <Controller
-              name="filters.endDate"
-              control={control}
-              render={({ field }) => (
-                <input
-                  type="date"
-                  {...field}
-                  value={field.value?.toISOString().split('T')[0] || ''}
-                  onChange={(e) =>
-                    field.onChange(e.target.value ? new Date(e.target.value) : undefined)
-                  }
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Branch Filter */}
-        {user?.role === 'admin' || user?.role === 'president' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Branch
-            </label>
-            <Controller
-              name="filters.branchId"
-              control={control}
-              render={({ field }) => (
-                <select
-                  {...field}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                >
-                  <option value="">All Branches</option>
-                  {/* Add branch options here */}
-                </select>
-              )}
-            />
-          </div>
-        ) : null}
-
-        {/* Agent Filter */}
-        {reportType === 'commission' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Agent
-            </label>
-            <Controller
-              name="filters.agentId"
-              control={control}
-              render={({ field }) => (
-                <select
-                  {...field}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                >
-                  <option value="">All Agents</option>
-                  {/* Add agent options here */}
-                </select>
-              )}
-            />
-          </div>
-        )}
-
-        {/* Status Filter */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Status
-          </label>
-          <Controller
-            name="filters.status"
-            control={control}
-            render={({ field }) => (
-              <select
-                {...field}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              >
-                <option value="">All Statuses</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="completed">Completed</option>
-              </select>
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
             )}
-          />
-        </div>
-      </div>
+          </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="rounded-md bg-red-50 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg
-                className="h-5 w-5 text-red-400"
-                viewBox="0 0 20 20"
-                fill="currentColor"
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Report Type</label>
+            <select
+              {...register('type')}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            >
+              <option value="applicant_status">Applicant Status</option>
+              <option value="transfer_analytics">Transfer Analytics</option>
+              <option value="financial_summary">Financial Summary</option>
+              <option value="commission_report">Commission Report</option>
+              <option value="document_verification">Document Verification</option>
+              <option value="branch_performance">Branch Performance</option>
+              <option value="agent_performance">Agent Performance</option>
+            </select>
+            {errors.type && (
+              <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <textarea
+              {...register('description')}
+              rows={3}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            />
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium">Filters</h3>
+            <button
+              type="button"
+              onClick={handleAddFilter}
+              className="px-3 py-1 text-sm text-indigo-600 hover:text-indigo-900"
+            >
+              Add Filter
+            </button>
+          </div>
+          
+          {filters.map((filter, index) => (
+            <div key={index} className="flex space-x-4">
+              <input
+                {...register(`filters.${index}.field`)}
+                placeholder="Field"
+                className="flex-1 border border-gray-300 rounded-md shadow-sm p-2"
+              />
+              <select
+                {...register(`filters.${index}.operator`)}
+                className="w-32 border border-gray-300 rounded-md shadow-sm p-2"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
+                <option value="eq">Equals</option>
+                <option value="gt">Greater Than</option>
+                <option value="lt">Less Than</option>
+                <option value="between">Between</option>
+              </select>
+              <input
+                {...register(`filters.${index}.value`)}
+                placeholder="Value"
+                className="flex-1 border border-gray-300 rounded-md shadow-sm p-2"
+              />
+              <button
+                type="button"
+                onClick={() => handleRemoveFilter(index)}
+                className="text-red-600 hover:text-red-900"
+              >
+                Remove
+              </button>
             </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
-              <div className="mt-2 text-sm text-red-700">{error}</div>
+          ))}
+        </div>
+
+        {/* Metrics */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium">Metrics</h3>
+            <button
+              type="button"
+              onClick={handleAddMetric}
+              className="px-3 py-1 text-sm text-indigo-600 hover:text-indigo-900"
+            >
+              Add Metric
+            </button>
+          </div>
+          
+          {metrics.map((metric, index) => (
+            <div key={index} className="flex space-x-4">
+              <input
+                {...register(`metrics.${index}.name`)}
+                placeholder="Metric Name"
+                className="flex-1 border border-gray-300 rounded-md shadow-sm p-2"
+              />
+              <select
+                {...register(`metrics.${index}.calculation`)}
+                className="w-32 border border-gray-300 rounded-md shadow-sm p-2"
+              >
+                <option value="count">Count</option>
+                <option value="sum">Sum</option>
+                <option value="average">Average</option>
+                <option value="min">Minimum</option>
+                <option value="max">Maximum</option>
+              </select>
+              <input
+                {...register(`metrics.${index}.field`)}
+                placeholder="Field"
+                className="flex-1 border border-gray-300 rounded-md shadow-sm p-2"
+              />
+              <select
+                {...register(`metrics.${index}.format`)}
+                className="w-32 border border-gray-300 rounded-md shadow-sm p-2"
+              >
+                <option value="number">Number</option>
+                <option value="currency">Currency</option>
+                <option value="percentage">Percentage</option>
+                <option value="date">Date</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => handleRemoveMetric(index)}
+                className="text-red-600 hover:text-red-900"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Schedule */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Schedule (Optional)</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Frequency</label>
+              <select
+                {...register('schedule.frequency')}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Format</label>
+              <select
+                {...register('schedule.format')}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+              >
+                <option value="pdf">PDF</option>
+                <option value="excel">Excel</option>
+              </select>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Form Actions */}
-      <div className="flex justify-end space-x-4">
-        {onCancel && (
+        {/* Actions */}
+        <div className="flex justify-end space-x-4">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Cancel
           </button>
-        )}
-        <button
-          type="submit"
-          disabled={loading}
-          className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-        >
-          {loading ? 'Generating...' : 'Generate Report'}
-        </button>
-      </div>
-    </form>
+          <button
+            type="submit"
+            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          >
+            Create Report
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
