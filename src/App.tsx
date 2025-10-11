@@ -17,7 +17,7 @@ import { Dashboard } from './pages/dashboard/Dashboard';
 import { FinancialDashboard } from './pages/dashboard/FinancialDashboard';
 
 // Document Management
-import { DocumentList } from './components/documents/DocumentList';
+import DocumentList from './components/documents/DocumentList';
 import { DocumentUpload } from './components/documents/DocumentUpload';
 import { DocumentVerification } from './components/documents/DocumentVerification';
 import { TemplateManagement } from './components/documents/TemplateManagement';
