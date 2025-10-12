@@ -1,42 +1,18 @@
 import { Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import {
-  Bars3Icon,
-  HomeIcon,
-  UsersIcon,
-  BuildingOfficeIcon,
-  DocumentTextIcon,
-  BanknotesIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import { Bars3Icon } from '@heroicons/react/24/outline';
+import { useNavigation } from '../../hooks/useNavigation';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.js';
-import { UserRole } from '../../types/index.js';
 
-interface NavigationItem {
-  name: string;
-  href: string;
-  icon: typeof HomeIcon;
-  roles: UserRole[];
-}
-
-const navigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon, roles: ['admin', 'president', 'ho_recruitment_officer', 'ho_accountant', 'branch_manager'] },
-  { name: 'Users', href: '/admin/users', icon: UsersIcon, roles: ['admin'] },
-  { name: 'Branches', href: '/admin/branches', icon: BuildingOfficeIcon, roles: ['admin', 'president'] },
-  { name: 'Applicants', href: '/recruitment/applicants', icon: DocumentTextIcon, roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager'] },
-  { name: 'Expenses', href: '/accounting/expenses', icon: BanknotesIcon, roles: ['admin', 'president', 'ho_accountant', 'branch_manager'] },
-  { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: ['admin', 'president', 'ho_accountant'] },
-];
+// Navigation types are imported from types/navigation.ts
 
 export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, customClaims, signOut } = useAuth();
   const location = useLocation();
 
-  const filteredNavigation = navigation.filter(item => 
-    customClaims?.role && item.roles.includes(customClaims.role as UserRole)
-  );
+  const { filteredNavigation, isActive } = useNavigation();
 
   return (
     <div>
@@ -83,7 +59,7 @@ export const DashboardLayout = () => {
                                 to={item.href}
                                 className={`
                                   group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold
-                                  ${location.pathname === item.href
+                                  ${isActive(item.href)
                                     ? 'bg-gray-50 text-primary-600'
                                     : 'text-gray-700 hover:text-primary-600 hover:bg-gray-50'
                                   }
@@ -91,7 +67,7 @@ export const DashboardLayout = () => {
                               >
                                 <item.icon
                                   className={`h-6 w-6 shrink-0 ${
-                                    location.pathname === item.href ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-600'
+                                    isActive(item.href) ? 'text-primary-600' : 'text-gray-400 group-hover:text-primary-600'
                                   }`}
                                   aria-hidden="true"
                                 />

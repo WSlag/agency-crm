@@ -13,15 +13,12 @@ export const app = initializeApp(firebaseConfig);
 // Initialize Firebase services
 export const auth = getAuth(app);
 
-// Configure Firestore with persistence before initializing
-let firestore: ReturnType<typeof getFirestore>;
-
 // Initialize Firestore with persistence
 const initializeFirestore = async () => {
+  const db = getFirestore(app);
   if (!isProduction) {
     try {
-      // Enable persistence before getting Firestore instance
-      await enableIndexedDbPersistence(getFirestore(app));
+      await enableIndexedDbPersistence(db);
       console.log('Firestore persistence enabled successfully');
     } catch (err: any) {
       if (err.code === 'failed-precondition') {
@@ -33,18 +30,17 @@ const initializeFirestore = async () => {
       }
     }
   }
-  
-  // Get Firestore instance after persistence setup attempt
-  firestore = getFirestore(app);
+  return db;
 };
 
-// Initialize Firestore
-initializeFirestore();
+// Export initial instance and update it after persistence is enabled
+export let firestore = getFirestore(app);
+initializeFirestore().then(db => {
+  firestore = db;
+  console.log('Firestore initialized with persistence');
+});
 
-export { firestore };
 export const storage = getStorage(app);
-
-// Initialize Analytics only in production
 export const analytics = isProduction ? getAnalytics(app) : null;
 
 // Export a function to get the current Firebase instance

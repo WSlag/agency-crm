@@ -1,88 +1,123 @@
 interface PerformanceMetric {
-  componentName: string;
-  renderTime: number;
-  timestamp: Date;
+  name: string;
+  duration: number;
+  startTime: number;
+  entryType: string;
 }
 
-class PerformanceMonitor {
-  private static instance: PerformanceMonitor;
-  private metrics: PerformanceMetric[] = [];
-  private readonly maxMetrics = 1000;
-  private isEnabled = process.env.NODE_ENV === 'development';
+class PerformanceMonitoring {
+  private static instance: PerformanceMonitoring;
+  private metrics: Map<string, PerformanceMetric[]>;
+  private observer: PerformanceObserver | null;
 
-  private constructor() {}
+  private constructor() {
+    this.metrics = new Map();
+    this.observer = null;
+    this.setupObserver();
+  }
 
-  static getInstance(): PerformanceMonitor {
-    if (!PerformanceMonitor.instance) {
-      PerformanceMonitor.instance = new PerformanceMonitor();
+  public static getInstance(): PerformanceMonitoring {
+    if (!PerformanceMonitoring.instance) {
+      PerformanceMonitoring.instance = new PerformanceMonitoring();
     }
-    return PerformanceMonitor.instance;
+    return PerformanceMonitoring.instance;
   }
 
-  enable() {
-    this.isEnabled = true;
-  }
+  private setupObserver() {
+    if (typeof window === 'undefined' || !window.PerformanceObserver) return;
 
-  disable() {
-    this.isEnabled = false;
-  }
+    try {
+      this.observer = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        entries.forEach((entry) => {
+          this.addMetric(entry.name, {
+            name: entry.name,
+            duration: entry.duration,
+            startTime: entry.startTime,
+            entryType: entry.entryType
+          });
+        });
+      });
 
-  measureRender(componentName: string, startTime: number) {
-    if (!this.isEnabled) return;
-
-    const renderTime = performance.now() - startTime;
-    this.addMetric({
-      componentName,
-      renderTime,
-      timestamp: new Date()
-    });
-
-    // Log slow renders
-    if (renderTime > 16) { // 16ms = 60fps threshold
-      console.warn(`Slow render detected in ${componentName}: ${renderTime.toFixed(2)}ms`);
-    }
-  }
-
-  private addMetric(metric: PerformanceMetric) {
-    this.metrics.push(metric);
-    
-    // Remove old metrics if we exceed maxMetrics
-    if (this.metrics.length > this.maxMetrics) {
-      this.metrics = this.metrics.slice(-this.maxMetrics);
+      this.observer.observe({ entryTypes: ['measure', 'resource'] });
+    } catch (error) {
+      console.warn('Performance monitoring is not supported in this environment:', error);
     }
   }
 
-  getMetrics(componentName?: string) {
-    if (componentName) {
-      return this.metrics.filter(m => m.componentName === componentName);
+  private addMetric(name: string, metric: PerformanceMetric) {
+    const metrics = this.metrics.get(name) || [];
+    metrics.push(metric);
+    this.metrics.set(name, metrics);
+  }
+
+  public startMeasure(name: string) {
+    if (typeof window === 'undefined' || !window.performance) return;
+
+    try {
+      performance.mark(`${name}-start`);
+    } catch (error) {
+      console.warn(`Failed to start measure ${name}:`, error);
     }
-    return this.metrics;
   }
 
-  getAverageRenderTime(componentName?: string) {
-    const relevantMetrics = componentName
-      ? this.metrics.filter(m => m.componentName === componentName)
-      : this.metrics;
+  public endMeasure(name: string) {
+    if (typeof window === 'undefined' || !window.performance) return;
 
-    if (relevantMetrics.length === 0) return 0;
-
-    const sum = relevantMetrics.reduce((acc, m) => acc + m.renderTime, 0);
-    return sum / relevantMetrics.length;
+    try {
+      performance.mark(`${name}-end`);
+      performance.measure(name, `${name}-start`, `${name}-end`);
+    } catch (error) {
+      console.warn(`Failed to end measure ${name}:`, error);
+    }
   }
 
-  clearMetrics() {
-    this.metrics = [];
+  public getMetrics(name?: string): PerformanceMetric[] {
+    if (name) {
+      return this.metrics.get(name) || [];
+    }
+    return Array.from(this.metrics.values()).flat();
+  }
+
+  public clearMetrics(name?: string) {
+    if (name) {
+      this.metrics.delete(name);
+      if (typeof window !== 'undefined' && window.performance) {
+        try {
+          performance.clearMarks(`${name}-start`);
+          performance.clearMarks(`${name}-end`);
+          performance.clearMeasures(name);
+        } catch (error) {
+          console.warn(`Failed to clear metrics for ${name}:`, error);
+        }
+      }
+    } else {
+      this.metrics.clear();
+      if (typeof window !== 'undefined' && window.performance) {
+        try {
+          performance.clearMarks();
+          performance.clearMeasures();
+        } catch (error) {
+          console.warn('Failed to clear all metrics:', error);
+        }
+      }
+    }
+  }
+
+  public dispose() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+    this.metrics.clear();
+    if (typeof window !== 'undefined' && window.performance) {
+      try {
+        performance.clearMarks();
+        performance.clearMeasures();
+      } catch (error) {
+        console.warn('Failed to dispose performance monitoring:', error);
+      }
+    }
   }
 }
 
-export const performanceMonitor = PerformanceMonitor.getInstance();
-
-// Performance monitoring hook
-export function usePerformanceMonitoring(componentName: string) {
-  return {
-    measureRender: () => {
-      const startTime = performance.now();
-      return () => performanceMonitor.measureRender(componentName, startTime);
-    }
-  };
-}
+export const performanceMonitoring = PerformanceMonitoring.getInstance();

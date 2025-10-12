@@ -1,43 +1,56 @@
 import React from 'react';
+import { ExclamationCircleIcon } from '@heroicons/react/20/solid';
 
-export interface BaseFieldProps {
-  name: string;
-  label: string;
+interface BaseFieldProps {
+  label?: string;
+  htmlFor?: string;
   error?: string;
-  disabled?: boolean;
-  required?: boolean;
+  children: React.ReactNode;
   className?: string;
+  required?: boolean;
   helpText?: string;
 }
 
-export const FieldWrapper: React.FC<BaseFieldProps & { children: React.ReactNode }> = ({
+export const BaseField: React.FC<BaseFieldProps> = ({
   label,
+  htmlFor,
   error,
-  required,
-  helpText,
   children,
-  className = ''
+  className = '',
+  required = false,
+  helpText
 }) => {
-  const id = React.useId();
-
   return (
-    <div className={className}>
-      <label
-        htmlFor={id}
-        className="block text-sm font-medium text-gray-700"
-      >
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <div className="mt-1">
-        {React.cloneElement(children as React.ReactElement, { id })}
-        {helpText && (
-          <p className="mt-2 text-sm text-gray-500">{helpText}</p>
-        )}
+    <div className={`space-y-1 ${className}`}>
+      {label && (
+        <label
+          htmlFor={htmlFor}
+          className="block text-sm font-medium text-gray-700"
+        >
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
+      <div className="relative mt-1">
+        {children}
         {error && (
-          <p className="mt-2 text-sm text-red-600">{error}</p>
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+            <ExclamationCircleIcon
+              className="h-5 w-5 text-red-500"
+              aria-hidden="true"
+            />
+          </div>
         )}
       </div>
+      {(error || helpText) && (
+        <p
+          className={`mt-2 text-sm ${
+            error ? 'text-red-600' : 'text-gray-500'
+          }`}
+        >
+          {error || helpText}
+        </p>
+      )}
     </div>
   );
 };

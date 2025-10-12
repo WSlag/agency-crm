@@ -1,232 +1,167 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
-import { firestore } from '../../config/firebase';
-import { notificationService } from '../../services/NotificationService';
+import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useExpiryDocuments } from '../../hooks/useExpiryDocuments';
 import { PageTransition } from '../animation/PageTransition';
 import { Breadcrumbs } from '../navigation/Breadcrumbs';
-import { ErrorBoundary } from '../error/ErrorBoundary';
+import { AsyncBoundary } from '../performance/AsyncBoundary';
 import { SelectField } from '../forms/fields/SelectField';
-import OptimizedImage from '../common/OptimizedImage';
+import { withPerformanceOptimizations } from '../../hocs/withPerformanceOptimizations';
+import { useAnnouncer } from '../../hooks/useAnnouncer';
 
-interface Document {
-  id: string;
-  type: string;
-  expiryDate: Date;
-  status: 'valid' | 'expiring' | 'expired';
-  applicantId: string;
-  applicantName: string;
-  documentUrl: string;
-  notificationSent: boolean;
-}
+const filterOptions = [
+  { value: 'all', label: 'All Documents' },
+  { value: 'expiring_soon', label: 'Expiring Soon' },
+  { value: 'expired', label: 'Expired' }
+];
 
-const EXPIRY_THRESHOLDS = {
-  warning: 30, // days before expiry to show warning
-  critical: 7  // days before expiry to show critical warning
-};
+const ExpiryTable = withPerformanceOptimizations(
+  ({ documents, onSendNotification }: any) => {
+    const getStatusColor = (expiryDate: Date) => {
+      const now = new Date();
+      const diffDays = Math.ceil(
+        (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
 
-export const ExpiryDashboard: React.FC = () => {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState('all');
-  const { customClaims } = useAuth();
-
-  const filterOptions = [
-    { value: 'all', label: 'All Documents' },
-    { value: 'valid', label: 'Valid' },
-    { value: 'expiring', label: 'Expiring Soon' },
-    { value: 'expired', label: 'Expired' }
-  ];
-
-  useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        setLoading(true);
-        const documentsRef = collection(firestore, 'documents');
-        let q = query(documentsRef, orderBy('expiryDate', 'asc'));
-
-        if (filter !== 'all') {
-          q = query(documentsRef, where('status', '==', filter), orderBy('expiryDate', 'asc'));
-        }
-
-        const querySnapshot = await getDocs(q);
-        const docs = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          expiryDate: doc.data().expiryDate.toDate()
-        })) as Document[];
-
-        setDocuments(docs);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching documents:', err);
-        setError('Failed to load documents');
-      } finally {
-        setLoading(false);
-      }
+      if (diffDays <= 0) return 'bg-red-100 text-red-800';
+      if (diffDays <= 7) return 'bg-yellow-100 text-yellow-800';
+      if (diffDays <= 30) return 'bg-blue-100 text-blue-800';
+      return 'bg-green-100 text-green-800';
     };
 
-    fetchDocuments();
-  }, [filter]);
+    return (
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Document Type
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Applicant
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Expiry Date
+            </th>
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Status
+            </th>
+            <th scope="col" className="relative px-6 py-3">
+              <span className="sr-only">Actions</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {documents.map((doc: any) => (
+            <tr key={doc.id}>
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                {doc.type}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {doc.applicantName}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {doc.expiryDate.toLocaleDateString()}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(doc.expiryDate)}`}>
+                  {new Date() > doc.expiryDate ? 'Expired' : 'Active'}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <button
+                  onClick={() => onSendNotification(doc.id)}
+                  disabled={doc.notificationSent}
+                  className={`text-indigo-600 hover:text-indigo-900 ${
+                    doc.notificationSent ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {doc.notificationSent ? 'Notification Sent' : 'Send Notification'}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  },
+  { name: 'ExpiryTable' }
+);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'expired':
-        return 'bg-red-100 text-red-800';
-      case 'expiring':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'valid':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+export const ExpiryDashboard: React.FC = () => {
+  const { customClaims } = useAuth();
+  const { announce } = useAnnouncer();
+  const {
+    documents,
+    loading,
+    error,
+    filterStatus,
+    setFilterStatus,
+    sendNotification
+  } = useExpiryDocuments(
+    customClaims?.role === 'branch_manager' ? customClaims.branchId : null
+  );
 
-  const handleNotificationSend = async (documentId: string) => {
+  const handleSendNotification = async (documentId: string) => {
     try {
-      const doc = documents.find(d => d.id === documentId);
-      if (!doc) return;
-
-      await notificationService.sendNotification({
-        userId: doc.applicantId,
-        title: 'Document Expiry Notice',
-        message: `Your ${doc.type} will expire on ${doc.expiryDate.toLocaleDateString()}. Please take necessary action.`,
-        type: 'expiry',
-        priority: 'high',
-        channels: ['email', 'push', 'in-app'],
-        data: {
-          documentId: doc.id,
-          documentType: doc.type,
-          expiryDate: doc.expiryDate.toISOString()
-        }
-      });
-
-      // Update local state to show notification sent
-      setDocuments(docs =>
-        docs.map(d =>
-          d.id === documentId
-            ? { ...d, notificationSent: true }
-            : d
-        )
-      );
+      await sendNotification(documentId);
+      announce('Notification sent successfully');
     } catch (err) {
-      console.error('Error sending notification:', err);
-      // Show error to user
-      setError(err instanceof Error ? err.message : 'Failed to send notification');
+      announce('Failed to send notification', 'assertive');
     }
   };
 
   return (
-    <ErrorBoundary>
+    <AsyncBoundary>
       <PageTransition isLoading={loading}>
         <div className="space-y-6">
           <Breadcrumbs />
-          
+
           <div className="sm:flex sm:items-center">
             <div className="sm:flex-auto">
-              <h1 className="text-xl font-semibold text-gray-900">Document Expiry Dashboard</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                Document Expiry Dashboard
+              </h1>
               <p className="mt-2 text-sm text-gray-700">
                 Monitor and manage document expiration dates and notifications.
               </p>
             </div>
           </div>
 
+          {error && (
+            <div className="rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Error</h3>
+                  <div className="mt-2 text-sm text-red-700">{error.message}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <div className="max-w-xs mb-6">
+              <div className="mb-6">
                 <SelectField
-                  name="filter"
                   label="Filter by Status"
-                  value={filter}
-                  onChange={setFilter}
+                  name="filterStatus"
                   options={filterOptions}
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value as any)}
+                  register={() => ({})}
                 />
               </div>
 
-              {error && (
-                <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
-                  {error}
-                </div>
-              )}
-
-              <div className="mt-4">
+              <div className="mt-6">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead>
-                      <tr>
-                        <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Document
-                        </th>
-                        <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Applicant
-                        </th>
-                        <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Expiry Date
-                        </th>
-                        <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {documents.map((doc) => (
-                        <tr key={doc.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="h-10 w-10 flex-shrink-0">
-                                <OptimizedImage
-                                  src={doc.documentUrl}
-                                  alt={doc.type}
-                                  className="h-10 w-10 rounded-md object-cover"
-                                />
-                              </div>
-                              <div className="ml-4">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {doc.type}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{doc.applicantName}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">
-                              {doc.expiryDate.toLocaleDateString()}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(doc.status)}`}>
-                              {doc.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button
-                              onClick={() => handleNotificationSend(doc.id)}
-                              disabled={doc.notificationSent}
-                              className={`inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md ${
-                                doc.notificationSent
-                                  ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                  : 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200'
-                              }`}
-                            >
-                              {doc.notificationSent ? 'Notification Sent' : 'Send Notification'}
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <ExpiryTable
+                    documents={documents}
+                    onSendNotification={handleSendNotification}
+                  />
                 </div>
               </div>
             </div>
           </div>
-    </div>
+        </div>
       </PageTransition>
-    </ErrorBoundary>
+    </AsyncBoundary>
   );
 };

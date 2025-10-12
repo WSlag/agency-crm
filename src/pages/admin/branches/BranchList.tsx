@@ -1,47 +1,28 @@
-import { useState, useEffect } from 'react';
-import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { firestore } from '../../../config/firebase';
-import { DashboardLayout } from '../../../components/layout/DashboardLayout';
-import { Branch } from '../../../types';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { DashboardLayout } from '../../../components/layout/DashboardLayout';
+import { useBranchStore } from '../../../stores/branchStore';
+import { PageTransition } from '../../../components/animation/PageTransition';
 
-export const BranchList = () => {
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export const BranchList: React.FC = () => {
+  const {
+    branches,
+    loading,
+    error,
+    fetchBranches,
+    updateBranch,
+    deleteBranch,
+  } = useBranchStore();
 
   useEffect(() => {
-    const fetchBranches = async () => {
-      try {
-        const branchesQuery = query(collection(firestore, 'branches'));
-        const querySnapshot = await getDocs(branchesQuery);
-        const branchesData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Branch));
-        setBranches(branchesData);
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch branches');
-        setLoading(false);
-      }
-    };
-
     fetchBranches();
-  }, []);
+  }, [fetchBranches]);
 
-  const handleStatusChange = async (branchId: string, newStatus: 'active' | 'inactive') => {
+  const handleStatusChange = async (branchId: string, active: boolean) => {
     try {
-      const branchRef = doc(firestore, 'branches', branchId);
-      await updateDoc(branchRef, {
-        status: newStatus
-      });
-      
-      setBranches(branches.map(branch => 
-        branch.id === branchId ? { ...branch, status: newStatus } : branch
-      ));
+      await updateBranch(branchId, { active });
     } catch (err) {
-      setError('Failed to update branch status');
+      console.error('Failed to update branch status:', err);
     }
   };
 
@@ -51,27 +32,38 @@ export const BranchList = () => {
     }
 
     try {
-      await deleteDoc(doc(firestore, 'branches', branchId));
-      setBranches(branches.filter(branch => branch.id !== branchId));
+      await deleteBranch(branchId);
     } catch (err) {
-      setError('Failed to delete branch');
+      console.error('Failed to delete branch:', err);
     }
   };
 
-  if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+  const renderContent = () => (
+    <div
+      role="main"
+      aria-label="Branch List Content"
+      className="branch-list-content"
+      data-testid="branch-list-content"
+    >
+      <div className="sm:flex sm:items-center">
+        <div className="sm:flex-auto">
+          <h1 className="text-base font-semibold leading-6 text-gray-900">Branches</h1>
+          <p className="mt-2 text-sm text-gray-700">
+            A list of all branches including their name, location, and status.
+          </p>
         </div>
-      </DashboardLayout>
-    );
-  }
+        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+          <Link
+            to="/branches/new"
+            className="block rounded-md bg-primary-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+          >
+            Add Branch
+          </Link>
+        </div>
+      </div>
 
-  if (error) {
-    return (
-      <DashboardLayout>
-        <div className="bg-red-50 p-4 rounded-md">
+      {error && (
+        <div className="mt-4 bg-red-50 p-4 rounded-md">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -83,107 +75,98 @@ export const BranchList = () => {
             </div>
           </div>
         </div>
-      </DashboardLayout>
-    );
-  }
+      )}
+
+      <div className="mt-8 flow-root">
+        <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+          <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+            <table className="min-w-full divide-y divide-gray-300">
+              <thead>
+                <tr>
+                  <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
+                    Name
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    Type
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    Location
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    Managers
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                    Status
+                  </th>
+                  <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {branches?.map((branch) => (
+                  <tr key={branch?.id}>
+                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
+                      {branch?.name ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {branch?.type === 'HEAD_OFFICE' ? 'Head Office' : 'Branch'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {branch?.location?.city ?? '—'}, {branch?.location?.state ?? '—'}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      {branch?.managers?.length ?? 0}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      <select
+                        value={branch?.active ? 'active' : 'inactive'}
+                        onChange={(e) => handleStatusChange(branch?.id ?? '', e.target.value === 'active')}
+                        className="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"
+                        disabled={!branch?.id}
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </td>
+                    <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+                      <Link
+                        to={`/branches/${branch?.id}/edit`}
+                        className="text-primary-600 hover:text-primary-900 mr-4"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(branch?.id ?? '')}
+                        className="text-red-600 hover:text-red-900"
+                        disabled={!branch?.id}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {!branches?.length && !loading && (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-4 text-sm text-gray-500 text-center">
+                      No branches found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <DashboardLayout>
       <div className="px-4 sm:px-6 lg:px-8">
-        <div className="sm:flex sm:items-center">
-          <div className="sm:flex-auto">
-            <h1 className="text-base font-semibold leading-6 text-gray-900">Branches</h1>
-            <p className="mt-2 text-sm text-gray-700">
-              A list of all branches including their name, location, and status.
-            </p>
-          </div>
-          <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-            <Link
-              to="/admin/branches/new"
-              className="block rounded-md bg-primary-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-            >
-              Add Branch
-            </Link>
-          </div>
-        </div>
-        <div className="mt-8 flow-root">
-          <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead>
-                  <tr>
-                    <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
-                      Branch Name
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Branch Code
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Address
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Contact Info
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Head Office
-                    </th>
-                    <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                      Status
-                    </th>
-                    <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-0">
-                      <span className="sr-only">Actions</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {branches.map((branch) => (
-                    <tr key={branch.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
-                        {branch.branchName}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {branch.branchCode}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {branch.address}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {branch.contactInfo}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {branch.isHeadOffice ? 'Yes' : 'No'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <select
-                          value={branch.status}
-                          onChange={(e) => handleStatusChange(branch.id, e.target.value as 'active' | 'inactive')}
-                          className="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"
-                        >
-                          <option value="active">Active</option>
-                          <option value="inactive">Inactive</option>
-                        </select>
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                        <Link
-                          to={`/admin/branches/${branch.id}/edit`}
-                          className="text-primary-600 hover:text-primary-900 mr-4"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(branch.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
+        <PageTransition isLoading={loading}>
+          {renderContent()}
+        </PageTransition>
       </div>
     </DashboardLayout>
   );

@@ -1,118 +1,108 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface Tab {
-  id: string;
-  label: string;
-  path: string;
-  roles?: string[];
+  name: string;
+  href: string;
   count?: number;
+  disabled?: boolean;
 }
 
 interface TabNavigationProps {
   tabs: Tab[];
   className?: string;
-  onChange?: (tabId: string) => void;
-  preserveQuery?: boolean;
+  ariaLabel?: string;
+  onChange?: (href: string) => void;
 }
 
 export const TabNavigation: React.FC<TabNavigationProps> = ({
   tabs,
   className = '',
-  onChange,
-  preserveQuery = false
+  ariaLabel = 'Navigation',
+  onChange
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { customClaims } = useAuth();
-  const [activeTab, setActiveTab] = useState('');
 
-  // Filter tabs based on user role
-  const filteredTabs = tabs.filter(tab => 
-    !tab.roles || (customClaims?.role && tab.roles.includes(customClaims.role))
+  const isActive = useCallback(
+    (href: string) => location.pathname === href,
+    [location.pathname]
   );
 
-  useEffect(() => {
-    // Find the active tab based on the current path
-    const currentTab = filteredTabs.find(tab => 
-      location.pathname.startsWith(tab.path)
-    );
-    
-    if (currentTab) {
-      setActiveTab(currentTab.id);
-    } else if (filteredTabs.length > 0) {
-      // If no matching tab found, set the first available tab as active
-      setActiveTab(filteredTabs[0].id);
+  const handleTabClick = (href: string) => {
+    if (onChange) {
+      onChange(href);
+    } else {
+      navigate(href);
     }
-  }, [location.pathname, filteredTabs]);
-
-  const handleTabChange = (tab: Tab) => {
-    setActiveTab(tab.id);
-    onChange?.(tab.id);
-
-    const queryString = preserveQuery ? location.search : '';
-    navigate(tab.path + queryString);
   };
-
-  if (filteredTabs.length === 0) {
-    return null;
-  }
 
   return (
     <div className={className}>
       <div className="sm:hidden">
+        <label htmlFor="tabs" className="sr-only">
+          Select a tab
+        </label>
         <select
-          aria-label="Selected tab"
-          value={activeTab}
-          onChange={(e) => {
-            const tab = filteredTabs.find(t => t.id === e.target.value);
-            if (tab) handleTabChange(tab);
-          }}
+          id="tabs"
+          name="tabs"
           className="block w-full rounded-md border-gray-300 focus:border-primary-500 focus:ring-primary-500"
+          value={location.pathname}
+          onChange={(e) => handleTabClick(e.target.value)}
         >
-          {filteredTabs.map((tab) => (
-            <option key={tab.id} value={tab.id}>
-              {tab.label}
+          {tabs.map((tab) => (
+            <option key={tab.name} value={tab.href} disabled={tab.disabled}>
+              {tab.name}
               {tab.count !== undefined && ` (${tab.count})`}
             </option>
           ))}
         </select>
       </div>
       <div className="hidden sm:block">
-        <nav className="flex space-x-4" aria-label="Tabs">
-          {filteredTabs.map((tab) => {
-            const isActive = tab.id === activeTab;
+        <nav
+          className="isolate flex divide-x divide-gray-200 rounded-lg shadow"
+          aria-label={ariaLabel}
+        >
+          {tabs.map((tab, tabIdx) => {
+            const active = isActive(tab.href);
             return (
               <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab)}
+                key={tab.name}
+                onClick={() => !tab.disabled && handleTabClick(tab.href)}
+                disabled={tab.disabled}
                 className={`
-                  px-3 py-2 text-sm font-medium rounded-md
-                  focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
-                  ${
-                    isActive
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }
+                  group relative min-w-0 flex-1 overflow-hidden
+                  px-4 py-3 text-center text-sm font-medium
+                  hover:bg-gray-50 focus:z-10
+                  ${active ? 'text-primary-600' : 'text-gray-500 hover:text-gray-700'}
+                  ${tabIdx === 0 ? 'rounded-l-lg' : ''}
+                  ${tabIdx === tabs.length - 1 ? 'rounded-r-lg' : ''}
+                  ${tab.disabled ? 'cursor-not-allowed opacity-50' : ''}
                 `}
-                aria-current={isActive ? 'page' : undefined}
+                aria-current={active ? 'page' : undefined}
               >
-                {tab.label}
+                <span>{tab.name}</span>
                 {tab.count !== undefined && (
                   <span
                     className={`
-                      ml-2 px-2 py-0.5 text-xs rounded-full
-                      ${
-                        isActive
-                          ? 'bg-primary-200 text-primary-800'
-                          : 'bg-gray-100 text-gray-900'
+                      ml-2 rounded-full
+                      ${active
+                        ? 'bg-primary-100 text-primary-600'
+                        : 'bg-gray-100 text-gray-900'
                       }
+                      px-2.5 py-0.5 text-xs font-medium
                     `}
                   >
                     {tab.count}
                   </span>
                 )}
+                <span
+                  aria-hidden="true"
+                  className={`
+                    absolute inset-x-0 bottom-0 h-0.5
+                    ${active ? 'bg-primary-500' : 'bg-transparent'}
+                  `}
+                />
               </button>
             );
           })}

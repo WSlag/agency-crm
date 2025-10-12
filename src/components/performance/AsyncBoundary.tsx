@@ -1,21 +1,21 @@
 import React, { Suspense } from 'react';
 import { ErrorBoundary } from '../error/ErrorBoundary';
-import LoadingSpinner from '../common/LoadingSpinner';
+import { PageLoader } from '../common/PageLoader';
 
 interface AsyncBoundaryProps {
   children: React.ReactNode;
-  fallback?: React.ReactNode;
   errorFallback?: React.ReactNode;
+  loadingFallback?: React.ReactNode;
 }
 
 export const AsyncBoundary: React.FC<AsyncBoundaryProps> = ({
   children,
-  fallback = <LoadingSpinner size="large" />,
-  errorFallback
+  errorFallback,
+  loadingFallback = <PageLoader />
 }) => {
   return (
     <ErrorBoundary fallback={errorFallback}>
-      <Suspense fallback={fallback}>
+      <Suspense fallback={loadingFallback}>
         {children}
       </Suspense>
     </ErrorBoundary>

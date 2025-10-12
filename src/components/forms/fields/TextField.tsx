@@ -1,61 +1,66 @@
-import React from 'react';
-import { BaseFieldProps, FieldWrapper } from './BaseField';
+import React, { forwardRef } from 'react';
+import { UseFormRegister, FieldValues, Path, RegisterOptions } from 'react-hook-form';
+import { BaseField } from './BaseField';
 
-interface TextFieldProps extends BaseFieldProps {
-  type?: 'text' | 'email' | 'password' | 'tel' | 'url';
-  value: string;
-  onChange: (value: string) => void;
-  onBlur?: () => void;
+interface TextFieldProps<T extends FieldValues> {
+  name: Path<T>;
+  label: string;
+  register: UseFormRegister<T>;
+  rules?: RegisterOptions;
+  error?: string;
+  type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url';
   placeholder?: string;
-  maxLength?: number;
-  minLength?: number;
-  pattern?: string;
+  className?: string;
+  disabled?: boolean;
+  required?: boolean;
+  helpText?: string;
   autoComplete?: string;
 }
 
-export const TextField = ({
+export const TextField = <T extends FieldValues>({
+  name,
+  label,
+  register,
+  rules,
+  error,
   type = 'text',
-  value,
-  onChange,
-  onBlur,
   placeholder,
-  maxLength,
-  minLength,
-  pattern,
+  className = '',
+  disabled = false,
+  required = false,
+  helpText,
   autoComplete,
-  disabled,
-  required,
-  ...fieldProps
-}: TextFieldProps) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  };
+}: TextFieldProps<T>) => {
+  const { ref, ...registerProps } = register(name, rules);
 
   return (
-    <FieldWrapper {...fieldProps} required={required} disabled={disabled}>
+    <BaseField
+      label={label}
+      htmlFor={name}
+      error={error}
+      className={className}
+      required={required}
+      helpText={helpText}
+    >
       <input
+        id={name}
         type={type}
-        value={value}
-        onChange={handleChange}
-        onBlur={onBlur}
-        disabled={disabled}
-        required={required}
+        ref={ref}
+        {...registerProps}
         placeholder={placeholder}
-        maxLength={maxLength}
-        minLength={minLength}
-        pattern={pattern}
+        disabled={disabled}
         autoComplete={autoComplete}
         className={`
-          block w-full rounded-md shadow-sm
-          ${disabled ? 'bg-gray-100' : 'bg-white'}
-          ${
-            fieldProps.error
-              ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+          block w-full rounded-md shadow-sm sm:text-sm
+          ${error
+            ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500'
+            : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
           }
-          sm:text-sm
+          ${disabled ? 'bg-gray-50 text-gray-500' : ''}
         `}
+        aria-invalid={error ? 'true' : 'false'}
+        aria-describedby={error ? `${name}-error` : undefined}
       />
-    </FieldWrapper>
+    </BaseField>
   );
 };

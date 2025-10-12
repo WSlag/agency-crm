@@ -24,4 +24,5 @@ export interface Branch extends BaseEntity {
   managers: string[];
   location: Location;
   metrics: BranchMetrics;
+  active: boolean;
 }

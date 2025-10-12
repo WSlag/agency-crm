@@ -2,39 +2,33 @@ import React from 'react';
 import { UseFormRegister, FieldValues, Path, RegisterOptions } from 'react-hook-form';
 import { BaseField } from './BaseField';
 
-interface SelectOption {
-  value: string;
-  label: string;
-  disabled?: boolean;
-}
-
-interface SelectFieldProps<T extends FieldValues> {
+interface TextAreaFieldProps<T extends FieldValues> {
   name: Path<T>;
   label: string;
   register: UseFormRegister<T>;
   rules?: RegisterOptions;
   error?: string;
-  options: SelectOption[];
   placeholder?: string;
   className?: string;
   disabled?: boolean;
   required?: boolean;
   helpText?: string;
+  rows?: number;
 }
 
-export const SelectField = <T extends FieldValues>({
+export const TextAreaField = <T extends FieldValues>({
   name,
   label,
   register,
   rules,
   error,
-  options,
   placeholder,
   className = '',
   disabled = false,
   required = false,
   helpText,
-}: SelectFieldProps<T>) => {
+  rows = 4,
+}: TextAreaFieldProps<T>) => {
   const { ref, ...registerProps } = register(name, rules);
 
   return (
@@ -46,37 +40,24 @@ export const SelectField = <T extends FieldValues>({
       required={required}
       helpText={helpText}
     >
-      <select
+      <textarea
         id={name}
         ref={ref}
         {...registerProps}
+        rows={rows}
+        placeholder={placeholder}
         disabled={disabled}
         className={`
           block w-full rounded-md shadow-sm sm:text-sm
           ${error
-            ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500'
+            ? 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500'
             : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
           }
           ${disabled ? 'bg-gray-50 text-gray-500' : ''}
         `}
         aria-invalid={error ? 'true' : 'false'}
         aria-describedby={error ? `${name}-error` : undefined}
-      >
-        {placeholder && (
-          <option value="" disabled>
-            {placeholder}
-          </option>
-        )}
-        {options.map((option) => (
-          <option
-            key={option.value}
-            value={option.value}
-            disabled={option.disabled}
-          >
-            {option.label}
-          </option>
-        ))}
-      </select>
+      />
     </BaseField>
   );
 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { Dialog, Disclosure, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
@@ -20,12 +20,19 @@ export const ApplicantFilters = ({
   officers,
 }: ApplicantFiltersProps) => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [localFilters, setLocalFilters] = useState<ApplicantFilter>(filters);
+
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
 
   const handleFilterChange = (key: keyof ApplicantFilter, value: any) => {
-    onFiltersChange({
-      ...filters,
+    const newFilters = {
+      ...localFilters,
       [key]: value,
-    });
+    };
+    setLocalFilters(newFilters);
+    onFiltersChange(newFilters);
   };
 
   const filterSections = [
@@ -65,7 +72,7 @@ export const ApplicantFilters = ({
             type="text"
             name="search"
             id="search"
-            value={filters.searchTerm || ''}
+            value={localFilters.searchTerm || ''}
             onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
             placeholder="Search applicants..."
@@ -84,10 +91,10 @@ export const ApplicantFilters = ({
             <input
               type="date"
               id="start-date"
-              value={filters.dateRange?.start?.toISOString().split('T')[0] || ''}
+              value={localFilters.dateRange?.start?.toISOString().split('T')[0] || ''}
               onChange={(e) =>
                 handleFilterChange('dateRange', {
-                  ...filters.dateRange,
+                  ...localFilters.dateRange,
                   start: e.target.value ? new Date(e.target.value) : null,
                 })
               }
@@ -101,10 +108,10 @@ export const ApplicantFilters = ({
             <input
               type="date"
               id="end-date"
-              value={filters.dateRange?.end?.toISOString().split('T')[0] || ''}
+              value={localFilters.dateRange?.end?.toISOString().split('T')[0] || ''}
               onChange={(e) =>
                 handleFilterChange('dateRange', {
-                  ...filters.dateRange,
+                  ...localFilters.dateRange,
                   end: e.target.value ? new Date(e.target.value) : null,
                 })
               }
@@ -124,12 +131,12 @@ export const ApplicantFilters = ({
         </label>
         <select
           id="branch"
-          value={filters.branchId || ''}
+          value={localFilters.branchId || ''}
           onChange={(e) => handleFilterChange('branchId', e.target.value || undefined)}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
         >
           <option value="">All Branches</option>
-          {branches.map((branch) => (
+          {branches?.map((branch) => (
             <option key={branch.id} value={branch.id}>
               {branch.branchName}
             </option>
@@ -147,12 +154,12 @@ export const ApplicantFilters = ({
         </label>
         <select
           id="agent"
-          value={filters.agentId || ''}
+          value={localFilters.agentId || ''}
           onChange={(e) => handleFilterChange('agentId', e.target.value || undefined)}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
         >
           <option value="">All Agents</option>
-          {agents.map((agent) => (
+          {agents?.map((agent) => (
             <option key={agent.id} value={agent.id}>
               {agent.agentName}
             </option>
@@ -170,12 +177,12 @@ export const ApplicantFilters = ({
         </label>
         <select
           id="officer"
-          value={filters.assignedOfficerId || ''}
+          value={localFilters.assignedOfficerId || ''}
           onChange={(e) => handleFilterChange('assignedOfficerId', e.target.value || undefined)}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
         >
           <option value="">All Officers</option>
-          {officers.map((officer) => (
+          {officers?.map((officer) => (
             <option key={officer.id} value={officer.id}>
               {officer.displayName}
             </option>
@@ -189,6 +196,7 @@ export const ApplicantFilters = ({
           as="div"
           key={section.id}
           className="border-t border-gray-200 pt-4"
+          defaultOpen={true}
         >
           {({ open }) => (
             <>
@@ -214,7 +222,7 @@ export const ApplicantFilters = ({
                         name={`${section.id}[]`}
                         value={option.value}
                         type="radio"
-                        checked={filters[section.id as keyof ApplicantFilter] === option.value}
+                        checked={localFilters[section.id as keyof ApplicantFilter] === option.value}
                         onChange={() => handleFilterChange(section.id as keyof ApplicantFilter, option.value)}
                         className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                       />
@@ -226,6 +234,24 @@ export const ApplicantFilters = ({
                       </label>
                     </div>
                   ))}
+                  {/* Add clear option */}
+                  <div className="flex items-center">
+                    <input
+                      id={`filter-${section.id}-clear`}
+                      name={`${section.id}[]`}
+                      value=""
+                      type="radio"
+                      checked={!localFilters[section.id as keyof ApplicantFilter]}
+                      onChange={() => handleFilterChange(section.id as keyof ApplicantFilter, undefined)}
+                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <label
+                      htmlFor={`filter-${section.id}-clear`}
+                      className="ml-3 text-sm text-gray-600"
+                    >
+                      All
+                    </label>
+                  </div>
                 </div>
               </Disclosure.Panel>
             </>
@@ -239,7 +265,7 @@ export const ApplicantFilters = ({
           id="transferred-to-ho"
           name="transferred-to-ho"
           type="checkbox"
-          checked={filters.transferredToHO || false}
+          checked={localFilters.transferredToHO || false}
           onChange={(e) => handleFilterChange('transferredToHO', e.target.checked)}
           className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
         />
@@ -256,9 +282,10 @@ export const ApplicantFilters = ({
   return (
     <>
       {/* Mobile filter dialog */}
-      <Transition.Root show={mobileFiltersOpen} as={Dialog} onClose={setMobileFiltersOpen}>
-        <Dialog.Panel className="fixed inset-0 z-40 flex">
+      <Transition.Root show={mobileFiltersOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-40 lg:hidden" onClose={setMobileFiltersOpen}>
           <Transition.Child
+            as={Fragment}
             enter="transition-opacity ease-linear duration-300"
             enterFrom="opacity-0"
             enterTo="opacity-100"
@@ -266,35 +293,38 @@ export const ApplicantFilters = ({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-25" />
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
           </Transition.Child>
 
-          <Transition.Child
-            enter="transition ease-in-out duration-300 transform"
-            enterFrom="translate-x-full"
-            enterTo="translate-x-0"
-            leave="transition ease-in-out duration-300 transform"
-            leaveFrom="translate-x-0"
-            leaveTo="translate-x-full"
-          >
-            <div className="relative ml-auto flex h-full w-full max-w-xs flex-col overflow-y-auto bg-white py-4 pb-6 shadow-xl">
-              <div className="flex items-center justify-between px-4">
-                <h2 className="text-lg font-medium text-gray-900">Filters</h2>
-                <button
-                  type="button"
-                  className="-mr-2 flex h-10 w-10 items-center justify-center rounded-md bg-white p-2 text-gray-400 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  onClick={() => setMobileFiltersOpen(false)}
-                >
-                  <span className="sr-only">Close menu</span>
-                  <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                </button>
-              </div>
+          <div className="fixed inset-0 z-40 flex">
+            <Transition.Child
+              as={Fragment}
+              enter="transition ease-in-out duration-300 transform"
+              enterFrom="translate-x-full"
+              enterTo="translate-x-0"
+              leave="transition ease-in-out duration-300 transform"
+              leaveFrom="translate-x-0"
+              leaveTo="translate-x-full"
+            >
+              <Dialog.Panel className="relative ml-auto flex h-full w-full max-w-xs flex-col overflow-y-auto bg-white py-4 pb-6 shadow-xl">
+                <div className="flex items-center justify-between px-4">
+                  <Dialog.Title className="text-lg font-medium text-gray-900">Filters</Dialog.Title>
+                  <button
+                    type="button"
+                    className="-mr-2 flex h-10 w-10 items-center justify-center rounded-md bg-white p-2 text-gray-400 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    onClick={() => setMobileFiltersOpen(false)}
+                  >
+                    <span className="sr-only">Close menu</span>
+                    <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                  </button>
+                </div>
 
-              {/* Filters */}
-              <div className="mt-4 px-4">{renderFilterContent()}</div>
-            </div>
-          </Transition.Child>
-        </Dialog.Panel>
+                {/* Filters */}
+                <div className="mt-4 px-4">{renderFilterContent()}</div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </Dialog>
       </Transition.Root>
 
       {/* Desktop filters */}

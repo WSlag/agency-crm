@@ -1,17 +1,20 @@
+import React, { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 interface PageTransitionProps {
-  children: React.ReactNode;
+  children: ReactNode;
   isLoading?: boolean;
-  loadingText?: string;
+  loadingMessage?: string;
+  className?: string;
 }
 
-export const PageTransition = ({
+export const PageTransition = React.memo<PageTransitionProps>(({
   children,
   isLoading = false,
-  loadingText = 'Loading...'
-}: PageTransitionProps) => {
+  loadingMessage,
+  className = '',
+}) => {
   return (
     <AnimatePresence mode="wait">
       {isLoading ? (
@@ -20,11 +23,11 @@ export const PageTransition = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="min-h-[200px] flex flex-col items-center justify-center"
+          className={`min-h-[200px] flex flex-col items-center justify-center ${className}`}
         >
           <LoadingSpinner size="large" />
-          {loadingText && (
-            <p className="mt-4 text-sm text-gray-600">{loadingText}</p>
+          {loadingMessage && (
+            <p className="mt-4 text-sm text-gray-600">{loadingMessage}</p>
           )}
         </motion.div>
       ) : (
@@ -38,10 +41,11 @@ export const PageTransition = ({
             stiffness: 260,
             damping: 20
           }}
+          className={className}
         >
           {children}
         </motion.div>
       )}
     </AnimatePresence>
   );
-};
+});

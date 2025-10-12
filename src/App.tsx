@@ -16,6 +16,9 @@ import { DashboardLayout } from './components/layout/DashboardLayout';
 import { Dashboard } from './pages/dashboard/Dashboard';
 import { FinancialDashboard } from './pages/dashboard/FinancialDashboard';
 
+// Applicant Management
+import { ApplicantList } from './pages/applicants/ApplicantList';
+
 // Document Management
 import DocumentList from './components/documents/DocumentList';
 import { DocumentUpload } from './components/documents/DocumentUpload';
@@ -97,6 +100,18 @@ const App: React.FC = () => {
               </RoleGuard>
             }
           />
+
+          {/* Applicant Management */}
+          <Route
+            path="/applicants"
+            element={
+              <RoleGuard allowedRoles={['admin', 'president', 'ho_recruitment_officer', 'branch_manager']}>
+                <Outlet />
+              </RoleGuard>
+            }
+          >
+            <Route index element={<ApplicantList />} />
+          </Route>
 
           {/* Document Management */}
           <Route path="/documents">

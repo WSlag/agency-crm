@@ -1,42 +1,91 @@
-import { useEffect, useRef, KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { useEffect, useCallback } from 'react';
 
-type KeyHandler = (event: KeyboardEvent | ReactKeyboardEvent) => void;
-
-interface KeyboardConfig {
-  [key: string]: KeyHandler;
+interface KeyboardNavigationOptions {
+  onArrowUp?: () => void;
+  onArrowDown?: () => void;
+  onArrowLeft?: () => void;
+  onArrowRight?: () => void;
+  onEnter?: () => void;
+  onEscape?: () => void;
+  onTab?: (shiftKey: boolean) => void;
+  disabled?: boolean;
 }
 
-export const useKeyboardNavigation = (config: KeyboardConfig) => {
-  const handlers = useRef(config);
-  handlers.current = config;
+export const useKeyboardNavigation = ({
+  onArrowUp,
+  onArrowDown,
+  onArrowLeft,
+  onArrowRight,
+  onEnter,
+  onEscape,
+  onTab,
+  disabled = false
+}: KeyboardNavigationOptions) => {
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (disabled) return;
+
+      switch (event.key) {
+        case 'ArrowUp':
+          if (onArrowUp) {
+            event.preventDefault();
+            onArrowUp();
+          }
+          break;
+        case 'ArrowDown':
+          if (onArrowDown) {
+            event.preventDefault();
+            onArrowDown();
+          }
+          break;
+        case 'ArrowLeft':
+          if (onArrowLeft) {
+            event.preventDefault();
+            onArrowLeft();
+          }
+          break;
+        case 'ArrowRight':
+          if (onArrowRight) {
+            event.preventDefault();
+            onArrowRight();
+          }
+          break;
+        case 'Enter':
+          if (onEnter) {
+            event.preventDefault();
+            onEnter();
+          }
+          break;
+        case 'Escape':
+          if (onEscape) {
+            event.preventDefault();
+            onEscape();
+          }
+          break;
+        case 'Tab':
+          if (onTab) {
+            event.preventDefault();
+            onTab(event.shiftKey);
+          }
+          break;
+      }
+    },
+    [
+      disabled,
+      onArrowUp,
+      onArrowDown,
+      onArrowLeft,
+      onArrowRight,
+      onEnter,
+      onEscape,
+      onTab
+    ]
+  );
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Don't handle keyboard events when user is typing in an input
-      if (
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement ||
-        event.target instanceof HTMLSelectElement
-      ) {
-        return;
-      }
-
-      const handler = handlers.current[event.key];
-      if (handler) {
-        handler(event);
-      }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
     };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  return {
-    handleKeyDown: (event: ReactKeyboardEvent) => {
-      const handler = handlers.current[event.key];
-      if (handler) {
-        handler(event);
-      }
-    }
-  };
+  }, [handleKeyDown]);
 };

@@ -1,108 +1,69 @@
 import { useAuth } from '../../contexts/AuthContext';
+import { useDashboardMetrics } from '../../hooks/useDashboardMetrics';
+import { MetricCard } from '../../components/dashboard/MetricCard';
+import { DashboardSkeleton } from '../../components/dashboard/DashboardSkeleton';
+import { DashboardError } from '../../components/dashboard/DashboardError';
 
 // Role-specific dashboard components
-const AdminDashboard = () => (
-  <div>
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <dt className="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">0</dd>
-        </div>
-      </div>
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <dt className="text-sm font-medium text-gray-500 truncate">Active Branches</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">0</dd>
-        </div>
-      </div>
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <dt className="text-sm font-medium text-gray-500 truncate">System Health</dt>
-          <dd className="mt-1 text-3xl font-semibold text-green-600">Good</dd>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const BranchManagerDashboard = ({ branchId }: { branchId: string | null }) => {
-  console.log('Branch Manager Dashboard for branch:', branchId);
+const AdminDashboard = () => {
+  const { metrics, isLoading, error } = useDashboardMetrics('admin');
+  
+  if (isLoading) return <DashboardSkeleton />;
+  if (error) return <DashboardError error={error} />;
+  
   return (
-    <div>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <dt className="text-sm font-medium text-gray-500 truncate">Branch Applicants</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">0</dd>
-          </div>
-        </div>
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <dt className="text-sm font-medium text-gray-500 truncate">Pending Approvals</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">0</dd>
-          </div>
-        </div>
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <dt className="text-sm font-medium text-gray-500 truncate">Monthly Target</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">0%</dd>
-          </div>
-        </div>
-      </div>
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {metrics.map(metric => (
+        <MetricCard key={metric.label} {...metric} />
+      ))}
     </div>
   );
 };
 
-const RecruitmentOfficerDashboard = () => (
-  <div>
+const BranchManagerDashboard = ({ branchId }: { branchId: string | null }) => {
+  const { metrics, isLoading, error } = useDashboardMetrics('branch_manager', branchId);
+  
+  if (isLoading) return <DashboardSkeleton />;
+  if (error) return <DashboardError error={error} />;
+  
+  return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <dt className="text-sm font-medium text-gray-500 truncate">Assigned Cases</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">0</dd>
-        </div>
-      </div>
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <dt className="text-sm font-medium text-gray-500 truncate">Pending Reviews</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">0</dd>
-        </div>
-      </div>
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <dt className="text-sm font-medium text-gray-500 truncate">Processing Time</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">0d</dd>
-        </div>
-      </div>
+      {metrics.map(metric => (
+        <MetricCard key={metric.label} {...metric} />
+      ))}
     </div>
-  </div>
-);
+  );
+};
 
-const AccountantDashboard = () => (
-  <div>
+const RecruitmentOfficerDashboard = () => {
+  const { metrics, isLoading, error } = useDashboardMetrics('ho_recruitment_officer');
+  
+  if (isLoading) return <DashboardSkeleton />;
+  if (error) return <DashboardError error={error} />;
+  
+  return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <dt className="text-sm font-medium text-gray-500 truncate">Pending Expenses</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">0</dd>
-        </div>
-      </div>
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <dt className="text-sm font-medium text-gray-500 truncate">Monthly Revenue</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">$0</dd>
-        </div>
-      </div>
-      <div className="bg-white overflow-hidden shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <dt className="text-sm font-medium text-gray-500 truncate">Outstanding Commissions</dt>
-          <dd className="mt-1 text-3xl font-semibold text-gray-900">$0</dd>
-        </div>
-      </div>
+      {metrics.map(metric => (
+        <MetricCard key={metric.label} {...metric} />
+      ))}
     </div>
-  </div>
-);
+  );
+};
+
+const AccountantDashboard = () => {
+  const { metrics, isLoading, error } = useDashboardMetrics('ho_accountant');
+  
+  if (isLoading) return <DashboardSkeleton />;
+  if (error) return <DashboardError error={error} />;
+  
+  return (
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {metrics.map(metric => (
+        <MetricCard key={metric.label} {...metric} />
+      ))}
+    </div>
+  );
+};
 
 const DefaultDashboard = () => (
   <div className="text-center text-gray-600">

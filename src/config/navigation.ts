@@ -1,0 +1,62 @@
+import {
+  HomeIcon,
+  UsersIcon,
+  BuildingOfficeIcon,
+  DocumentTextIcon,
+  BanknotesIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+} from '@heroicons/react/24/outline';
+import type { NavigationItem } from '../types/navigation';
+
+export const navigation: NavigationItem[] = [
+  {
+    name: 'Dashboard',
+    href: '/',
+    icon: HomeIcon,
+    roles: ['admin', 'president', 'ho_recruitment_officer', 'ho_accountant', 'branch_manager']
+  },
+  {
+    name: 'Users',
+    href: '/users',
+    icon: UsersIcon,
+    roles: ['admin']
+  },
+  {
+    name: 'Branches',
+    href: '/branches',
+    icon: BuildingOfficeIcon,
+    roles: ['admin', 'president']
+  },
+  {
+    name: 'Applicants',
+    href: '/applicants',
+    icon: DocumentTextIcon,
+    roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
+  },
+  {
+    name: 'Expenses',
+    href: '/expenses',
+    icon: BanknotesIcon,
+    roles: ['admin', 'president', 'ho_accountant', 'branch_manager']
+  },
+  {
+    name: 'Commissions',
+    href: '/commissions',
+    icon: CurrencyDollarIcon,
+    roles: ['admin', 'president', 'ho_accountant', 'branch_manager']
+  },
+  {
+    name: 'Reports',
+    href: '/reports',
+    icon: ChartBarIcon,
+    roles: ['admin', 'president', 'ho_accountant']
+  },
+  {
+    name: 'Settings',
+    href: '/settings',
+    icon: Cog6ToothIcon,
+    roles: ['admin']
+  }
+];

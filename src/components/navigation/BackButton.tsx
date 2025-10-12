@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeftIcon } from '@heroicons/react/20/solid';
 
 interface BackButtonProps {
@@ -16,7 +16,6 @@ export const BackButton: React.FC<BackButtonProps> = ({
   onBack
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleBack = () => {
     if (onBack) {
@@ -31,21 +30,22 @@ export const BackButton: React.FC<BackButtonProps> = ({
     }
   };
 
-  // Don't show back button on the main dashboard
-  if (location.pathname === '/') {
-    return null;
-  }
-
   return (
     <button
+      type="button"
       onClick={handleBack}
       className={`
-        inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+        inline-flex items-center gap-x-2 rounded-md 
+        bg-white px-3 py-2 text-sm font-semibold 
+        text-gray-900 shadow-sm ring-1 ring-inset 
+        ring-gray-300 hover:bg-gray-50
         ${className}
       `}
     >
-      <ArrowLeftIcon className="mr-1 h-5 w-5" aria-hidden="true" />
+      <ArrowLeftIcon
+        className="-ml-0.5 h-5 w-5 text-gray-400"
+        aria-hidden="true"
+      />
       {label}
     </button>
   );
