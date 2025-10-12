@@ -1,12 +1,12 @@
 import { createContext, useContext, ReactNode } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import { User } from '../types';
+import { User } from 'firebase/auth';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  initialized: boolean;
+  customClaims: { role?: string; branchId?: string | null } | null;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -14,10 +14,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { user, loading, error, initialized, signIn, signOut } = useAuthStore();
+  const { user, loading, error, customClaims, signIn, signOut } = useAuthStore();
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, initialized, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading, error, customClaims, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

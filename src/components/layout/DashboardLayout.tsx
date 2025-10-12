@@ -2,7 +2,6 @@ import { Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import {
   Bars3Icon,
-  XMarkIcon,
   HomeIcon,
   UsersIcon,
   BuildingOfficeIcon,
@@ -10,9 +9,9 @@ import {
   BanknotesIcon,
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { UserRole } from '../../types';
+import { Link, useLocation, Outlet } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext.js';
+import { UserRole } from '../../types/index.js';
 
 interface NavigationItem {
   name: string;
@@ -22,7 +21,7 @@ interface NavigationItem {
 }
 
 const navigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, roles: ['admin', 'president', 'ho_recruitment_officer', 'ho_accountant', 'branch_manager'] },
+  { name: 'Dashboard', href: '/', icon: HomeIcon, roles: ['admin', 'president', 'ho_recruitment_officer', 'ho_accountant', 'branch_manager'] },
   { name: 'Users', href: '/admin/users', icon: UsersIcon, roles: ['admin'] },
   { name: 'Branches', href: '/admin/branches', icon: BuildingOfficeIcon, roles: ['admin', 'president'] },
   { name: 'Applicants', href: '/recruitment/applicants', icon: DocumentTextIcon, roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager'] },
@@ -30,17 +29,13 @@ const navigation: NavigationItem[] = [
   { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: ['admin', 'president', 'ho_accountant'] },
 ];
 
-interface DashboardLayoutProps {
-  children: React.ReactNode;
-}
-
-export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, customClaims, signOut } = useAuth();
   const location = useLocation();
 
   const filteredNavigation = navigation.filter(item => 
-    item.roles.includes(user?.role as UserRole)
+    customClaims?.role && item.roles.includes(customClaims.role as UserRole)
   );
 
   return (
@@ -74,7 +69,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   <div className="flex h-16 shrink-0 items-center">
                     <img
                       className="h-8 w-auto"
-                      src="/logo.svg"
+                      src="/logo192.png"
                       alt="Company Logo"
                     />
                   </div>
@@ -121,7 +116,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="flex h-16 shrink-0 items-center">
             <img
               className="h-8 w-auto"
-              src="/logo.svg"
+              src="/logo192.png"
+              srcSet="/logo192.png 1x, /logo512.png 2x"
               alt="Company Logo"
             />
           </div>
@@ -186,7 +182,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               {/* User menu */}
               <div className="relative">
                 <span className="text-sm font-medium text-gray-900">
-                  {user?.displayName} ({user?.role})
+                  {user?.displayName} ({customClaims?.role})
                 </span>
               </div>
             </div>
@@ -195,7 +191,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
         <main className="py-10">
           <div className="px-4 sm:px-6 lg:px-8">
-            {children}
+            <Outlet />
           </div>
         </main>
       </div>

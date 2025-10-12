@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function hasRole(role) {
+      return request.auth.token.role == role;
+    }
+    
+    function belongsToBranch(branchId) {
+      return request.auth.token.branchId == branchId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && (
+        request.auth.uid == userId || hasRole('admin')
+      );
+      allow delete: if hasRole('admin');
+    }
+    
+    // Branches collection
+    match /branches/{branchId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if hasRole('admin');
+      allow update: if isBranchManager() && belongsToBranch(branchId);
+    }
+    
+    // Agents collection
+    match /agents/{agentId} {
+      allow read: if isAuthenticated();
+      allow create: if hasRole('admin') || 
+        (hasRole('branch_manager') && belongsToBranch(resource.data.branchId));
+      allow update, delete: if hasRole('admin') || 
+        (hasRole('branch_manager') && belongsToBranch(resource.data.branchId));
+    }
+    
+    // Applicants collection
+    match /applicants/{applicantId} {
+      allow read: if isAuthenticated();
+      allow create: if hasRole('admin') || hasRole('branch_manager');
+      allow update: if hasRole('admin') || 
+        (hasRole('branch_manager') && belongsToBranch(resource.data.branchId)) ||
+        (hasRole('ho_recruitment_officer') && resource.data.assignedRecruitmentOfficerId == request.auth.uid);
+      
+      match /documents/{documentId} {
+        allow read: if isAuthenticated();
+        allow write: if hasRole('admin') ||
+          (hasRole('branch_manager') && belongsToBranch(get(/databases/$(database)/documents/applicants/$(applicantId)).data.branchId)) ||
+          (hasRole('ho_recruitment_officer') && get(/databases/$(database)/documents/applicants/$(applicantId)).data.assignedRecruitmentOfficerId == request.auth.uid);
+      }
+      
+      match /expenses/{expenseId} {
+        allow read: if isAuthenticated();
+        allow create: if hasRole('admin') || hasRole('branch_manager') || hasRole('ho_accountant');
+        allow update: if hasRole('admin') || hasRole('president') || hasRole('ho_accountant');
+      }
+    }
+    
+    // Other collections
+    match /{collection=**}/{document} {
+      allow read: if isAuthenticated();
+      allow write: if hasRole('admin');
+    }
+  }
+}

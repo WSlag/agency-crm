@@ -1,116 +1,128 @@
-import React, { useEffect, useState } from 'react';
-import { ReportService, ReportResult } from '../../services/reports/reportService';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { PageTransition } from '../animation/PageTransition';
+import { Breadcrumbs } from '../navigation/Breadcrumbs';
+import { ErrorBoundary } from '../error/ErrorBoundary';
+import { SelectField } from '../forms/fields/SelectField';
+import { analyticsService, AnalyticsResult } from '../../services/AnalyticsService';
+import { ResponsiveContainer } from '../layout/ResponsiveContainer';
+import { ResponsiveGrid } from '../layout/ResponsiveContainer';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartData
+} from 'chart.js';
+import { Line, Bar } from 'react-chartjs-2';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface DashboardMetrics {
-  applicants: {
-    total: number;
-    active: number;
-    deployed: number;
-    byStage: Record<string, number>;
-  };
-  transfers: {
-    pending: number;
-    completed: number;
-    rejected: number;
-    averageTime: number;
-  };
-  documents: {
-    pending: number;
-    verified: number;
-    rejected: number;
-    expiringSoon: number;
-  };
   financial: {
-    totalExpenses: number;
-    totalCommissions: number;
-    pendingApprovals: number;
+    expenses: AnalyticsResult;
+    commissions: AnalyticsResult;
   };
+  documents: AnalyticsResult;
+  performance: AnalyticsResult;
 }
 
-interface AnalyticsDashboardProps {
-  branchId?: string;
-  userRole: string;
+interface MetricCardProps {
+  title: string;
+  value: number | string;
+  change?: number;
+  format?: 'number' | 'currency' | 'percentage' | 'duration';
 }
 
-export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
-  branchId,
-  userRole,
-}) => {
+const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, format }) => {
+  const formatValue = (val: number | string, format?: string) => {
+    if (typeof val !== 'number') return val;
+    
+    switch (format) {
+      case 'currency':
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD'
+        }).format(val);
+      case 'percentage':
+        return `${(val * 100).toFixed(1)}%`;
+      case 'duration':
+        return `${val.toFixed(1)}ms`;
+      default:
+        return new Intl.NumberFormat('en-US').format(val);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+      <div className="mt-2 flex items-baseline">
+        <p className="text-2xl font-semibold text-gray-900">
+          {formatValue(value, format)}
+        </p>
+        {change !== undefined && (
+          <p className={`ml-2 flex items-baseline text-sm font-semibold ${
+            change >= 0 ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {change >= 0 ? '↑' : '↓'} {Math.abs(change)}%
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export const AnalyticsDashboard: React.FC = () => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState('7d');
+  const { customClaims } = useAuth();
 
-  const reportService = new ReportService();
+  const timeRangeOptions = [
+    { value: '7d', label: 'Last 7 Days' },
+    { value: '30d', label: 'Last 30 Days' },
+    { value: '90d', label: 'Last 90 Days' }
+  ];
 
   useEffect(() => {
-    loadDashboardMetrics();
-  }, [branchId, userRole]);
+    loadMetrics();
+  }, [timeRange]);
 
-  const loadDashboardMetrics = async () => {
+  const loadMetrics = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Load applicant metrics
-      const applicantReport = await reportService.generateReport({
-        id: 'applicant_metrics',
-        name: 'Applicant Metrics',
-        type: 'applicant_status',
-        description: 'Current applicant statistics',
-        filters: branchId ? [{ field: 'branchId', operator: 'eq', value: branchId }] : [],
-        metrics: [
-          { name: 'total', calculation: 'count' },
-          { name: 'active', calculation: 'count', field: 'status', format: 'number' },
-          { name: 'deployed', calculation: 'count', field: 'status', format: 'number' },
-        ],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        status: 'active',
-      });
+      const [expenses, commissions, documents, performance] = await Promise.all([
+        analyticsService.getExpenseMetrics(customClaims?.branchId),
+        analyticsService.getCommissionMetrics(customClaims?.branchId),
+        analyticsService.getDocumentMetrics(customClaims?.branchId),
+        analyticsService.getPerformanceMetrics()
+      ]);
 
-      // Load transfer metrics
-      const transferReport = await reportService.generateReport({
-        id: 'transfer_metrics',
-        name: 'Transfer Metrics',
-        type: 'transfer_analytics',
-        description: 'Transfer statistics',
-        filters: branchId ? [{ field: 'fromBranchId', operator: 'eq', value: branchId }] : [],
-        metrics: [
-          { name: 'pending', calculation: 'count', field: 'status', format: 'number' },
-          { name: 'completed', calculation: 'count', field: 'status', format: 'number' },
-          { name: 'rejected', calculation: 'count', field: 'status', format: 'number' },
-          { name: 'averageTime', calculation: 'average', field: 'processingTime', format: 'number' },
-        ],
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        status: 'active',
-      });
-
-      // Combine metrics
       setMetrics({
-        applicants: {
-          total: applicantReport.summary.total || 0,
-          active: applicantReport.summary.active || 0,
-          deployed: applicantReport.summary.deployed || 0,
-          byStage: applicantReport.summary.byStage || {},
-        },
-        transfers: {
-          pending: transferReport.summary.pending || 0,
-          completed: transferReport.summary.completed || 0,
-          rejected: transferReport.summary.rejected || 0,
-          averageTime: transferReport.summary.averageTime || 0,
-        },
-        documents: {
-          pending: 0, // To be implemented
-          verified: 0,
-          rejected: 0,
-          expiringSoon: 0,
-        },
         financial: {
-          totalExpenses: 0, // To be implemented
-          totalCommissions: 0,
-          pendingApprovals: 0,
+          expenses,
+          commissions
         },
+        documents,
+        performance
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load metrics');
@@ -119,131 +131,177 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border-l-4 border-red-400 p-4">
-        <div className="flex">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Error</h3>
-            <div className="mt-2 text-sm text-red-700">{error}</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!metrics) {
-    return null;
-  }
+  const getChartData = (result: AnalyticsResult): ChartData<'line' | 'bar'> => {
+    return {
+      labels: result.details.map(d => new Date(d.createdAt).toLocaleDateString()),
+      datasets: Object.entries(result.summary)
+        .filter(([key]) => !key.includes('_sum') && !key.includes('_count'))
+        .map(([key, value]) => ({
+          label: key,
+          data: result.details.map(d => d[key] || 0),
+          borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
+          backgroundColor: `hsla(${Math.random() * 360}, 70%, 50%, 0.5)`,
+          tension: 0.4
+        }))
+    };
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Applicant Metrics */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Applicant Overview</h2>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Total Applicants</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.applicants.total}</dd>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Active Applicants</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.applicants.active}</dd>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Deployed</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.applicants.deployed}</dd>
-          </div>
-        </div>
-      </div>
-
-      {/* Transfer Metrics */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Transfer Status</h2>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Pending Transfers</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.transfers.pending}</dd>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Completed Transfers</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.transfers.completed}</dd>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Rejected Transfers</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.transfers.rejected}</dd>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Avg. Processing Time (days)</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">
-              {Math.round(metrics.transfers.averageTime)}
-            </dd>
-          </div>
-        </div>
-      </div>
-
-      {/* Document Metrics */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">Document Status</h2>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-4">
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Pending Verification</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.documents.pending}</dd>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Verified Documents</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.documents.verified}</dd>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Rejected Documents</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.documents.rejected}</dd>
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <dt className="text-sm font-medium text-gray-500 truncate">Expiring Soon</dt>
-            <dd className="mt-1 text-3xl font-semibold text-gray-900">{metrics.documents.expiringSoon}</dd>
-          </div>
-        </div>
-      </div>
-
-      {/* Financial Metrics */}
-      {(userRole === 'admin' || userRole === 'ho_accountant') && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Financial Overview</h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <dt className="text-sm font-medium text-gray-500 truncate">Total Expenses</dt>
-              <dd className="mt-1 text-3xl font-semibold text-gray-900">
-                ₱{metrics.financial.totalExpenses.toLocaleString()}
-              </dd>
+    <ErrorBoundary>
+      <PageTransition isLoading={loading}>
+        <div className="space-y-6">
+          <Breadcrumbs />
+          
+          <div className="sm:flex sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Analytics Dashboard</h1>
+              <p className="mt-2 text-sm text-gray-700">
+                Track key metrics and performance indicators.
+              </p>
             </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <dt className="text-sm font-medium text-gray-500 truncate">Total Commissions</dt>
-              <dd className="mt-1 text-3xl font-semibold text-gray-900">
-                ₱{metrics.financial.totalCommissions.toLocaleString()}
-              </dd>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <dt className="text-sm font-medium text-gray-500 truncate">Pending Approvals</dt>
-              <dd className="mt-1 text-3xl font-semibold text-gray-900">
-                {metrics.financial.pendingApprovals}
-              </dd>
+            <div className="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+              <SelectField
+                name="timeRange"
+                label="Time Range"
+                value={timeRange}
+                onChange={setTimeRange}
+                options={timeRangeOptions}
+              />
             </div>
           </div>
+
+          {error && (
+            <div className="rounded-md bg-red-50 p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">Error</h3>
+                  <div className="mt-2 text-sm text-red-700">{error}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {metrics && (
+            <ResponsiveContainer>
+              {/* Financial Metrics */}
+              <div className="space-y-6">
+                <h2 className="text-lg font-medium text-gray-900">Financial Metrics</h2>
+                <ResponsiveGrid cols={{ default: 1, sm: 2, lg: 4 }} gap={4}>
+                  <MetricCard
+                    title="Total Expenses"
+                    value={metrics.financial.expenses.summary.total}
+                    format="currency"
+                  />
+                  <MetricCard
+                    title="Average Expense"
+                    value={metrics.financial.expenses.summary.average}
+                    format="currency"
+                  />
+                  <MetricCard
+                    title="Total Commissions"
+                    value={metrics.financial.commissions.summary.total}
+                    format="currency"
+                  />
+                  <MetricCard
+                    title="Average Commission"
+                    value={metrics.financial.commissions.summary.average}
+                    format="currency"
+                  />
+                </ResponsiveGrid>
+                <div className="h-80">
+                  <Line
+                    data={getChartData(metrics.financial.expenses)}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        title: {
+                          display: true,
+                          text: 'Expense Trends'
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Document Metrics */}
+              <div className="space-y-6 mt-8">
+                <h2 className="text-lg font-medium text-gray-900">Document Metrics</h2>
+                <ResponsiveGrid cols={{ default: 1, sm: 2, lg: 3 }} gap={4}>
+                  <MetricCard
+                    title="Total Documents"
+                    value={metrics.documents.summary.total}
+                    format="number"
+                  />
+                  <MetricCard
+                    title="Average Verification Time"
+                    value={metrics.documents.summary.verificationTime}
+                    format="duration"
+                  />
+                  <MetricCard
+                    title="Rejection Rate"
+                    value={metrics.documents.summary.rejectionRate}
+                    format="percentage"
+                  />
+                </ResponsiveGrid>
+                <div className="h-80">
+                  <Bar
+                    data={getChartData(metrics.documents)}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        title: {
+                          display: true,
+                          text: 'Document Processing Statistics'
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="space-y-6 mt-8">
+                <h2 className="text-lg font-medium text-gray-900">Performance Metrics</h2>
+                <ResponsiveGrid cols={{ default: 1, sm: 2, lg: 3 }} gap={4}>
+                  <MetricCard
+                    title="Average Response Time"
+                    value={metrics.performance.summary.responseTime}
+                    format="duration"
+                  />
+                  <MetricCard
+                    title="Error Rate"
+                    value={metrics.performance.summary.errorRate}
+                    format="percentage"
+                  />
+                  <MetricCard
+                    title="Active Users"
+                    value={metrics.performance.summary.userCount}
+                    format="number"
+                  />
+                </ResponsiveGrid>
+                <div className="h-80">
+                  <Line
+                    data={getChartData(metrics.performance)}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        title: {
+                          display: true,
+                          text: 'System Performance Trends'
+                        }
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </ResponsiveContainer>
+          )}
         </div>
-      )}
-    </div>
+      </PageTransition>
+    </ErrorBoundary>
   );
 };
