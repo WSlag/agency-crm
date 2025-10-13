@@ -165,7 +165,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       set({ loading: true, error: null });
       const { filter, sort, pagination } = get();
 
-      let q = collection(db, 'commissions');
+      let q = collection(firestore, 'commissions');
 
       // Apply filters
       if (filter.agentId) {
@@ -219,7 +219,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
   fetchCommissionById: async (id) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'commissions', id);
+      const docRef = doc(firestore, 'commissions', id);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -247,7 +247,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
   createCommission: async (data) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(collection(db, 'commissions'));
+      const docRef = doc(collection(firestore, 'commissions'));
       const timestamp = serverTimestamp();
 
       const commissionData = {
@@ -260,7 +260,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       await setDoc(docRef, commissionData);
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'commission_created',
         entityId: docRef.id,
         entityType: 'commission',
@@ -284,7 +284,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
   updateCommission: async (id, data) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'commissions', id);
+      const docRef = doc(firestore, 'commissions', id);
       const timestamp = serverTimestamp();
 
       await updateDoc(docRef, {
@@ -293,7 +293,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'commission_updated',
         entityId: id,
         entityType: 'commission',
@@ -317,7 +317,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
   deleteCommission: async (id) => {
     try {
       set({ loading: true, error: null });
-      await deleteDoc(doc(db, 'commissions', id));
+      await deleteDoc(doc(firestore, 'commissions', id));
 
       set({
         commissions: get().commissions.filter((c) => c.id !== id),
@@ -340,7 +340,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       const timestamp = serverTimestamp();
 
       // Update commission status
-      await updateDoc(doc(db, 'commissions', verification.commissionId), {
+      await updateDoc(doc(firestore, 'commissions', verification.commissionId), {
         status: verification.status,
         verifiedBy: verification.verifiedBy,
         verifiedAt: timestamp,
@@ -348,13 +348,13 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       });
 
       // Create verification record
-      await setDoc(doc(collection(db, 'commission_verifications')), {
+      await setDoc(doc(collection(firestore, 'commission_verifications')), {
         ...verification,
         verifiedAt: timestamp,
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'commission_verified',
         entityId: verification.commissionId,
         entityType: 'commission',
@@ -378,14 +378,14 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
 
-      await updateDoc(doc(db, 'commissions', commissionId), {
+      await updateDoc(doc(firestore, 'commissions', commissionId), {
         status: 'rejected' as CommissionStatus,
         notes: reason,
         updatedAt: timestamp,
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'commission_rejected',
         entityId: commissionId,
         entityType: 'commission',
@@ -412,7 +412,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       const timestamp = serverTimestamp();
 
       // Update commission status
-      await updateDoc(doc(db, 'commissions', approval.commissionId), {
+      await updateDoc(doc(firestore, 'commissions', approval.commissionId), {
         status: approval.status,
         approvedBy: approval.approvedBy,
         approvedAt: timestamp,
@@ -420,13 +420,13 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       });
 
       // Create approval record
-      await setDoc(doc(collection(db, 'commission_approvals')), {
+      await setDoc(doc(collection(firestore, 'commission_approvals')), {
         ...approval,
         approvedAt: timestamp,
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'commission_approved',
         entityId: approval.commissionId,
         entityType: 'commission',
@@ -451,7 +451,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       const timestamp = serverTimestamp();
 
       // Update commission status
-      await updateDoc(doc(db, 'commissions', payment.commissionId), {
+      await updateDoc(doc(firestore, 'commissions', payment.commissionId), {
         status: 'paid' as CommissionStatus,
         paidBy: payment.paidBy,
         paidAt: timestamp,
@@ -459,13 +459,13 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       });
 
       // Create payment record
-      await setDoc(doc(collection(db, 'commission_payments')), {
+      await setDoc(doc(collection(firestore, 'commission_payments')), {
         ...payment,
         paidAt: timestamp,
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'commission_paid',
         entityId: payment.commissionId,
         entityType: 'commission',

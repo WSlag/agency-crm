@@ -3,11 +3,20 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { firestore, auth } from '../../../config/firebase';
-import { DashboardLayout } from '../../../components/layout/DashboardLayout';
-import { UserRole } from '../../../types';
+import { 
+  SparklesIcon, 
+  UserIcon,
+  EnvelopeIcon,
+  KeyIcon,
+  UserCircleIcon,
+  ShieldCheckIcon,
+  BuildingOfficeIcon,
+  CheckCircleIcon,
+  ArrowLeftIcon
+} from '@heroicons/react/24/outline';
 
 const userSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -43,7 +52,7 @@ export const UserForm = () => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const branchesSnapshot = await getDocs(collection(db, 'branches'));
+        const branchesSnapshot = await getDocs(collection(firestore, 'branches'));
         const branchesData = branchesSnapshot.docs.map(doc => ({
           id: doc.id,
           branchName: doc.data().branchName,
@@ -59,7 +68,7 @@ export const UserForm = () => {
     if (id) {
       const fetchUser = async () => {
         try {
-          const userDoc = await getDoc(doc(db, 'users', id));
+          const userDoc = await getDoc(doc(firestore, 'users', id));
           if (userDoc.exists()) {
             reset(userDoc.data() as UserFormData);
           } else {
@@ -81,7 +90,7 @@ export const UserForm = () => {
 
       if (id) {
         // Update existing user
-        const userRef = doc(db, 'users', id);
+        const userRef = doc(firestore, 'users', id);
         const updateData = { ...data };
         delete updateData.password; // Remove password from update data
         await updateDoc(userRef, {
@@ -102,7 +111,7 @@ export const UserForm = () => {
         );
 
         // Create user document in Firestore
-        await setDoc(doc(db, 'users', userCredential.user.uid), {
+        await setDoc(doc(firestore, 'users', userCredential.user.uid), {
           email: data.email,
           displayName: data.displayName,
           role: data.role,
@@ -113,7 +122,7 @@ export const UserForm = () => {
         });
       }
 
-      navigate('/admin/users');
+      navigate('/users');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -122,18 +131,32 @@ export const UserForm = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="sm:flex sm:items-center">
-          <div className="sm:flex-auto">
-            <h1 className="text-base font-semibold leading-6 text-gray-900">
-              {id ? 'Edit User' : 'Create User'}
+    <div className="min-h-full">
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+          <div className="py-8">
+            <button
+              onClick={() => navigate('/users')}
+              className="group mb-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/20 transition-all duration-200"
+            >
+              <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              Back to Users
+            </button>
+            <div className="flex items-center space-x-3">
+              <SparklesIcon className="h-8 w-8 text-white" />
+              <h1 className="text-3xl font-bold text-white">
+                {id ? 'Edit User' : 'Create New User'}
             </h1>
+            </div>
+            <p className="mt-2 text-indigo-100">
+              {id ? 'Update user information and permissions' : 'Add a new user to the system'}
+            </p>
           </div>
         </div>
 
+        <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
         {error && (
-          <div className="mt-4 bg-red-50 p-4 rounded-md">
+            <div className="mb-6 rounded-xl bg-red-50 border-2 border-red-200 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -147,66 +170,83 @@ export const UserForm = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
-          <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {/* Basic Information */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+              <div className="flex items-center space-x-2 mb-6">
+                <UserCircleIcon className="h-6 w-6 text-indigo-600" />
+                <h3 className="text-xl font-bold text-gray-900">Basic Information</h3>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="displayName" className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+                    <UserIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    {...register('displayName')}
+                    className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
+                    placeholder="John Doe"
+                  />
+                  {errors.displayName && (
+                    <p className="mt-2 text-sm text-red-600 flex items-center">⚠ {errors.displayName.message}</p>
+                  )}
+                </div>
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
+                  <label htmlFor="email" className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+                    <EnvelopeIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                    Email Address
               </label>
-              <div className="mt-1">
                 <input
                   type="email"
                   {...register('email')}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                    disabled={!!id}
+                    className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    placeholder="john@example.com"
                 />
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                    <p className="mt-2 text-sm text-red-600 flex items-center">⚠ {errors.email.message}</p>
                 )}
-              </div>
             </div>
 
             {!id && (
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    <label htmlFor="password" className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+                      <KeyIcon className="h-4 w-4 mr-2 text-indigo-600" />
                   Password
                 </label>
-                <div className="mt-1">
                   <input
                     type="password"
                     {...register('password')}
-                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                      className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
+                      placeholder="••••••••"
                   />
                   {errors.password && (
-                    <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                      <p className="mt-2 text-sm text-red-600 flex items-center">⚠ {errors.password.message}</p>
                   )}
                 </div>
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700">
-                Display Name
-              </label>
-              <div className="mt-1">
-                <input
-                  type="text"
-                  {...register('displayName')}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-                />
-                {errors.displayName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.displayName.message}</p>
                 )}
               </div>
             </div>
 
+            {/* Role & Permissions */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+              <div className="flex items-center space-x-2 mb-6">
+                <ShieldCheckIcon className="h-6 w-6 text-indigo-600" />
+                <h3 className="text-xl font-bold text-gray-900">Role & Permissions</h3>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Role
+                  <label htmlFor="role" className="block text-sm font-semibold text-gray-700 mb-2">
+                    User Role
               </label>
-              <div className="mt-1">
                 <select
                   {...register('role')}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                    className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
                 >
                   <option value="admin">Admin</option>
                   <option value="president">President</option>
@@ -215,19 +255,18 @@ export const UserForm = () => {
                   <option value="branch_manager">Branch Manager</option>
                 </select>
                 {errors.role && (
-                  <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
+                    <p className="mt-2 text-sm text-red-600 flex items-center">⚠ {errors.role.message}</p>
                 )}
-              </div>
             </div>
 
             <div>
-              <label htmlFor="branchId" className="block text-sm font-medium text-gray-700">
-                Branch
+                  <label htmlFor="branchId" className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+                    <BuildingOfficeIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                    Branch Assignment
               </label>
-              <div className="mt-1">
                 <select
                   {...register('branchId')}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                    className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
                 >
                   <option value="">Head Office</option>
                   {branches.map((branch) => (
@@ -237,48 +276,58 @@ export const UserForm = () => {
                   ))}
                 </select>
                 {errors.branchId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.branchId.message}</p>
+                    <p className="mt-2 text-sm text-red-600 flex items-center">⚠ {errors.branchId.message}</p>
                 )}
-              </div>
             </div>
 
             <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                Status
+                  <label htmlFor="status" className="flex items-center text-sm font-semibold text-gray-700 mb-2">
+                    <CheckCircleIcon className="h-4 w-4 mr-2 text-indigo-600" />
+                    Account Status
               </label>
-              <div className="mt-1">
                 <select
                   {...register('status')}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                    className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
                 {errors.status && (
-                  <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>
+                    <p className="mt-2 text-sm text-red-600 flex items-center">⚠ {errors.status.message}</p>
                 )}
-              </div>
+                </div>
             </div>
           </div>
 
-          <div className="flex justify-end space-x-3">
+            {/* Form Actions */}
+            <div className="flex justify-end space-x-4">
             <button
               type="button"
-              onClick={() => navigate('/admin/users')}
-              className="rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+              onClick={() => navigate('/users')}
+              className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:scale-105 transition-all duration-200"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex justify-center rounded-md border border-transparent bg-primary-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : 'Save'}
+                className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 border-2 border-transparent rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {loading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {id ? 'Updating...' : 'Creating...'}
+                  </span>
+                ) : (
+                  id ? 'Update User' : 'Create User'
+                )}
             </button>
           </div>
         </form>
-      </div>
-    </DashboardLayout>
+        </div>
+    </div>
   );
 };

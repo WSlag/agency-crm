@@ -7,6 +7,7 @@ import {
   CurrencyDollarIcon,
   ChartBarIcon,
   Cog6ToothIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import type { NavigationItem } from '../types/navigation';
 
@@ -16,6 +17,12 @@ export const navigation: NavigationItem[] = [
     href: '/',
     icon: HomeIcon,
     roles: ['admin', 'president', 'ho_recruitment_officer', 'ho_accountant', 'branch_manager']
+  },
+  {
+    name: 'Financial',
+    href: '/financial-dashboard',
+    icon: ChartBarIcon,
+    roles: ['admin', 'president', 'ho_accountant']
   },
   {
     name: 'Users',
@@ -34,6 +41,12 @@ export const navigation: NavigationItem[] = [
     href: '/applicants',
     icon: DocumentTextIcon,
     roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
+  },
+  {
+    name: 'Officers',
+    href: '/officers',
+    icon: UserGroupIcon,
+    roles: ['admin', 'president', 'ho_recruitment_officer']
   },
   {
     name: 'Expenses',

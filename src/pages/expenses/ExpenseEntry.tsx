@@ -4,6 +4,7 @@ import { ExpenseForm } from '../../components/expenses/ExpenseForm';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useAuthStore } from '../../stores/authStore';
 import type { Expense } from '../../types/expense';
+import { SparklesIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 
 export const ExpenseEntry: React.FC = () => {
   const navigate = useNavigate();
@@ -48,35 +49,31 @@ export const ExpenseEntry: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
+          <SparklesIcon className="h-8 w-8 text-indigo-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 px-4 py-6">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 px-4 py-6">
         <div className="mx-auto max-w-7xl">
-          <div className="bg-red-50 border-l-4 border-red-400 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-red-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error</h3>
-                <div className="mt-2 text-sm text-red-700">{error}</div>
-              </div>
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-red-200 p-8">
+            <div className="text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Error</h3>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <button
+                onClick={() => navigate('/expenses')}
+                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium hover:from-indigo-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg"
+              >
+                <ArrowLeftIcon className="h-5 w-5 mr-2" />
+                Back to Expenses
+              </button>
             </div>
           </div>
         </div>
@@ -85,17 +82,36 @@ export const ExpenseEntry: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 px-4 py-6">
       <div className="mx-auto max-w-7xl">
-        <div className="md:flex md:items-center md:justify-between mb-6">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-              {id ? 'Edit Expense' : 'New Expense'}
-            </h2>
+        {/* Header */}
+        <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl p-8 mb-8 overflow-hidden">
+          <div className="absolute inset-0 bg-black opacity-10"></div>
+          <div className="relative z-10">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/expenses')}
+                className="p-2 bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition-all transform hover:scale-110"
+              >
+                <ArrowLeftIcon className="h-6 w-6 text-white" />
+              </button>
+              <div>
+                <div className="flex items-center space-x-3">
+                  <SparklesIcon className="h-8 w-8 text-white animate-pulse" />
+                  <h1 className="text-3xl font-bold text-white">
+                    {id ? 'Edit Expense' : 'New Expense'}
+                  </h1>
+                </div>
+                <p className="text-indigo-100 mt-1">
+                  {id ? 'Update expense information' : 'Enter new expense details'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow">
+        {/* Form Container */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200">
           <ExpenseForm
             initialData={id ? selectedExpense : undefined}
             onSubmit={handleSubmit}

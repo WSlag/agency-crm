@@ -19,6 +19,9 @@ import { FinancialDashboard } from './pages/dashboard/FinancialDashboard';
 // Applicant Management
 import { ApplicantList } from './pages/applicants/ApplicantList';
 
+// Officer Management
+import { OfficerManagement } from './pages/officers/OfficerManagement';
+
 // Document Management
 import DocumentList from './components/documents/DocumentList';
 import { DocumentUpload } from './components/documents/DocumentUpload';
@@ -36,8 +39,13 @@ import { CommissionsPage } from './pages/commissions/CommissionsPage';
 // Branch Management
 import { BranchList } from './pages/admin/branches/BranchList';
 import { BranchDetail } from './pages/admin/branches/BranchDetail';
+import { BranchForm } from './pages/admin/branches/BranchForm';
 import { BranchDashboard } from './components/branch/BranchDashboard';
 import { BranchMetrics } from './components/branch/BranchMetrics';
+
+// User Management
+import { UserList } from './pages/admin/users/UserList';
+import { UserForm } from './pages/admin/users/UserForm';
 
 // Reports
 import { FinancialReports } from './pages/reports/FinancialReports';
@@ -113,6 +121,16 @@ const App: React.FC = () => {
             <Route index element={<ApplicantList />} />
           </Route>
 
+          {/* Officer Management */}
+          <Route
+            path="/officers"
+            element={
+              <RoleGuard allowedRoles={['admin', 'president', 'ho_recruitment_officer']}>
+                <OfficerManagement />
+              </RoleGuard>
+            }
+          />
+
           {/* Document Management */}
           <Route path="/documents">
             <Route path=":applicantId" element={<DocumentList applicantId="" />} />
@@ -154,6 +172,20 @@ const App: React.FC = () => {
               </RoleGuard>
             }
           />
+
+          {/* User Management */}
+          <Route
+            path="/users"
+            element={
+              <RoleGuard allowedRoles={['admin']}>
+                <Outlet />
+              </RoleGuard>
+            }
+          >
+            <Route index element={<UserList />} />
+            <Route path="new" element={<UserForm />} />
+            <Route path=":id/edit" element={<UserForm />} />
+          </Route>
 
           {/* Branch Management */}
           <Route
@@ -206,7 +238,9 @@ const App: React.FC = () => {
           {/* Branch Routes */}
           <Route path="/branches">
             <Route index element={<BranchList />} />
+            <Route path="new" element={<BranchForm />} />
             <Route path=":id" element={<BranchDetail />} />
+            <Route path=":id/edit" element={<BranchForm />} />
             <Route path=":id/dashboard" element={<BranchDashboard />} />
             <Route path=":id/metrics" element={<BranchMetrics />} />
           </Route>

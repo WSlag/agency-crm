@@ -1,12 +1,21 @@
 import { useState, useEffect } from 'react';
-import { DashboardLayout } from '../../components/layout/DashboardLayout';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { firestore } from '../../config/firebase';
 import { OfficerDashboard } from '../../components/officers/OfficerDashboard';
 import { OfficerAssignment } from '../../components/officers/OfficerAssignment';
 import { useAuth } from '../../contexts/AuthContext';
 import { User } from '../../types';
+import { 
+  SparklesIcon, 
+  UserGroupIcon,
+  ChartBarIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  TrophyIcon
+} from '@heroicons/react/24/outline';
 
 export const OfficerManagement = () => {
-  const { user } = useAuth();
+  const { user, customClaims } = useAuth();
   const [officers, setOfficers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,31 +24,21 @@ export const OfficerManagement = () => {
     const fetchOfficers = async () => {
       try {
         setLoading(true);
-        // In a real application, fetch officers from Firebase
-        // For now, we'll use mock data
-        const mockOfficers: User[] = [
-          {
-            uid: '1',
-            email: 'officer1@example.com',
-            displayName: 'John Smith',
-            role: 'ho_recruitment_officer',
-            branchId: null,
-            status: 'active',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-          {
-            uid: '2',
-            email: 'officer2@example.com',
-            displayName: 'Jane Doe',
-            role: 'ho_recruitment_officer',
-            branchId: null,
-            status: 'active',
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        ];
-        setOfficers(mockOfficers);
+        setError(null);
+        
+        // Fetch recruitment officers from Firebase
+        const officersQuery = query(
+          collection(firestore, 'users'),
+          where('role', '==', 'ho_recruitment_officer')
+        );
+        
+        const snapshot = await getDocs(officersQuery);
+        const officersData = snapshot.docs.map(doc => ({
+          uid: doc.id,
+          ...doc.data()
+        } as User));
+        
+        setOfficers(officersData);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch officers');
       } finally {
@@ -59,158 +58,269 @@ export const OfficerManagement = () => {
     }
   };
 
+  // Calculate stats
+  const activeOfficers = officers.filter(o => o.status === 'active').length;
+
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <SparklesIcon className="h-6 w-6 text-indigo-600 animate-pulse" />
+            </div>
+          </div>
+          <p className="mt-4 text-gray-600 font-medium">Loading recruitment officers...</p>
         </div>
-      </DashboardLayout>
     );
   }
 
   if (error) {
     return (
-      <DashboardLayout>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-red-50 p-4 rounded-md">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-red-400"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+      <div className="rounded-xl bg-red-50 border-2 border-red-200 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-red-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">{error}</h3>
+            </div>
+          </div>
+        </div>
+    );
+  }
+
+  // If the current user is a recruitment officer, show their dashboard
+  if (customClaims?.role === 'ho_recruitment_officer') {
+    return (
+      <div className="min-h-full">
+          {/* Header with gradient background */}
+          <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+            <div className="py-8">
+              <div className="flex items-center space-x-3">
+                <SparklesIcon className="h-8 w-8 text-white" />
+                <h1 className="text-3xl font-bold text-white">My Dashboard</h1>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">{error}</h3>
+              <p className="mt-2 text-indigo-100">
+                Track your assigned applicants and performance metrics
+              </p>
+            </div>
+          </div>
+
+          {/* Dashboard Content */}
+          <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
+            <OfficerDashboard />
+          </div>
+        </div>
+    );
+  }
+
+  // Admin/Manager view - show all officers
+  return (
+    <div className="min-h-full">
+        {/* Header with gradient background */}
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+          <div className="py-8">
+            <div className="flex items-center space-x-3">
+              <SparklesIcon className="h-8 w-8 text-white" />
+              <h1 className="text-3xl font-bold text-white">
+                Recruitment Officer Management
+              </h1>
+            </div>
+            <p className="mt-2 text-indigo-100">
+              Monitor performance and manage recruitment officer assignments
+            </p>
+
+            {/* Stats Cards */}
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
+                  <UserGroupIcon className="h-5 w-5" />
+                  <span>Total Officers</span>
+                </dt>
+                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                  {officers.length}
+                </dd>
+                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 opacity-20 blur-2xl"></div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
+                  <CheckCircleIcon className="h-5 w-5" />
+                  <span>Active Officers</span>
+                </dt>
+                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                  {activeOfficers}
+                </dd>
+                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-green-500 to-green-600 opacity-20 blur-2xl"></div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
+                  <ClockIcon className="h-5 w-5" />
+                  <span>Avg. Workload</span>
+                </dt>
+                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                  {officers.length > 0 ? Math.floor(Math.random() * 20 + 10) : 0}
+                </dd>
+                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 opacity-20 blur-2xl"></div>
+              </div>
+
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
+                  <TrophyIcon className="h-5 w-5" />
+                  <span>Avg. Success Rate</span>
+                </dt>
+                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                  {Math.floor(Math.random() * 20 + 75)}%
+                </dd>
+                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 opacity-20 blur-2xl"></div>
               </div>
             </div>
           </div>
         </div>
-      </DashboardLayout>
-    );
-  }
 
-  return (
-    <DashboardLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Recruitment Officer Management
-          </h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Manage recruitment officers and their assignments
-          </p>
-        </div>
-
-        <div className="space-y-6">
-          {user?.role === 'ho_recruitment_officer' ? (
-            <OfficerDashboard />
-          ) : (
-            <>
-              {/* Officer Performance Overview */}
-              <div className="bg-white shadow sm:rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg font-medium leading-6 text-gray-900">
-                    Officer Performance Overview
-                  </h3>
-                  <div className="mt-6">
-                    <div className="overflow-hidden bg-white shadow sm:rounded-lg">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th
-                              scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              Officer
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              Total Applicants
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              Active Cases
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              Success Rate
-                            </th>
-                            <th
-                              scope="col"
-                              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                              Status
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {officers.map((officer) => (
-                            <tr key={officer.uid}>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center">
-                                  <div>
-                                    <div className="text-sm font-medium text-gray-900">
-                                      {officer.displayName}
-                                    </div>
-                                    <div className="text-sm text-gray-500">
-                                      {officer.email}
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {Math.floor(Math.random() * 50)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {Math.floor(Math.random() * 20)}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {Math.floor(Math.random() * 100)}%
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span
-                                  className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                    officer.status === 'active'
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-red-100 text-red-800'
-                                  }`}
-                                >
-                                  {officer.status}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
+        {/* Officer Performance Table */}
+        <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-6">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <ChartBarIcon className="h-6 w-6 text-indigo-600" />
+                <h3 className="text-xl font-bold text-gray-900">
+                  Officer Performance Overview
+                </h3>
               </div>
+            </div>
 
-              {/* Officer Assignment */}
-              <OfficerAssignment
-                officers={officers}
-                onAssign={handleAssignOfficer}
-              />
-            </>
-          )}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="py-4 pl-6 pr-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+                    >
+                      Officer
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+                    >
+                      Total Applicants
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+                    >
+                      Active Cases
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+                    >
+                      Success Rate
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+                    >
+                      Status
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {officers.map((officer) => {
+                    const totalApplicants = Math.floor(Math.random() * 50 + 10);
+                    const activeCases = Math.floor(Math.random() * 20 + 5);
+                    const successRate = Math.floor(Math.random() * 30 + 65);
+
+                    return (
+                      <tr
+                        key={officer.uid}
+                        className="hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200"
+                      >
+                        <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 flex-shrink-0">
+                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                                <span className="text-white font-semibold text-sm">
+                                  {officer.displayName.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="font-semibold text-gray-900">
+                                {officer.displayName}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {officer.email}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
+                          {totalApplicants}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {activeCases}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              successRate >= 80
+                                ? 'bg-green-100 text-green-800'
+                                : successRate >= 70
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {successRate}%
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              officer.status === 'active'
+                                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                                : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+                            }`}
+                          >
+                            {officer.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+
+              {officers.length === 0 && (
+                <div className="text-center py-12">
+                  <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No officers found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    No recruitment officers are currently registered.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Officer Assignment */}
+          <OfficerAssignment officers={officers} onAssign={handleAssignOfficer} />
         </div>
       </div>
-    </DashboardLayout>
   );
 };

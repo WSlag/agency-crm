@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, doc, updateDoc, addDoc } from 'firebase/firestore';
-import { firestore } from '../../config/firebase';
-import { DashboardLayout } from '../../components/layout/DashboardLayout';
 import { UserRole } from '../../types';
+import {
+  SparklesIcon,
+  LockClosedIcon,
+} from '@heroicons/react/24/outline';
 
 interface Permission {
   id: string;
@@ -24,7 +25,6 @@ export const RolePermissions: React.FC = () => {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
 
   const availableRoles: UserRole[] = [
     'admin',
@@ -120,51 +120,54 @@ export const RolePermissions: React.FC = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600"></div>
+          <SparklesIcon className="h-8 w-8 text-indigo-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
         </div>
-      </DashboardLayout>
+        <p className="mt-4 text-gray-600 font-medium">Loading permissions...</p>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <DashboardLayout>
-        <div className="bg-red-50 p-4 rounded-md">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">{error}</h3>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 px-4 py-6">
+        <div className="mx-auto max-w-7xl">
+          <div className="bg-white rounded-2xl shadow-xl border-2 border-red-200 p-8">
+            <div className="text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Permissions</h3>
+              <p className="text-gray-600">{error}</p>
             </div>
           </div>
         </div>
-      </DashboardLayout>
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="sm:flex sm:items-center">
-          <div className="sm:flex-auto">
-            <h1 className="text-2xl font-bold text-gray-900">Role Permissions</h1>
-            <p className="mt-2 text-sm text-gray-700">
-              Manage access permissions for different user roles
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto py-8">
+          <div className="flex items-center space-x-3">
+            <SparklesIcon className="h-8 w-8 text-white animate-pulse" />
+            <div>
+              <h1 className="text-3xl font-bold text-white">Role Permissions</h1>
+              <p className="text-indigo-100 mt-1">
+                Manage access permissions for different user roles
+              </p>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="mt-8 flex flex-col">
-          <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
-              <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-300">
-                  <thead className="bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
                       <th scope="col" className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">
                         Permission
@@ -180,43 +183,46 @@ export const RolePermissions: React.FC = () => {
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {permissions.map(permission => (
-                      <tr key={permission.id}>
-                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                          <div className="font-medium text-gray-900">{permission.name}</div>
-                          <div className="text-gray-500">{permission.description}</div>
-                        </td>
-                        {availableRoles.map(role => {
-                          const rolePermission = rolePermissions.find(rp => rp.role === role);
-                          const hasPermission = rolePermission?.permissions.includes(permission.id);
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {permissions.map(permission => (
+                    <tr key={permission.id} className="hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200">
+                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                        <div className="flex items-center space-x-2">
+                          <LockClosedIcon className="h-4 w-4 text-indigo-600" />
+                          <div>
+                            <div className="font-semibold text-gray-900">{permission.name}</div>
+                            <div className="text-gray-500 text-xs">{permission.description}</div>
+                          </div>
+                        </div>
+                      </td>
+                      {availableRoles.map(role => {
+                        const rolePermission = rolePermissions.find(rp => rp.role === role);
+                        const hasPermission = rolePermission?.permissions.includes(permission.id);
 
-                          return (
-                            <td key={role} className="px-3 py-4 text-sm text-center">
-                              <button
-                                onClick={() => handlePermissionToggle(role, permission.id)}
-                                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
-                                  hasPermission ? 'bg-primary-600' : 'bg-gray-200'
+                        return (
+                          <td key={role} className="px-3 py-4 text-sm text-center">
+                            <button
+                              onClick={() => handlePermissionToggle(role, permission.id)}
+                              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                                hasPermission ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-gray-200'
+                              }`}
+                            >
+                              <span
+                                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                  hasPermission ? 'translate-x-5' : 'translate-x-0'
                                 }`}
-                              >
-                                <span
-                                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                    hasPermission ? 'translate-x-5' : 'translate-x-0'
-                                  }`}
-                                />
-                              </button>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                              />
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </div>
   );
 };

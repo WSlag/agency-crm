@@ -34,6 +34,14 @@ export const routes = {
       documents: ':id/documents'
     }
   },
+  officers: {
+    path: '/officers',
+    roles: ['admin', 'president', 'ho_recruitment_officer'] as UserRole[],
+    children: {
+      list: '',
+      dashboard: 'dashboard'
+    }
+  },
   expenses: {
     path: '/expenses',
     roles: ['admin', 'president', 'ho_accountant', 'branch_manager'] as UserRole[],

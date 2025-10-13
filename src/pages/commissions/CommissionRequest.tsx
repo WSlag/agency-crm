@@ -1,11 +1,12 @@
-import React from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { CommissionRequestForm } from '../../components/commissions/CommissionRequestForm';
 import { useCommissionStore } from '../../stores/commissionStore';
 import { useAuthStore } from '../../stores/authStore';
 import type { Commission } from '../../types/commission';
+import { ArrowLeftIcon, SparklesIcon } from '@heroicons/react/24/outline';
 
-export const CommissionRequest: React.FC = () => {
+export const CommissionRequest = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
@@ -18,7 +19,7 @@ export const CommissionRequest: React.FC = () => {
     updateCommission,
   } = useCommissionStore();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (id) {
       fetchCommissionById(id);
     }
@@ -53,8 +54,14 @@ export const CommissionRequest: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <SparklesIcon className="h-6 w-6 text-indigo-600 animate-pulse" />
+          </div>
+        </div>
+        <p className="mt-4 text-gray-600 font-medium">Loading commission...</p>
       </div>
     );
   }
@@ -63,7 +70,7 @@ export const CommissionRequest: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 px-4 py-6">
         <div className="mx-auto max-w-7xl">
-          <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="rounded-xl bg-red-50 border-2 border-red-200 p-4">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg
@@ -80,9 +87,7 @@ export const CommissionRequest: React.FC = () => {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800">Error</h3>
-                <div className="mt-2 text-sm text-red-700">
-                  {error}
-                </div>
+                <div className="mt-2 text-sm text-red-700">{error}</div>
               </div>
             </div>
           </div>
@@ -92,21 +97,37 @@ export const CommissionRequest: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="md:flex md:items-center md:justify-between mb-6">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+    <div className="min-h-full bg-gray-50">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl">
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <button
+            onClick={() => navigate('/commissions')}
+            className="group mb-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/20 transition-all duration-200"
+          >
+            <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Back to Commissions
+          </button>
+          <div className="flex items-center space-x-3">
+            <SparklesIcon className="h-8 w-8 text-white" />
+            <h1 className="text-3xl font-bold text-white">
               {id ? 'Edit Commission Request' : 'New Commission Request'}
-            </h2>
+            </h1>
           </div>
+          <p className="mt-2 text-indigo-100">
+            {id ? 'Update commission details and information' : 'Submit a new commission request for approval'}
+          </p>
         </div>
+      </div>
 
-        <CommissionRequestForm
-          initialData={id ? selectedCommission : undefined}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-        />
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mx-auto max-w-4xl">
+          <CommissionRequestForm
+            initialData={id ? selectedCommission : undefined}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+          />
+        </div>
       </div>
     </div>
   );

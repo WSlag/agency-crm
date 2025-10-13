@@ -1,10 +1,11 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { useExpenseStore } from '../../stores/expenseStore';
-import { EXPENSE_CONFIG, type Expense } from '../../types/expense';
+import { EXPENSE_CONFIG, type Expense, type ExpenseType, type ExpenseStatus } from '../../types/expense';
 import { useAuthStore } from '../../stores/authStore';
+import { SparklesIcon, CurrencyDollarIcon, EyeIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/20/solid';
 
-export const ExpenseList: React.FC = () => {
+export const ExpenseList = () => {
   const { user } = useAuthStore();
   const {
     expenses,
@@ -16,16 +17,17 @@ export const ExpenseList: React.FC = () => {
     setFilter,
     setSort,
     setPagination,
-    fetchExpenses,
   } = useExpenseStore();
 
-  React.useEffect(() => {
-    fetchExpenses();
-  }, [fetchExpenses, filter, sort, pagination]);
-
-  const handleFilterChange = (newFilter: typeof filter) => {
-    setFilter({ ...filter, ...newFilter });
-    setPagination({ ...pagination, page: 1 }); // Reset to first page
+  const handleFilterChange = (key: keyof typeof filter, value: any) => {
+    const newFilters = { ...filter };
+    if (value === '' || value === undefined) {
+      delete newFilters[key];
+    } else {
+      newFilters[key] = value as any;
+    }
+    setFilter(newFilters);
+    setPagination({ ...pagination, page: 1 });
   };
 
   const handleSortChange = (field: keyof Expense) => {
@@ -41,6 +43,7 @@ export const ExpenseList: React.FC = () => {
   };
 
   const formatDate = (date: Date) => {
+    if (!date) return '—';
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
@@ -51,38 +54,35 @@ export const ExpenseList: React.FC = () => {
   const getStatusBadgeColor = (status: Expense['status']) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border-yellow-300';
       case 'verified':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300';
       case 'approved':
-        return 'bg-green-100 text-green-800';
+        return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300';
       case 'rejected':
-        return 'bg-red-100 text-red-800';
+        return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300';
       case 'paid':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border-purple-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border-gray-300';
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
+  const renderSortIcon = (field: keyof Expense) => {
+    if (sort.field !== field) return null;
+    return sort.direction === 'asc' ? (
+      <ChevronUpIcon className="h-4 w-4 ml-1" />
+    ) : (
+      <ChevronDownIcon className="h-4 w-4 ml-1" />
     );
-  }
+  };
 
   if (error) {
     return (
-      <div className="bg-red-50 border-l-4 border-red-400 p-4">
+      <div className="rounded-xl bg-red-50 border-2 border-red-200 p-4 mb-6">
         <div className="flex">
           <div className="flex-shrink-0">
-            <svg
-              className="h-5 w-5 text-red-400"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
+            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
               <path
                 fillRule="evenodd"
                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -91,8 +91,7 @@ export const ExpenseList: React.FC = () => {
             </svg>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-800">Error</h3>
-            <div className="mt-2 text-sm text-red-700">{error}</div>
+            <h3 className="text-sm font-medium text-red-800">{error}</h3>
           </div>
         </div>
       </div>
@@ -100,255 +99,237 @@ export const ExpenseList: React.FC = () => {
   }
 
   return (
-    <div className="bg-white shadow-sm rounded-lg">
-      {/* Filters */}
-      <div className="border-b border-gray-200 bg-gray-50 p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <select
-            value={filter.expenseType || ''}
-            onChange={(e) => handleFilterChange({ expenseType: e.target.value || undefined })}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          >
-            <option value="">All Types</option>
-            {Object.entries(EXPENSE_CONFIG).map(([key, config]) => (
-              <option key={key} value={key}>
-                {config.name}
-              </option>
-            ))}
-          </select>
+    <div className="space-y-6">
+      {/* Horizontal Filters */}
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Expense Type */}
+          <div>
+            <label htmlFor="expenseType" className="block text-sm font-semibold text-gray-700 mb-2">
+              Expense Type
+            </label>
+            <select
+              id="expenseType"
+              value={filter.expenseType || ''}
+              onChange={(e) => handleFilterChange('expenseType', e.target.value || undefined as ExpenseType | undefined)}
+              className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
+            >
+              <option value="">All Types</option>
+              {Object.entries(EXPENSE_CONFIG).map(([key, config]) => (
+                <option key={key} value={key}>
+                  {config.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <select
-            value={filter.status || ''}
-            onChange={(e) => handleFilterChange({ status: e.target.value || undefined })}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          >
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="verified">Verified</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="paid">Paid</option>
-          </select>
+          {/* Status */}
+          <div>
+            <label htmlFor="status" className="block text-sm font-semibold text-gray-700 mb-2">
+              Status
+            </label>
+            <select
+              id="status"
+              value={filter.status || ''}
+              onChange={(e) => handleFilterChange('status', e.target.value || undefined as ExpenseStatus | undefined)}
+              className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
+            >
+              <option value="">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="verified">Verified</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
 
-          <input
-            type="date"
-            value={filter.dateRange?.start?.toISOString().split('T')[0] || ''}
-            onChange={(e) =>
-              handleFilterChange({
-                dateRange: {
-                  ...filter.dateRange,
+          {/* Start Date */}
+          <div>
+            <label htmlFor="startDate" className="block text-sm font-semibold text-gray-700 mb-2">
+              Start Date
+            </label>
+            <input
+              type="date"
+              id="startDate"
+              value={filter.dateRange?.start?.toISOString().split('T')[0] || ''}
+              onChange={(e) =>
+                handleFilterChange('dateRange', {
                   start: e.target.value ? new Date(e.target.value) : undefined,
-                },
-              })
-            }
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            placeholder="Start Date"
-          />
+                  end: filter.dateRange?.end || new Date(),
+                })
+              }
+              className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
+            />
+          </div>
 
-          <input
-            type="date"
-            value={filter.dateRange?.end?.toISOString().split('T')[0] || ''}
-            onChange={(e) =>
-              handleFilterChange({
-                dateRange: {
-                  ...filter.dateRange,
+          {/* End Date */}
+          <div>
+            <label htmlFor="endDate" className="block text-sm font-semibold text-gray-700 mb-2">
+              End Date
+            </label>
+            <input
+              type="date"
+              id="endDate"
+              value={filter.dateRange?.end?.toISOString().split('T')[0] || ''}
+              onChange={(e) =>
+                handleFilterChange('dateRange', {
+                  start: filter.dateRange?.start || new Date(),
                   end: e.target.value ? new Date(e.target.value) : undefined,
-                },
-              })
-            }
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            placeholder="End Date"
-          />
+                })
+              }
+              className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
+            />
+          </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead>
-            <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                onClick={() => handleSortChange('expenseDate')}
-              >
-                Date
-                {sort.field === 'expenseDate' && (
-                  <span className="ml-2">
-                    {sort.direction === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Type
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                onClick={() => handleSortChange('amount')}
-              >
-                Amount
-                {sort.field === 'amount' && (
-                  <span className="ml-2">
-                    {sort.direction === 'asc' ? '↑' : '↓'}
-                  </span>
-                )}
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Status
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {expenses.map((expense) => (
-              <tr key={expense.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatDate(expense.expenseDate)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {EXPENSE_CONFIG[expense.expenseType].name}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {formatCurrency(expense.amount, expense.currency)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(
-                      expense.status
-                    )}`}
-                  >
-                    {expense.status.charAt(0).toUpperCase() +
-                      expense.status.slice(1)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div className="flex space-x-4">
-                    <Link
-                      to={`/expenses/${expense.id}`}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      View
-                    </Link>
-                    {expense.status === 'pending' &&
-                      expense.enteredBy === user?.uid && (
-                        <Link
-                          to={`/expenses/${expense.id}/edit`}
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Edit
-                        </Link>
-                      )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-        <div className="flex-1 flex justify-between sm:hidden">
-          <button
-            onClick={() =>
-              setPagination({ ...pagination, page: pagination.page - 1 })
-            }
-            disabled={pagination.page === 1}
-            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <button
-            onClick={() =>
-              setPagination({ ...pagination, page: pagination.page + 1 })
-            }
-            disabled={expenses.length < pagination.limit}
-            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-gray-700">
-              Showing{' '}
-              <span className="font-medium">
-                {(pagination.page - 1) * pagination.limit + 1}
-              </span>{' '}
-              to{' '}
-              <span className="font-medium">
-                {Math.min(
-                  pagination.page * pagination.limit,
-                  pagination.total
-                )}
-              </span>{' '}
-              of <span className="font-medium">{pagination.total}</span> results
-            </p>
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center h-96">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <SparklesIcon className="h-6 w-6 text-indigo-600 animate-pulse" />
+              </div>
+            </div>
+            <p className="mt-4 text-gray-600 font-medium">Loading expenses...</p>
           </div>
-          <div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="py-4 pl-6 pr-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSortChange('expenseDate')}
+                    >
+                      <div className="flex items-center hover:text-indigo-600 transition-colors">
+                        Date
+                        {renderSortIcon('expenseDate')}
+                      </div>
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+                    >
+                      Type
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider cursor-pointer"
+                      onClick={() => handleSortChange('amount')}
+                    >
+                      <div className="flex items-center hover:text-indigo-600 transition-colors">
+                        Amount
+                        {renderSortIcon('amount')}
+                      </div>
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+                    >
+                      Status
+                    </th>
+                    <th scope="col" className="relative py-4 pl-3 pr-6">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {expenses.map((expense) => (
+                    <tr
+                      key={expense.id}
+                      className="hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200 group"
+                    >
+                      <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-gray-900">
+                        {formatDate(expense.expenseDate)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
+                        {EXPENSE_CONFIG[expense.expenseType].name}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-gray-900">
+                        {formatCurrency(expense.amount, expense.currency)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm">
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${getStatusBadgeColor(
+                            expense.status
+                          )} shadow-sm`}
+                        >
+                          {expense.status.charAt(0).toUpperCase() + expense.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
+                        <div className="flex items-center justify-end space-x-2">
+                          <Link
+                            to={`/expenses/${expense.id}`}
+                            className="inline-flex items-center px-3 py-1.5 text-indigo-600 hover:text-white bg-indigo-50 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-purple-600 rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                          >
+                            <EyeIcon className="h-4 w-4 mr-1" />
+                            View
+                          </Link>
+                          {expense.status === 'pending' && expense.enteredBy === user?.uid && (
+                            <Link
+                              to={`/expenses/${expense.id}/edit`}
+                              className="inline-flex items-center px-3 py-1.5 text-blue-600 hover:text-white bg-blue-50 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-600 rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                            >
+                              <PencilIcon className="h-4 w-4 mr-1" />
+                              Edit
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {!expenses?.length && !loading && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-16 text-center text-gray-500">
+                        <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        <p className="mt-4 text-lg font-medium text-gray-900">No expenses found</p>
+                        <p className="text-sm mt-2 text-gray-600">
+                          Try adjusting your filters or add a new expense
+                        </p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination */}
             <nav
-              className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+              className="flex items-center justify-between border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4"
               aria-label="Pagination"
             >
-              <button
-                onClick={() =>
-                  setPagination({ ...pagination, page: pagination.page - 1 })
-                }
-                disabled={pagination.page === 1}
-                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-              >
-                <span className="sr-only">Previous</span>
-                <svg
-                  className="h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
+              <div className="flex w-0 flex-1">
+                <button
+                  onClick={() => setPagination({ ...pagination, page: Math.max(1, pagination.page - 1) })}
+                  disabled={pagination.page === 1}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
-              <button
-                onClick={() =>
-                  setPagination({ ...pagination, page: pagination.page + 1 })
-                }
-                disabled={expenses.length < pagination.limit}
-                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-              >
-                <span className="sr-only">Next</span>
-                <svg
-                  className="h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  aria-hidden="true"
+                  ← Previous
+                </button>
+              </div>
+              <div className="hidden md:flex">
+                <span className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg">
+                  Page {pagination.page} of {Math.ceil(pagination.total / pagination.limit)}
+                </span>
+              </div>
+              <div className="flex w-0 flex-1 justify-end">
+                <button
+                  onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                  disabled={pagination.page >= Math.ceil(pagination.total / pagination.limit)}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105"
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </button>
+                  Next →
+                </button>
+              </div>
             </nav>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

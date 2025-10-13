@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ApplicantFilters } from '../../components/applicants/list/ApplicantFilters';
 import { ApplicantTable } from '../../components/applicants/list/ApplicantTable';
 import { useApplicantStore } from '../../stores/applicantStore';
 import { useBranchStore } from '../../stores/branchStore';
 import { useAgentStore } from '../../stores/agentStore';
 import { useOfficerStore } from '../../stores/officerStore';
 import { ApplicantFilter, ApplicantSort } from '../../types/applicant';
-import { FunnelIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, SparklesIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export const ApplicantList = () => {
   const navigate = useNavigate();
@@ -27,8 +26,6 @@ export const ApplicantList = () => {
   const { branches, loading: branchesLoading, error: branchesError, fetchActiveBranches } = useBranchStore();
   const { agents, loading: agentsLoading, error: agentsError, fetchActiveAgents } = useAgentStore();
   const { officers, loading: officersLoading, error: officersError, fetchActiveOfficers } = useOfficerStore();
-
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Load initial data only once on mount
   useEffect(() => {
@@ -75,8 +72,15 @@ export const ApplicantList = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter, sort, pagination.page]); // Don't include fetchApplicants to avoid infinite loop
 
-  const handleFiltersChange = (newFilters: ApplicantFilter) => {
-    console.log('Applying filters:', newFilters);
+  const handleFilterChange = (key: keyof ApplicantFilter, value: any) => {
+    console.log('Filter change:', { key, value });
+    const newFilters = { ...filter };
+    if (value === '' || value === undefined) {
+      delete newFilters[key];
+    } else {
+      newFilters[key] = value;
+    }
+    console.log('New filters:', newFilters);
     setFilter(newFilters);
     setPagination({ ...pagination, page: 1 }); // Reset to first page
   };
@@ -101,47 +105,62 @@ export const ApplicantList = () => {
   const isLoading = loading || branchesLoading || agentsLoading || officersLoading;
   const combinedError = error || branchesError || agentsError || officersError;
 
-  // Debug logging
-  console.log('=== ApplicantList Render ===');
-  console.log('Applicants from store:', {
-    count: applicants?.length,
-    isArray: Array.isArray(applicants),
-    sample: applicants?.[0],
-    loading,
-    error
-  });
+  // Stats for the top cards
+  const stats = [
+    { name: 'Total Applicants', value: pagination.total, color: 'from-blue-500 to-blue-600' },
+    { name: 'Active', value: applicants.filter(a => a.status === 'active').length, color: 'from-green-500 to-green-600' },
+    { name: 'In Interview', value: applicants.filter(a => a.currentStage === 'interview').length, color: 'from-purple-500 to-purple-600' },
+    { name: 'Deployed', value: applicants.filter(a => a.currentStage === 'deployed').length, color: 'from-orange-500 to-orange-600' },
+  ];
 
   return (
     <div className="min-h-full">
-      <div className="bg-white shadow">
-        <div className="px-4 sm:px-6 lg:px-8 py-6">
-          <div className="sm:flex sm:items-center">
+      {/* Header with gradient background */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl">
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="sm:flex sm:items-center sm:justify-between">
             <div className="sm:flex-auto">
-              <h1 className="text-base font-semibold leading-6 text-gray-900">
-                Applicants
-              </h1>
-              <p className="mt-2 text-sm text-gray-700">
-                A list of all applicants in the system including their status,
-                stage, and registration date.
+              <div className="flex items-center space-x-3">
+                <SparklesIcon className="h-8 w-8 text-white" />
+                <h1 className="text-3xl font-bold text-white">
+                  Applicants Management
+                </h1>
+              </div>
+              <p className="mt-2 text-indigo-100">
+                Track and manage all applicants throughout their recruitment journey
               </p>
             </div>
             <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
               <button
                 type="button"
                 onClick={() => navigate('/applicants/new')}
-                className="block rounded-md bg-primary-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
+                className="group relative inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-2xl"
               >
-                <PlusIcon className="h-5 w-5 inline-block mr-1" />
+                <PlusIcon className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
                 Add Applicant
               </button>
             </div>
           </div>
+
+          {/* Stats Cards */}
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {stats.map((stat) => (
+              <div
+                key={stat.name}
+                className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105 cursor-pointer"
+              >
+                <dt className="truncate text-sm font-medium text-indigo-100">{stat.name}</dt>
+                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">{stat.value}</dd>
+                <div className={`absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br ${stat.color} opacity-20 blur-2xl`}></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
         {combinedError && (
-          <div className="rounded-md bg-red-50 p-4 mb-6">
+          <div className="rounded-xl bg-red-50 border-2 border-red-200 p-4 mb-6">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg
@@ -163,89 +182,176 @@ export const ApplicantList = () => {
           </div>
         )}
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Filters */}
-          <div className="w-full lg:w-64 flex-none">
-            <div className="flex items-center justify-between lg:hidden">
-              <h2 className="text-sm font-medium text-gray-900">Filters</h2>
-              <button
-                type="button"
-                className="text-gray-500 hover:text-gray-600"
-                onClick={() => setShowMobileFilters(true)}
-              >
-                <FunnelIcon className="h-5 w-5" />
-              </button>
+        {/* Horizontal Filters */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {/* Search */}
+            <div className="xl:col-span-2">
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+                Search
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  id="search"
+                  value={filter.searchTerm || ''}
+                  onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
+                  className="block w-full pl-10 rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
+                  placeholder="Search applicants..."
+                />
+              </div>
             </div>
 
-            <ApplicantFilters
-              filters={filter}
-              onFiltersChange={handleFiltersChange}
-              branches={branchOptions}
-              agents={agentOptions}
-              officers={officers}
-            />
-          </div>
+            {/* Stage Dropdown */}
+            <div>
+              <label htmlFor="stage" className="block text-sm font-medium text-gray-700 mb-2">
+                Stage
+              </label>
+              <select
+                id="stage"
+                value={filter.currentStage || ''}
+                onChange={(e) => handleFilterChange('currentStage', e.target.value)}
+                className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
+              >
+                <option value="">All Stages</option>
+                <option value="interview">Interview</option>
+                <option value="medical">Medical</option>
+                <option value="processing">Processing</option>
+                <option value="deployment">Deployment</option>
+                <option value="deployed">Deployed</option>
+              </select>
+            </div>
 
-          {/* Content */}
-          <div className="flex-1">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+            {/* Status Dropdown */}
+            <div>
+              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                id="status"
+                value={filter.status || ''}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+                className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="rejected">Rejected</option>
+                <option value="interview">Interview</option>
+                <option value="document_verification">Document Verification</option>
+              </select>
+            </div>
+
+            {/* Branch Dropdown */}
+            <div>
+              <label htmlFor="branch" className="block text-sm font-medium text-gray-700 mb-2">
+                Branch
+              </label>
+              <select
+                id="branch"
+                value={filter.branchId || ''}
+                onChange={(e) => handleFilterChange('branchId', e.target.value)}
+                className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
+              >
+                <option value="">All Branches</option>
+                {branchOptions?.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.branchName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Agent Dropdown */}
+            <div>
+              <label htmlFor="agent" className="block text-sm font-medium text-gray-700 mb-2">
+                Agent
+              </label>
+              <select
+                id="agent"
+                value={filter.agentId || ''}
+                onChange={(e) => handleFilterChange('agentId', e.target.value)}
+                className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
+              >
+                <option value="">All Agents</option>
+                {agentOptions?.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.agentName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-96">
+              <div className="relative">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <SparklesIcon className="h-6 w-6 text-indigo-600 animate-pulse" />
+                </div>
               </div>
-            ) : (
-              <>
-                <ApplicantTable
-                  applicants={applicants}
-                  sort={sort}
-                  onSortChange={handleSortChange}
-                />
+              <p className="mt-4 text-gray-600 font-medium">Loading applicants...</p>
+            </div>
+          ) : (
+            <>
+              <ApplicantTable
+                applicants={applicants}
+                sort={sort}
+                onSortChange={handleSortChange}
+              />
 
-                {/* Pagination */}
-                <nav
-                  className="flex items-center justify-between border-t border-gray-200 px-4 sm:px-0 mt-6"
-                  aria-label="Pagination"
-                >
-                  <div className="-mt-px flex w-0 flex-1">
-                    <button
-                      onClick={() =>
-                        setPagination({
-                          ...pagination,
-                          page: Math.max(1, pagination.page - 1),
-                        })
-                      }
-                      disabled={pagination.page === 1}
-                      className="inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 disabled:opacity-50"
-                    >
-                      Previous
-                    </button>
-                  </div>
-                  <div className="hidden md:-mt-px md:flex">
-                    <span className="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">
-                      Page {pagination.page} of{' '}
-                      {Math.ceil(pagination.total / pagination.limit)}
-                    </span>
-                  </div>
-                  <div className="-mt-px flex w-0 flex-1 justify-end">
-                    <button
-                      onClick={() =>
-                        setPagination({
-                          ...pagination,
-                          page: pagination.page + 1,
-                        })
-                      }
-                      disabled={
-                        pagination.page >=
-                        Math.ceil(pagination.total / pagination.limit)
-                      }
-                      className="inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700 disabled:opacity-50"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </nav>
-              </>
-            )}
-          </div>
+              {/* Pagination with Gradient */}
+              <nav
+                className="flex items-center justify-between border-t border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4"
+                aria-label="Pagination"
+              >
+                <div className="flex w-0 flex-1">
+                  <button
+                    onClick={() =>
+                      setPagination({
+                        ...pagination,
+                        page: Math.max(1, pagination.page - 1),
+                      })
+                    }
+                    disabled={pagination.page === 1}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105"
+                  >
+                    ← Previous
+                  </button>
+                </div>
+                <div className="hidden md:flex">
+                  <span className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg">
+                    Page {pagination.page} of{' '}
+                    {Math.ceil(pagination.total / pagination.limit)}
+                  </span>
+                </div>
+                <div className="flex w-0 flex-1 justify-end">
+                  <button
+                    onClick={() =>
+                      setPagination({
+                        ...pagination,
+                        page: pagination.page + 1,
+                      })
+                    }
+                    disabled={
+                      pagination.page >=
+                      Math.ceil(pagination.total / pagination.limit)
+                    }
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105"
+                  >
+                    Next →
+                  </button>
+                </div>
+              </nav>
+            </>
+          )}
         </div>
       </div>
     </div>

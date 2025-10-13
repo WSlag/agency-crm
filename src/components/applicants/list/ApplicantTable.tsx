@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Applicant, ApplicantSort } from '../../../types/applicant';
-import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/20/solid';
+import { ChevronUpIcon, ChevronDownIcon, EyeIcon } from '@heroicons/react/20/solid';
 
 interface ApplicantTableProps {
   applicants: Applicant[];
@@ -33,37 +33,41 @@ export const ApplicantTable = ({
     }
 
     return sort.direction === 'asc' ? (
-      <ChevronUpIcon className="h-5 w-5" />
+      <ChevronUpIcon className="h-4 w-4 ml-1" />
     ) : (
-      <ChevronDownIcon className="h-5 w-5" />
+      <ChevronDownIcon className="h-4 w-4 ml-1" />
     );
   };
 
   const getStageBadgeColor = (stage: string) => {
     switch (stage) {
       case 'interview':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border-blue-300';
       case 'medical':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border-yellow-300';
       case 'processing':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border-purple-300';
       case 'deployment':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border-orange-300';
       case 'deployed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border-gray-300';
     }
   };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800';
+        return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300';
       case 'inactive':
-        return 'bg-red-100 text-red-800';
+        return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300';
+      case 'rejected':
+        return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300';
+      case 'document_verification':
+        return 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border-yellow-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border-gray-300';
     }
   };
 
@@ -91,8 +95,8 @@ export const ApplicantTable = ({
   if (!Array.isArray(applicants)) {
     console.error('Applicants is not an array:', applicants);
     return (
-      <div className="text-center py-4 text-red-600">
-        Error loading applicants data
+      <div className="text-center py-12 text-red-600 bg-red-50 rounded-lg m-4">
+        <p className="text-lg font-medium">Error loading applicants data</p>
       </div>
     );
   }
@@ -100,9 +104,12 @@ export const ApplicantTable = ({
   if (applicants.length === 0) {
     console.log('No applicants found - returning empty state');
     return (
-      <div className="text-center py-8 text-gray-500">
-        <p className="text-lg font-medium">No applicants found</p>
-        <p className="text-sm mt-2">Try adjusting your filters or add a new applicant</p>
+      <div className="text-center py-16 text-gray-500">
+        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+        <p className="mt-4 text-lg font-medium text-gray-900">No applicants found</p>
+        <p className="text-sm mt-2 text-gray-600">Try adjusting your filters or add a new applicant</p>
       </div>
     );
   }
@@ -118,163 +125,174 @@ export const ApplicantTable = ({
   console.log('Rendering table with', applicants.length, 'applicants');
 
   return (
-    <div className="mt-8 flow-root">
-      <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-          <table className="min-w-full divide-y divide-gray-300">
-            <thead>
-              <tr>
-                <th
-                  scope="col"
-                  className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
+    <div className="overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+            <tr>
+              <th
+                scope="col"
+                className="py-4 pl-6 pr-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSort('fullName')}
+                  className="group inline-flex items-center hover:text-indigo-600 transition-colors"
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleSort('fullName')}
-                    className="group inline-flex"
-                  >
-                    Full Name
-                    {renderSortIcon('fullName')}
-                  </button>
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  Full Name
+                  {renderSortIcon('fullName')}
+                </button>
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSort('currentStage')}
+                  className="group inline-flex items-center hover:text-indigo-600 transition-colors"
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleSort('currentStage')}
-                    className="group inline-flex"
-                  >
-                    Stage
-                    {renderSortIcon('currentStage')}
-                  </button>
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  Stage
+                  {renderSortIcon('currentStage')}
+                </button>
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSort('applicationType')}
+                  className="group inline-flex items-center hover:text-indigo-600 transition-colors"
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleSort('applicationType')}
-                    className="group inline-flex"
-                  >
-                    Type
-                    {renderSortIcon('applicationType')}
-                  </button>
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  Type
+                  {renderSortIcon('applicationType')}
+                </button>
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSort('transferredToHO')}
+                  className="group inline-flex items-center hover:text-indigo-600 transition-colors"
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleSort('transferredToHO')}
-                    className="group inline-flex"
-                  >
-                    Location
-                    {renderSortIcon('transferredToHO')}
-                  </button>
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  Location
+                  {renderSortIcon('transferredToHO')}
+                </button>
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSort('status')}
+                  className="group inline-flex items-center hover:text-indigo-600 transition-colors"
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleSort('status')}
-                    className="group inline-flex"
-                  >
-                    Status
-                    {renderSortIcon('status')}
-                  </button>
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                  Status
+                  {renderSortIcon('status')}
+                </button>
+              </th>
+              <th
+                scope="col"
+                className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleSort('createdAt')}
+                  className="group inline-flex items-center hover:text-indigo-600 transition-colors"
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleSort('createdAt')}
-                    className="group inline-flex"
+                  Registration Date
+                  {renderSortIcon('createdAt')}
+                </button>
+              </th>
+              <th scope="col" className="relative py-4 pl-3 pr-6">
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {applicants.length > 0 ? (
+              applicants.map((applicant) => {
+                console.log('Rendering applicant row:', {
+                  id: applicant?.id,
+                  fullName: applicant?.fullName,
+                  name: applicant?.name,
+                  allKeys: Object.keys(applicant || {}),
+                  applicantObject: applicant
+                });
+                return (
+                  <tr 
+                    key={applicant?.id}
+                    className="hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200 group"
                   >
-                    Registration Date
-                    {renderSortIcon('createdAt')}
-                  </button>
-                </th>
-                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-0">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {applicants.length > 0 ? (
-                applicants.map((applicant) => {
-                  console.log('Rendering applicant row:', {
-                    id: applicant?.id,
-                    fullName: applicant?.fullName,
-                    name: applicant?.name,
-                    allKeys: Object.keys(applicant || {}),
-                    applicantObject: applicant
-                  });
-                  return (
-                    <tr key={applicant?.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
+                    <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-medium text-gray-900">
+                      <div className="flex items-center">
+                        <div className={`w-2 h-2 rounded-full mr-3 ${
+                          applicant?.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                        }`}></div>
                         {applicant?.fullName || applicant?.name || '—'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStageBadgeColor(
-                            applicant?.currentStage || ''
-                          )}`}
-                        >
-                          {applicant?.currentStage || '—'}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${getStageBadgeColor(
+                          applicant?.currentStage || ''
+                        )} shadow-sm`}
+                      >
+                        {applicant?.currentStage || '—'}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
+                      <span className="font-medium">
                         {applicant?.applicationType === 'with_agent'
                           ? 'With Agent'
                           : 'Direct Hire'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {applicant?.transferredToHO ? 'Head Office' : 'Branch'}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(
-                            applicant?.status || ''
-                          )}`}
-                        >
-                          {applicant?.status || '—'}
-                        </span>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {formatDate(applicant?.createdAt)}
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                        <Link
-                          to={`/applicants/${applicant?.id}`}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          View
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-3 py-4 text-sm text-gray-500 text-center"
-                  >
-                    No applicants found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
+                      <span className={`inline-flex items-center ${applicant?.transferredToHO ? 'text-indigo-600 font-semibold' : ''}`}>
+                        {applicant?.transferredToHO ? '🏢 Head Office' : '🏪 Branch'}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${getStatusBadgeColor(
+                          applicant?.status || ''
+                        )} shadow-sm`}
+                      >
+                        {applicant?.status || '—'}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
+                      {formatDate(applicant?.createdAt)}
+                    </td>
+                    <td className="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
+                      <Link
+                        to={`/applicants/${applicant?.id}`}
+                        className="inline-flex items-center px-3 py-1.5 text-indigo-600 hover:text-white bg-indigo-50 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-purple-600 rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                      >
+                        <EyeIcon className="h-4 w-4 mr-1" />
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-3 py-4 text-sm text-gray-500 text-center"
+                >
+                  No applicants found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

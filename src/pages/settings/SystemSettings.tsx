@@ -4,6 +4,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
+import {
+  SparklesIcon,
+  BuildingOfficeIcon,
+  UsersIcon,
+  CurrencyDollarIcon,
+  ShieldCheckIcon,
+} from '@heroicons/react/24/outline';
 
 const systemSettingsSchema = z.object({
   company: z.object({
@@ -111,24 +118,38 @@ export const SystemSettings: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="flex items-center justify-center h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        <div className="text-center">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto"></div>
+            <SparklesIcon className="h-6 w-6 text-indigo-600 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+          </div>
+          <p className="mt-4 text-gray-600 font-medium">Loading settings...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Configure global system settings and preferences.
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto py-8">
+          <div className="flex items-center space-x-3">
+            <SparklesIcon className="h-8 w-8 text-white animate-pulse" />
+            <div>
+              <h1 className="text-3xl font-bold text-white">System Settings</h1>
+              <p className="text-indigo-100 mt-1">
+                Configure global system settings and preferences
+              </p>
+            </div>
+          </div>
         </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -142,78 +163,88 @@ export const SystemSettings: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           {/* Company Information */}
-          <div className="bg-white shadow sm:rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Company Information</h2>
-            <div className="grid grid-cols-1 gap-6">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <BuildingOfficeIcon className="h-6 w-6 text-indigo-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Company Information</h2>
+              </div>
+            </div>
+            <div className="p-6 grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Company Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
                 <input
                   type="text"
                   {...register('company.name')}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white p-2.5"
                 />
                 {errors.company?.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.company.name.message}</p>
+                  <p className="mt-1 text-sm text-red-600">⚠ {errors.company.name.message}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                 <input
                   type="text"
                   {...register('company.address')}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white p-2.5"
                 />
                 {errors.company?.address && (
-                  <p className="mt-1 text-sm text-red-600">{errors.company.address.message}</p>
+                  <p className="mt-1 text-sm text-red-600">⚠ {errors.company.address.message}</p>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Contact Information</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Information</label>
                 <input
                   type="text"
                   {...register('company.contact')}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white p-2.5"
                 />
                 {errors.company?.contact && (
-                  <p className="mt-1 text-sm text-red-600">{errors.company.contact.message}</p>
+                  <p className="mt-1 text-sm text-red-600">⚠ {errors.company.contact.message}</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Recruitment Settings */}
-          <div className="bg-white shadow sm:rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Recruitment Settings</h2>
-            <div className="grid grid-cols-1 gap-6">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <UsersIcon className="h-6 w-6 text-green-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Recruitment Settings</h2>
+              </div>
+            </div>
+            <div className="p-6 grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Maximum Applicants per Officer
                 </label>
                 <input
                   type="number"
                   {...register('recruitment.maxApplicantsPerOfficer', { valueAsNumber: true })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm transition-all hover:border-green-400 bg-white p-2.5"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Document Expiry Warning Days
                 </label>
                 <input
                   type="number"
                   {...register('recruitment.documentExpiryWarningDays', { valueAsNumber: true })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm transition-all hover:border-green-400 bg-white p-2.5"
                 />
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
                 <input
                   type="checkbox"
                   {...register('recruitment.autoAssignOfficers')}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  className="h-5 w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                 />
-                <label className="ml-2 block text-sm text-gray-900">
+                <label className="ml-3 block text-sm font-medium text-gray-900">
                   Auto-assign Officers to New Applicants
                 </label>
               </div>
@@ -221,14 +252,19 @@ export const SystemSettings: React.FC = () => {
           </div>
 
           {/* Financial Settings */}
-          <div className="bg-white shadow sm:rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Financial Settings</h2>
-            <div className="grid grid-cols-1 gap-6">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <CurrencyDollarIcon className="h-6 w-6 text-yellow-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Financial Settings</h2>
+              </div>
+            </div>
+            <div className="p-6 grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Currency</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
                 <select
                   {...register('financial.currency')}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm transition-all hover:border-yellow-400 bg-white p-2.5"
                 >
                   <option value="PHP">PHP - Philippine Peso</option>
                   <option value="USD">USD - US Dollar</option>
@@ -237,33 +273,33 @@ export const SystemSettings: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Minimum Commission Rate (%)
                   </label>
                   <input
                     type="number"
                     {...register('financial.commissionRateRange.min', { valueAsNumber: true })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm transition-all hover:border-yellow-400 bg-white p-2.5"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Maximum Commission Rate (%)
                   </label>
                   <input
                     type="number"
                     {...register('financial.commissionRateRange.max', { valueAsNumber: true })}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                    className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm transition-all hover:border-yellow-400 bg-white p-2.5"
                   />
                 </div>
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">
                 <input
                   type="checkbox"
                   {...register('financial.requireReceiptUpload')}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  className="h-5 w-5 text-yellow-600 focus:ring-yellow-500 border-gray-300 rounded"
                 />
-                <label className="ml-2 block text-sm text-gray-900">
+                <label className="ml-3 block text-sm font-medium text-gray-900">
                   Require Receipt Upload for Expenses
                 </label>
               </div>
@@ -271,36 +307,41 @@ export const SystemSettings: React.FC = () => {
           </div>
 
           {/* Security Settings */}
-          <div className="bg-white shadow sm:rounded-lg p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Security Settings</h2>
-            <div className="grid grid-cols-1 gap-6">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <ShieldCheckIcon className="h-6 w-6 text-purple-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Security Settings</h2>
+              </div>
+            </div>
+            <div className="p-6 grid grid-cols-1 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password Expiry (Days)
                 </label>
                 <input
                   type="number"
                   {...register('security.passwordExpiryDays', { valueAsNumber: true })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm transition-all hover:border-purple-400 bg-white p-2.5"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Session Timeout (Minutes)
                 </label>
                 <input
                   type="number"
                   {...register('security.sessionTimeoutMinutes', { valueAsNumber: true })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500 sm:text-sm transition-all hover:border-purple-400 bg-white p-2.5"
                 />
               </div>
-              <div className="flex items-center">
+              <div className="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
                 <input
                   type="checkbox"
                   {...register('security.requireTwoFactor')}
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  className="h-5 w-5 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
                 />
-                <label className="ml-2 block text-sm text-gray-900">
+                <label className="ml-3 block text-sm font-medium text-gray-900">
                   Require Two-Factor Authentication
                 </label>
               </div>
@@ -311,9 +352,12 @@ export const SystemSettings: React.FC = () => {
             <button
               type="submit"
               disabled={isSaving}
-              className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="inline-flex items-center justify-center px-6 py-3 border border-transparent shadow-lg text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? 'Saving...' : 'Save Settings'}
+              {isSaving && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              )}
+              {isSaving ? 'Saving Settings...' : 'Save Settings'}
             </button>
           </div>
         </form>

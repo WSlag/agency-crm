@@ -101,7 +101,7 @@ export const ApplicantFilters = ({
             id="search"
             value={localFilters.searchTerm || ''}
             onChange={(e) => handleFilterChange('searchTerm', e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+            className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
             placeholder="Search applicants..."
           />
         </div>
@@ -125,7 +125,7 @@ export const ApplicantFilters = ({
                   start: e.target.value ? new Date(e.target.value) : null,
                 })
               }
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
             />
           </div>
           <div>
@@ -142,7 +142,7 @@ export const ApplicantFilters = ({
                   end: e.target.value ? new Date(e.target.value) : null,
                 })
               }
-              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
             />
           </div>
         </div>
@@ -160,7 +160,7 @@ export const ApplicantFilters = ({
           id="branch"
           value={localFilters.branchId || ''}
           onChange={(e) => handleFilterChange('branchId', e.target.value || undefined)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
         >
           <option value="">All Branches</option>
           {branches?.map((branch) => (
@@ -183,7 +183,7 @@ export const ApplicantFilters = ({
           id="agent"
           value={localFilters.agentId || ''}
           onChange={(e) => handleFilterChange('agentId', e.target.value || undefined)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
         >
           <option value="">All Agents</option>
           {Array.isArray(agents) && agents.length > 0 ? (
@@ -210,7 +210,7 @@ export const ApplicantFilters = ({
           id="officer"
           value={localFilters.assignedOfficerId || ''}
           onChange={(e) => handleFilterChange('assignedOfficerId', e.target.value || undefined)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
         >
           <option value="">All Officers</option>
           {officers?.map((officer) => (

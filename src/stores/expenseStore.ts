@@ -93,7 +93,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       set({ loading: true, error: null });
       const { filter, sort, pagination } = get();
 
-      let q = collection(db, 'expenses');
+      let q = collection(firestore, 'expenses');
 
       // Apply filters
       if (filter.applicantId) {
@@ -140,7 +140,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   fetchExpenseById: async (id) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'expenses', id);
+      const docRef = doc(firestore, 'expenses', id);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -168,7 +168,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   createExpense: async (data) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(collection(db, 'expenses'));
+      const docRef = doc(collection(firestore, 'expenses'));
       const timestamp = serverTimestamp();
 
       const expenseData = {
@@ -181,7 +181,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       await setDoc(docRef, expenseData);
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'expense_created',
         entityId: docRef.id,
         entityType: 'expense',
@@ -205,7 +205,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   updateExpense: async (id, data) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'expenses', id);
+      const docRef = doc(firestore, 'expenses', id);
       const timestamp = serverTimestamp();
 
       await updateDoc(docRef, {
@@ -214,7 +214,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'expense_updated',
         entityId: id,
         entityType: 'expense',
@@ -247,7 +247,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       }
 
       // Delete expense from Firestore
-      await deleteDoc(doc(db, 'expenses', id));
+      await deleteDoc(doc(firestore, 'expenses', id));
 
       set({
         expenses: get().expenses.filter((e) => e.id !== id),
@@ -276,7 +276,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       await uploadBytes(storageRef, file);
       const receiptUrl = await getDownloadURL(storageRef);
 
-      await updateDoc(doc(db, 'expenses', expenseId), {
+      await updateDoc(doc(firestore, 'expenses', expenseId), {
         receiptUrl,
         updatedAt: serverTimestamp(),
       });
@@ -302,7 +302,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         const storageRef = ref(storage, expense.receiptUrl);
         await deleteObject(storageRef);
 
-        await updateDoc(doc(db, 'expenses', expenseId), {
+        await updateDoc(doc(firestore, 'expenses', expenseId), {
           receiptUrl: null,
           updatedAt: serverTimestamp(),
         });
@@ -324,7 +324,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       const timestamp = serverTimestamp();
 
       // Update expense status
-      await updateDoc(doc(db, 'expenses', verification.expenseId), {
+      await updateDoc(doc(firestore, 'expenses', verification.expenseId), {
         status: verification.status,
         verifiedBy: verification.verifiedBy,
         verifiedAt: timestamp,
@@ -332,13 +332,13 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       });
 
       // Create verification record
-      await setDoc(doc(collection(db, 'expense_verifications')), {
+      await setDoc(doc(collection(firestore, 'expense_verifications')), {
         ...verification,
         verifiedAt: timestamp,
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'expense_verified',
         entityId: verification.expenseId,
         entityType: 'expense',
@@ -362,14 +362,14 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
 
-      await updateDoc(doc(db, 'expenses', expenseId), {
+      await updateDoc(doc(firestore, 'expenses', expenseId), {
         status: 'rejected',
         notes: reason,
         updatedAt: timestamp,
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'expense_rejected',
         entityId: expenseId,
         entityType: 'expense',
@@ -396,7 +396,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       const timestamp = serverTimestamp();
 
       // Update expense status
-      await updateDoc(doc(db, 'expenses', approval.expenseId), {
+      await updateDoc(doc(firestore, 'expenses', approval.expenseId), {
         status: approval.status,
         approvedBy: approval.approvedBy,
         approvedAt: timestamp,
@@ -404,13 +404,13 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       });
 
       // Create approval record
-      await setDoc(doc(collection(db, 'expense_approvals')), {
+      await setDoc(doc(collection(firestore, 'expense_approvals')), {
         ...approval,
         approvedAt: timestamp,
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'expense_approved',
         entityId: approval.expenseId,
         entityType: 'expense',
@@ -435,7 +435,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       const timestamp = serverTimestamp();
 
       // Update expense status
-      await updateDoc(doc(db, 'expenses', payment.expenseId), {
+      await updateDoc(doc(firestore, 'expenses', payment.expenseId), {
         status: 'paid',
         paidBy: payment.paidBy,
         paidAt: timestamp,
@@ -443,13 +443,13 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       });
 
       // Create payment record
-      await setDoc(doc(collection(db, 'expense_payments')), {
+      await setDoc(doc(collection(firestore, 'expense_payments')), {
         ...payment,
         paidAt: timestamp,
       });
 
       // Create audit log
-      await setDoc(doc(collection(db, 'audit_logs')), {
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
         action: 'expense_paid',
         entityId: payment.expenseId,
         entityType: 'expense',

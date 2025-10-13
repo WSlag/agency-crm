@@ -21,6 +21,9 @@ export interface DashboardMetric {
   type?: 'number' | 'currency' | 'percentage';
   trend?: 'up' | 'down' | 'neutral';
   change?: number;
+  trendData?: number[];
+  description?: string;
+  colorScheme?: 'blue' | 'green' | 'purple' | 'orange' | 'pink' | 'indigo';
 }
 
 export interface BreadcrumbItem {
