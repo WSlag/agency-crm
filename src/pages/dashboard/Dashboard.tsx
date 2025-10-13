@@ -18,6 +18,8 @@ import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   ChartBarIcon,
+  ArrowsRightLeftIcon,
+  DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
 
 // Time-based greeting helper
@@ -116,13 +118,15 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
       admin: [
         { label: 'Add User', icon: UserPlusIcon, href: '/users/new', color: 'from-blue-500 to-blue-600' },
         { label: 'Add Branch', icon: PlusIcon, href: '/branches/new', color: 'from-green-500 to-green-600' },
-        { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-purple-500 to-purple-600' },
+        { label: 'View Transfers', icon: ArrowsRightLeftIcon, href: '/applicants/transfers', color: 'from-purple-500 to-purple-600' },
+        { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-indigo-500 to-indigo-600' },
         { label: 'Financial', icon: CurrencyDollarIcon, href: '/financial-dashboard', color: 'from-orange-500 to-orange-600' },
       ],
       president: [
-        { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-purple-500 to-purple-600' },
+        { label: 'View Transfers', icon: ArrowsRightLeftIcon, href: '/applicants/transfers', color: 'from-purple-500 to-purple-600' },
+        { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-indigo-500 to-indigo-600' },
         { label: 'Financial', icon: CurrencyDollarIcon, href: '/financial-dashboard', color: 'from-orange-500 to-orange-600' },
-        { label: 'Officers', icon: UserPlusIcon, href: '/officers', color: 'from-indigo-500 to-indigo-600' },
+        { label: 'Officers', icon: UserPlusIcon, href: '/officers', color: 'from-blue-500 to-blue-600' },
         { label: 'Branches', icon: ChartBarIcon, href: '/branches', color: 'from-green-500 to-green-600' },
       ],
       branch_manager: [
@@ -140,7 +144,7 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
       ho_recruitment_officer: [
         { label: 'My Applicants', icon: UserPlusIcon, href: '/officers', color: 'from-purple-500 to-purple-600' },
         { label: 'All Applicants', icon: UserPlusIcon, href: '/applicants', color: 'from-indigo-500 to-indigo-600' },
-        { label: 'Documents', icon: DocumentPlusIcon, href: '/applicants', color: 'from-green-500 to-green-600' },
+        { label: 'Documents', icon: DocumentDuplicateIcon, href: '/applicants/documents', color: 'from-green-500 to-green-600' },
         { label: 'Reports', icon: ChartBarIcon, href: '/reports', color: 'from-blue-500 to-blue-600' },
       ],
     };

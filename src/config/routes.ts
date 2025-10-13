@@ -31,7 +31,21 @@ export const routes = {
       create: 'new',
       detail: ':id',
       edit: ':id/edit',
-      documents: ':id/documents'
+      documents: ':id/documents',
+      transfers: 'transfers',
+      transfersPending: 'transfers/pending',
+      transfersActive: 'transfers/active',
+      transfersCompleted: 'transfers/completed',
+      transferDetail: 'transfers/:transferId',
+      transferManagement: ':id/transfer',
+      documentsOverview: 'documents',
+      documentsPending: 'documents/pending',
+      documentsExpiring: 'documents/expiring',
+      documentsExpired: 'documents/expired',
+      documentsVerify: 'documents/verify',
+      documentsTemplates: 'documents/templates',
+      documentsUpload: 'documents/upload',
+      documentDetail: 'documents/:documentId'
     }
   },
   officers: {

@@ -8,6 +8,11 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   UserGroupIcon,
+  ArrowsRightLeftIcon,
+  ClipboardDocumentListIcon,
+  UserPlusIcon,
+  RectangleStackIcon,
+  DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
 import type { NavigationItem } from '../types/navigation';
 
@@ -40,7 +45,27 @@ export const navigation: NavigationItem[] = [
     name: 'Applicants',
     href: '/applicants',
     icon: DocumentTextIcon,
-    roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
+    roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager'],
+    children: [
+      {
+        name: 'All Applicants',
+        href: '/applicants',
+        icon: ClipboardDocumentListIcon,
+        roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
+      },
+      {
+        name: 'Transfers',
+        href: '/applicants/transfers',
+        icon: ArrowsRightLeftIcon,
+        roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
+      },
+      {
+        name: 'Documents',
+        href: '/applicants/documents',
+        icon: DocumentDuplicateIcon,
+        roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
+      }
+    ]
   },
   {
     name: 'Officers',

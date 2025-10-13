@@ -18,6 +18,9 @@ import { FinancialDashboard } from './pages/dashboard/FinancialDashboard';
 
 // Applicant Management
 import { ApplicantList } from './pages/applicants/ApplicantList';
+import { TransfersList } from './pages/applicants/TransfersList';
+import { TransferManagement } from './pages/applicants/TransferManagement';
+import { DocumentsDashboard } from './pages/applicants/DocumentsDashboard';
 
 // Officer Management
 import { OfficerManagement } from './pages/officers/OfficerManagement';
@@ -119,6 +122,19 @@ const App: React.FC = () => {
             }
           >
             <Route index element={<ApplicantList />} />
+            <Route path="transfers" element={<TransfersList />} />
+            <Route path="transfers/pending" element={<TransfersList />} />
+            <Route path="transfers/active" element={<TransfersList />} />
+            <Route path="transfers/completed" element={<TransfersList />} />
+            <Route path=":id/transfer" element={<TransferManagement />} />
+            
+            {/* Document Routes */}
+            <Route path="documents" element={<DocumentsDashboard />} />
+            <Route path="documents/pending" element={<DocumentsDashboard />} />
+            <Route path="documents/expiring" element={<DocumentsDashboard />} />
+            <Route path="documents/expired" element={<DocumentsDashboard />} />
+            <Route path="documents/verify" element={<DocumentVerification />} />
+            <Route path="documents/templates" element={<TemplateManagement />} />
           </Route>
 
           {/* Officer Management */}

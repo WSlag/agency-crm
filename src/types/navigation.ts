@@ -1,18 +1,20 @@
 import { ComponentType } from 'react';
 import { UserRole } from './auth';
 
+export interface NavigationChild {
+  name: string;
+  href: string;
+  icon?: ComponentType<{ className?: string }>;
+  roles?: UserRole[];
+}
+
 export interface NavigationItem {
   name: string;
   href: string;
   icon: ComponentType<{ className?: string }>;
   roles: UserRole[];
   children?: NavigationChild[];
-}
-
-export interface NavigationChild {
-  name: string;
-  href: string;
-  roles: UserRole[];
+  badge?: () => number | string;
 }
 
 export interface DashboardMetric {

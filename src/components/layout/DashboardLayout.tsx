@@ -6,7 +6,9 @@ import {
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
   BellIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  ChevronDownIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { useNavigation } from '../../hooks/useNavigation';
 import { Link, Outlet, useLocation } from 'react-router-dom';
@@ -18,10 +20,23 @@ export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['Applicants']));
   const { user, customClaims, signOut } = useAuth();
   const location = useLocation();
   const { filteredNavigation, isActive } = useNavigation();
   const { unreadCount } = useNotifications(user?.uid || '');
+
+  const toggleExpanded = (itemName: string) => {
+    setExpandedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemName)) {
+        newSet.delete(itemName);
+      } else {
+        newSet.add(itemName);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div className="h-screen overflow-hidden">
@@ -108,30 +123,95 @@ export const DashboardLayout = () => {
                     <ul role="list" className="flex flex-1 flex-col gap-y-7">
                       <li>
                         <ul role="list" className="-mx-2 space-y-1">
-                          {filteredNavigation.map((item) => (
-                            <li key={item.name}>
-                              <Link
-                                to={item.href}
-                                onClick={() => setSidebarOpen(false)}
-                                className={`
-                                  group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold
-                                  transition-all duration-200 transform hover:scale-[1.02]
-                                  ${isActive(item.href)
-                                    ? 'bg-white text-indigo-600 shadow-lg'
-                                    : 'text-white hover:bg-white/10 hover:text-white'
-                                  }
-                                `}
-                              >
-                                <item.icon
-                                  className={`h-6 w-6 shrink-0 ${
-                                    isActive(item.href) ? 'text-indigo-600' : 'text-indigo-200'
-                                  }`}
-                                  aria-hidden="true"
-                                />
-                                {item.name}
-                              </Link>
-                            </li>
-                          ))}
+                          {filteredNavigation.map((item) => {
+                            const hasChildren = item.children && item.children.length > 0;
+                            const isExpanded = expandedItems.has(item.name);
+                            const hasActiveChild = hasChildren && item.children?.some(child => 
+                              location.pathname === child.href || location.pathname.startsWith(child.href + '/')
+                            );
+
+                            return (
+                              <li key={item.name}>
+                                {/* Parent Item */}
+                                <div>
+                                  <Link
+                                    to={hasChildren ? '#' : item.href}
+                                    onClick={(e) => {
+                                      if (hasChildren) {
+                                        e.preventDefault();
+                                        toggleExpanded(item.name);
+                                      } else {
+                                        setSidebarOpen(false);
+                                      }
+                                    }}
+                                    className={`
+                                      group flex items-center justify-between gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold
+                                      transition-all duration-200 transform hover:scale-[1.02]
+                                      ${isActive(item.href) || hasActiveChild
+                                        ? 'bg-white text-indigo-600 shadow-lg'
+                                        : 'text-white hover:bg-white/10 hover:text-white'
+                                      }
+                                    `}
+                                  >
+                                    <div className="flex items-center gap-x-3">
+                                      <item.icon
+                                        className={`h-6 w-6 shrink-0 ${
+                                          isActive(item.href) || hasActiveChild ? 'text-indigo-600' : 'text-indigo-200'
+                                        }`}
+                                        aria-hidden="true"
+                                      />
+                                      <span>{item.name}</span>
+                                    </div>
+                                    {hasChildren && (
+                                      isExpanded ? (
+                                        <ChevronDownIcon className={`h-4 w-4 ${isActive(item.href) || hasActiveChild ? 'text-indigo-600' : 'text-white'}`} />
+                                      ) : (
+                                        <ChevronRightIcon className={`h-4 w-4 ${isActive(item.href) || hasActiveChild ? 'text-indigo-600' : 'text-white'}`} />
+                                      )
+                                    )}
+                                  </Link>
+                                </div>
+
+                                {/* Children Items */}
+                                {hasChildren && isExpanded && (
+                                  <ul className="mt-1 ml-4 space-y-1">
+                                    {item.children?.map((child) => {
+                                      // Filter by role
+                                      if (child.roles && customClaims?.role && !child.roles.includes(customClaims.role)) {
+                                        return null;
+                                      }
+
+                                      return (
+                                        <li key={child.href}>
+                                          <Link
+                                            to={child.href}
+                                            onClick={() => setSidebarOpen(false)}
+                                            className={`
+                                              group flex items-center gap-x-3 rounded-md p-2 pl-10 text-sm
+                                              transition-all duration-200
+                                              ${isActive(child.href)
+                                                ? 'bg-white/20 text-white font-medium'
+                                                : 'text-indigo-200 hover:bg-white/10 hover:text-white'
+                                              }
+                                            `}
+                                          >
+                                            {child.icon && (
+                                              <child.icon
+                                                className={`h-4 w-4 shrink-0 ${
+                                                  isActive(child.href) ? 'text-white' : 'text-indigo-300'
+                                                }`}
+                                              />
+                                            )}
+                                            {child.name}
+                                          </Link>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
+                              </li>
+                            );
+                          })}
                         </ul>
                       </li>
                       <li className="mt-auto">
@@ -232,31 +312,94 @@ export const DashboardLayout = () => {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {filteredNavigation.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        to={item.href}
-                        className={`
-                          group flex gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold
-                          transition-all duration-200 transform hover:scale-[1.02]
-                          ${collapsed ? 'justify-center' : ''}
-                          ${location.pathname === item.href
-                            ? 'bg-white text-indigo-600 shadow-lg'
-                            : 'text-white hover:bg-white/10 hover:text-white hover:shadow-md'
-                          }
-                        `}
-                        title={collapsed ? item.name : ''}
-                      >
-                        <item.icon
-                          className={`h-6 w-6 shrink-0 ${
-                            location.pathname === item.href ? 'text-indigo-600' : 'text-indigo-200 group-hover:text-white'
-                          }`}
-                          aria-hidden="true"
-                        />
-                        {!collapsed && <span>{item.name}</span>}
-                      </Link>
-                    </li>
-                  ))}
+                  {filteredNavigation.map((item) => {
+                    const hasChildren = item.children && item.children.length > 0;
+                    const isExpanded = expandedItems.has(item.name);
+                    const hasActiveChild = hasChildren && item.children?.some(child => 
+                      location.pathname === child.href || location.pathname.startsWith(child.href + '/')
+                    );
+
+                    return (
+                      <li key={item.name}>
+                        {/* Parent Item */}
+                        <div>
+                          <Link
+                            to={hasChildren ? '#' : item.href}
+                            onClick={(e) => {
+                              if (hasChildren) {
+                                e.preventDefault();
+                                toggleExpanded(item.name);
+                              }
+                            }}
+                            className={`
+                              group flex items-center justify-between gap-x-3 rounded-md p-3 text-sm leading-6 font-semibold
+                              transition-all duration-200 transform hover:scale-[1.02]
+                              ${collapsed ? 'justify-center' : ''}
+                              ${isActive(item.href) || hasActiveChild
+                                ? 'bg-white text-indigo-600 shadow-lg'
+                                : 'text-white hover:bg-white/10 hover:text-white hover:shadow-md'
+                              }
+                            `}
+                            title={collapsed ? item.name : ''}
+                          >
+                            <div className="flex items-center gap-x-3">
+                              <item.icon
+                                className={`h-6 w-6 shrink-0 ${
+                                  isActive(item.href) || hasActiveChild ? 'text-indigo-600' : 'text-indigo-200 group-hover:text-white'
+                                }`}
+                                aria-hidden="true"
+                              />
+                              {!collapsed && <span>{item.name}</span>}
+                            </div>
+                            {hasChildren && !collapsed && (
+                              isExpanded ? (
+                                <ChevronDownIcon className={`h-4 w-4 ${isActive(item.href) || hasActiveChild ? 'text-indigo-600' : 'text-white'}`} />
+                              ) : (
+                                <ChevronRightIcon className={`h-4 w-4 ${isActive(item.href) || hasActiveChild ? 'text-indigo-600' : 'text-white'}`} />
+                              )
+                            )}
+                          </Link>
+                        </div>
+
+                        {/* Children Items */}
+                        {hasChildren && isExpanded && !collapsed && (
+                          <ul className="mt-1 ml-4 space-y-1">
+                            {item.children?.map((child) => {
+                              // Filter by role
+                              if (child.roles && customClaims?.role && !child.roles.includes(customClaims.role)) {
+                                return null;
+                              }
+
+                              return (
+                                <li key={child.href}>
+                                  <Link
+                                    to={child.href}
+                                    className={`
+                                      group flex items-center gap-x-3 rounded-md p-2 pl-10 text-sm
+                                      transition-all duration-200
+                                      ${isActive(child.href)
+                                        ? 'bg-white/20 text-white font-medium'
+                                        : 'text-indigo-200 hover:bg-white/10 hover:text-white'
+                                      }
+                                    `}
+                                  >
+                                    {child.icon && (
+                                      <child.icon
+                                        className={`h-4 w-4 shrink-0 ${
+                                          isActive(child.href) ? 'text-white' : 'text-indigo-300'
+                                        }`}
+                                      />
+                                    )}
+                                    {child.name}
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </li>
               <li className="mt-auto">
