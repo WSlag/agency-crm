@@ -60,18 +60,30 @@ export const useBranchStore = create<BranchState>((set, get) => ({
   fetchActiveBranches: async () => {
     try {
       console.log('Fetching active branches...');
+      set({ loading: true, error: null });
       const branchesRef = collection(firestore, 'branches');
       const q = query(branchesRef, where('active', '==', true));
       const snapshot = await getDocs(q);
-      const branches = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Branch[];
-      console.log('Active branches fetched:', branches.length);
+      const branches = snapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log('Raw branch data:', { id: doc.id, data });
+        return {
+          id: doc.id,
+          name: data.name || data.branchName || 'Unknown Branch',
+          ...data,
+        };
+      }) as Branch[];
+      console.log('Active branches fetched:', branches);
+      set({ branches, loading: false });
       return branches;
     } catch (error) {
       console.error('Error fetching active branches:', error);
-      throw error;
+      set({
+        error: error instanceof Error ? error.message : 'Failed to fetch active branches',
+        loading: false,
+        branches: []
+      });
+      return [];
     }
   },
 

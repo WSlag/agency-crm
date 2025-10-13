@@ -77,6 +77,17 @@ export const ApplicantTable = ({
     }
   };
 
+  // Enhanced debug logging
+  console.log('=== ApplicantTable Render ===');
+  console.log('ApplicantTable received props:', { 
+    applicantsCount: applicants?.length,
+    applicantsArray: applicants,
+    isArray: Array.isArray(applicants),
+    sortField: sort?.field,
+    sortDirection: sort?.direction,
+    firstApplicant: applicants?.[0]
+  });
+
   if (!Array.isArray(applicants)) {
     console.error('Applicants is not an array:', applicants);
     return (
@@ -85,6 +96,26 @@ export const ApplicantTable = ({
       </div>
     );
   }
+
+  if (applicants.length === 0) {
+    console.log('No applicants found - returning empty state');
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p className="text-lg font-medium">No applicants found</p>
+        <p className="text-sm mt-2">Try adjusting your filters or add a new applicant</p>
+      </div>
+    );
+  }
+
+  // Log the first applicant for debugging
+  console.log('First applicant data:', {
+    id: applicants[0]?.id,
+    name: applicants[0]?.fullName,
+    stage: applicants[0]?.currentStage,
+    type: applicants[0]?.applicationType,
+    status: applicants[0]?.status
+  });
+  console.log('Rendering table with', applicants.length, 'applicants');
 
   return (
     <div className="mt-8 flow-root">
@@ -178,50 +209,59 @@ export const ApplicantTable = ({
             </thead>
             <tbody className="divide-y divide-gray-200">
               {applicants.length > 0 ? (
-                applicants.map((applicant) => (
-                  <tr key={applicant?.id}>
-                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
-                      {applicant?.fullName ?? '—'}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStageBadgeColor(
-                          applicant?.currentStage ?? ''
-                        )}`}
-                      >
-                        {applicant?.currentStage ?? '—'}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {applicant?.applicationType === 'with_agent'
-                        ? 'With Agent'
-                        : 'Direct Hire'}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {applicant?.transferredToHO ? 'Head Office' : 'Branch'}
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(
-                          applicant?.status ?? ''
-                        )}`}
-                      >
-                        {applicant?.status ?? '—'}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                      {formatDate(applicant?.createdAt)}
-                    </td>
-                    <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-                      <Link
-                        to={`/applicants/${applicant?.id}`}
-                        className="text-primary-600 hover:text-primary-900"
-                      >
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                applicants.map((applicant) => {
+                  console.log('Rendering applicant row:', {
+                    id: applicant?.id,
+                    fullName: applicant?.fullName,
+                    name: applicant?.name,
+                    allKeys: Object.keys(applicant || {}),
+                    applicantObject: applicant
+                  });
+                  return (
+                    <tr key={applicant?.id}>
+                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
+                        {applicant?.fullName || applicant?.name || '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStageBadgeColor(
+                            applicant?.currentStage || ''
+                          )}`}
+                        >
+                          {applicant?.currentStage || '—'}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        {applicant?.applicationType === 'with_agent'
+                          ? 'With Agent'
+                          : 'Direct Hire'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        {applicant?.transferredToHO ? 'Head Office' : 'Branch'}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(
+                            applicant?.status || ''
+                          )}`}
+                        >
+                          {applicant?.status || '—'}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                        {formatDate(applicant?.createdAt)}
+                      </td>
+                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+                        <Link
+                          to={`/applicants/${applicant?.id}`}
+                          className="text-primary-600 hover:text-primary-900"
+                        >
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td

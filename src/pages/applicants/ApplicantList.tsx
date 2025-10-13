@@ -5,6 +5,7 @@ import { ApplicantTable } from '../../components/applicants/list/ApplicantTable'
 import { useApplicantStore } from '../../stores/applicantStore';
 import { useBranchStore } from '../../stores/branchStore';
 import { useAgentStore } from '../../stores/agentStore';
+import { useOfficerStore } from '../../stores/officerStore';
 import { ApplicantFilter, ApplicantSort } from '../../types/applicant';
 import { FunnelIcon, PlusIcon } from '@heroicons/react/24/outline';
 
@@ -25,30 +26,35 @@ export const ApplicantList = () => {
 
   const { branches, loading: branchesLoading, error: branchesError, fetchActiveBranches } = useBranchStore();
   const { agents, loading: agentsLoading, error: agentsError, fetchActiveAgents } = useAgentStore();
+  const { officers, loading: officersLoading, error: officersError, fetchActiveOfficers } = useOfficerStore();
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [officers, setOfficers] = useState<Array<{ id: string; displayName: string }>>([]);
 
+  // Load initial data only once on mount
   useEffect(() => {
     const loadData = async () => {
       try {
         console.log('Loading initial data...');
         
-        // Fetch applicants
+        // Load reference data in parallel
+        const [
+          branchesResult,
+          agentsResult,
+          officersResult
+        ] = await Promise.all([
+          fetchActiveBranches(),
+          fetchActiveAgents(),
+          fetchActiveOfficers()
+        ]);
+
+        console.log('Reference data loaded:', {
+          branches: branchesResult?.length,
+          agents: agentsResult?.length,
+          officers: officersResult?.length
+        });
+
+        // Fetch applicants after reference data is loaded
         await fetchApplicants();
-
-        // Fetch branches
-        const branchesResult = await fetchActiveBranches();
-        console.log('Branches loaded:', branchesResult);
-
-        // Fetch agents
-        const agentsResult = await fetchActiveAgents();
-        console.log('Agents loaded:', agentsResult);
-
-        // For now, we'll use empty array for officers
-        // TODO: Implement officer fetching
-        setOfficers([]);
-
         console.log('Initial data loaded successfully');
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -56,19 +62,28 @@ export const ApplicantList = () => {
     };
 
     loadData();
-  }, [fetchApplicants, fetchActiveBranches, fetchActiveAgents]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  // Fetch applicants when filters, sort, or pagination change
+  useEffect(() => {
+    const isInitialLoad = filter && Object.keys(filter).length === 0;
+    if (!isInitialLoad) {
+      console.log('Fetching applicants due to filter/sort/pagination change');
+      fetchApplicants();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, sort, pagination.page]); // Don't include fetchApplicants to avoid infinite loop
 
   const handleFiltersChange = (newFilters: ApplicantFilter) => {
     console.log('Applying filters:', newFilters);
     setFilter(newFilters);
     setPagination({ ...pagination, page: 1 }); // Reset to first page
-    fetchApplicants();
   };
 
   const handleSortChange = (newSort: ApplicantSort) => {
     console.log('Applying sort:', newSort);
     setSort(newSort);
-    fetchApplicants();
   };
 
   // Transform branches data for filters
@@ -83,8 +98,18 @@ export const ApplicantList = () => {
     agentName: agent.agentName
   })) || [];
 
-  const isLoading = loading || branchesLoading || agentsLoading;
-  const combinedError = error || branchesError || agentsError;
+  const isLoading = loading || branchesLoading || agentsLoading || officersLoading;
+  const combinedError = error || branchesError || agentsError || officersError;
+
+  // Debug logging
+  console.log('=== ApplicantList Render ===');
+  console.log('Applicants from store:', {
+    count: applicants?.length,
+    isArray: Array.isArray(applicants),
+    sample: applicants?.[0],
+    loading,
+    error
+  });
 
   return (
     <div className="min-h-full">

@@ -27,17 +27,44 @@ export const ApplicantFilters = ({
   }, [filters]);
 
   const handleFilterChange = (key: keyof ApplicantFilter, value: any) => {
+    console.log('Filter change:', { key, value });
+    
+    let newValue = value;
+    
+    // Special handling for different filter types
+    if (value === '') {
+      newValue = undefined;
+    } else if (key === 'transferredToHO') {
+      newValue = Boolean(value);
+    } else if (key === 'dateRange' && value) {
+      newValue = {
+        start: value.start ? new Date(value.start) : undefined,
+        end: value.end ? new Date(value.end) : undefined
+      };
+    }
+
+    // Create new filters object
     const newFilters = {
       ...localFilters,
-      [key]: value,
+      [key]: newValue
     };
+
+    // Clean up undefined values
+    Object.keys(newFilters).forEach(k => {
+      const key = k as keyof ApplicantFilter;
+      if (newFilters[key] === undefined || newFilters[key] === null) {
+        delete newFilters[key];
+      }
+    });
+
+    console.log('New filters:', newFilters);
     setLocalFilters(newFilters);
     onFiltersChange(newFilters);
   };
 
   const filterSections = [
     {
-      id: 'stage',
+      id: 'currentStage', // Changed from 'stage' to match the field name in Applicant type
       name: 'Stage',
       options: [
         { value: 'interview', label: 'Interview' },
@@ -159,11 +186,15 @@ export const ApplicantFilters = ({
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
         >
           <option value="">All Agents</option>
-          {agents?.map((agent) => (
-            <option key={agent.id} value={agent.id}>
-              {agent.agentName}
-            </option>
-          ))}
+          {Array.isArray(agents) && agents.length > 0 ? (
+            agents.map((agent) => (
+              <option key={agent.id} value={agent.id}>
+                {agent.agentName || 'Unknown Agent'}
+              </option>
+            ))
+          ) : (
+            <option value="" disabled>Loading agents...</option>
+          )}
         </select>
       </div>
 

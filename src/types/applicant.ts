@@ -137,7 +137,7 @@ export interface Applicant {
 
 export interface ApplicantFilter {
   searchTerm?: string;
-  stage?: ApplicantStage;
+  currentStage?: ApplicantStage;  // Changed from stage to match Applicant interface
   branchId?: string;
   agentId?: string;
   assignedOfficerId?: string;

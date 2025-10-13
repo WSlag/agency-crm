@@ -89,38 +89,58 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
       const applicantsRef = collection(firestore, 'applicants');
       let queryConstraints: any[] = [];
 
-      // Always add the sort field first
-      queryConstraints.push(orderBy(sort.field, sort.direction));
-
-      // Apply filters
-      if (filter.searchTerm) {
-        queryConstraints.unshift(where('fullName', '>=', filter.searchTerm));
-        queryConstraints.unshift(where('fullName', '<=', filter.searchTerm + '\uf8ff'));
-      }
+      // Add filters in the correct order
       if (filter.branchId) {
-        queryConstraints.unshift(where('branchId', '==', filter.branchId));
+        queryConstraints.push(where('branchId', '==', filter.branchId));
       }
       if (filter.agentId) {
-        queryConstraints.unshift(where('agentId', '==', filter.agentId));
+        queryConstraints.push(where('agentId', '==', filter.agentId));
       }
       if (filter.assignedOfficerId) {
-        queryConstraints.unshift(where('assignedRecruitmentOfficerId', '==', filter.assignedOfficerId));
+        // Check both fields for backward compatibility
+        queryConstraints.push(where('assignedRecruitmentOfficerId', '==', filter.assignedOfficerId));
       }
-      if (filter.stage) {
-        queryConstraints.unshift(where('currentStage', '==', filter.stage));
+      if (filter.currentStage) {
+        // Check both fields for backward compatibility
+        queryConstraints.push(where('currentStage', '==', filter.currentStage));
       }
       if (filter.status) {
-        queryConstraints.unshift(where('status', '==', filter.status));
+        queryConstraints.push(where('status', '==', filter.status));
       }
       if (filter.transferredToHO !== undefined) {
-        // Add this filter before the orderBy
-        queryConstraints.unshift(where('transferredToHO', '==', filter.transferredToHO));
+        queryConstraints.push(where('transferredToHO', '==', Boolean(filter.transferredToHO)));
       }
       if (filter.dateRange?.start) {
-        queryConstraints.unshift(where('createdAt', '>=', Timestamp.fromDate(filter.dateRange.start)));
+        const startDate = new Date(filter.dateRange.start);
+        startDate.setHours(0, 0, 0, 0);
+        queryConstraints.push(where('createdAt', '>=', Timestamp.fromDate(startDate)));
       }
       if (filter.dateRange?.end) {
-        queryConstraints.unshift(where('createdAt', '<=', Timestamp.fromDate(filter.dateRange.end)));
+        const endDate = new Date(filter.dateRange.end);
+        endDate.setHours(23, 59, 59, 999);
+        queryConstraints.push(where('createdAt', '<=', Timestamp.fromDate(endDate)));
+      }
+      
+      // Log the filters being applied
+      console.log('Applying filters:', {
+        filter,
+        queryConstraints: queryConstraints.map(c => ({ 
+          field: c.field?.toString(),
+          op: c.op?.toString(),
+          value: c.value
+        }))
+      });
+
+      // Add the sort field after the filters
+      queryConstraints.push(orderBy(sort.field, sort.direction));
+
+      // Handle search term separately as it requires special indexing
+      if (filter.searchTerm) {
+        queryConstraints = [
+          where('fullName', '>=', filter.searchTerm),
+          where('fullName', '<=', filter.searchTerm + '\uf8ff'),
+          ...queryConstraints
+        ];
       }
 
       // Apply pagination
@@ -139,17 +159,85 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
 
         const applicants = snapshot.docs.map(doc => {
           const data = doc.data();
-          return {
+          console.log('Raw document data:', { id: doc.id, ...data });
+          
+          // Convert Firestore timestamps to dates and map fields correctly
+          const processedData = {
             id: doc.id,
-            ...data,
-            createdAt: data.createdAt?.toDate(),
-            updatedAt: data.updatedAt?.toDate(),
-            transferredDate: data.transferredDate?.toDate(),
-            dateOfBirth: data.dateOfBirth?.toDate(),
-          } as Applicant;
+            fullName: data.name || data.fullName || 'No Name', // Handle both name fields
+            contactInfo: data.phone || data.contactInfo || '',
+            email: data.email || '',
+            agentId: data.agentId || null,
+            branchId: data.branchId || '',
+            assignedRecruitmentOfficerId: data.assignedRecruitmentOfficerId || data.officerId || null,
+            applicationType: data.applicationType || 'direct_hire',
+            currentStage: data.currentStage || data.stage || 'interview',
+            transferredToHO: Boolean(data.transferredToHO),
+            status: data.status || 'active',
+            createdAt: data.createdAt?.toDate() || new Date(),
+            updatedAt: data.updatedAt?.toDate() || new Date(),
+            transferredDate: data.transferredDate?.toDate() || null,
+            dateOfBirth: data.dateOfBirth?.toDate() || null,
+            
+            // Add required fields with defaults
+            placeOfBirth: data.placeOfBirth || '',
+            nationality: data.nationality || '',
+            civilStatus: data.civilStatus || 'single',
+            gender: data.gender || 'other',
+            address: {
+              present: data.address?.present || data.presentAddress || '',
+              permanent: data.address?.permanent || data.permanentAddress || ''
+            },
+            preferredCountries: data.preferredCountries || [],
+            preferredPositions: data.preferredPositions || [],
+            expectedSalary: {
+              amount: data.expectedSalary?.amount || 0,
+              currency: data.expectedSalary?.currency || 'USD'
+            },
+            education: data.education || [],
+            workExperience: data.workExperience || [],
+            skills: data.skills || [],
+            certifications: data.certifications || [],
+            languages: data.languages || [],
+            medicalStatus: {
+              examination: {
+                date: data.medicalStatus?.examination?.date?.toDate() || null,
+                result: data.medicalStatus?.examination?.result || 'pending',
+                facility: data.medicalStatus?.examination?.facility || ''
+              },
+              conditions: data.medicalStatus?.conditions || [],
+              allergies: data.medicalStatus?.allergies || [],
+              vaccinations: data.medicalStatus?.vaccinations || []
+            },
+            deployment: {
+              employer: data.deployment?.employer || null,
+              position: data.deployment?.position || null,
+              country: data.deployment?.country || null,
+              contractPeriod: data.deployment?.contractPeriod || null,
+              salary: {
+                amount: data.deployment?.salary?.amount || null,
+                currency: data.deployment?.salary?.currency || null
+              },
+              startDate: data.deployment?.startDate?.toDate() || null,
+              endDate: data.deployment?.endDate?.toDate() || null,
+              status: data.deployment?.status || null
+            },
+            emergencyContact: {
+              name: data.emergencyContact?.name || '',
+              relationship: data.emergencyContact?.relationship || '',
+              contactNumber: data.emergencyContact?.contactNumber || '',
+              address: data.emergencyContact?.address || ''
+            }
+          };
+          
+          console.log('Processed applicant data:', processedData);
+          return processedData as Applicant;
         });
 
-        console.log('Applicants processed:', applicants);
+        console.log('=== Setting applicants in store ===');
+        console.log('Applicants count:', applicants.length);
+        console.log('Sample applicant:', applicants[0]);
+        
         set({ 
           applicants, 
           loading: false,
@@ -157,6 +245,12 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
             ...get().pagination,
             total: snapshot.size,
           }
+        });
+        
+        console.log('Store updated. Current state:', {
+          applicantsCount: get().applicants.length,
+          loading: get().loading,
+          error: get().error
         });
       } catch (error: any) {
         if (error.code === 'failed-precondition') {
@@ -184,6 +278,154 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
     }
   },
 
-  // ... rest of the store implementation remains the same ...
+  fetchApplicantById: async (id) => {
+    try {
+      set({ loading: true, error: null });
+      const docRef = doc(firestore, 'applicants', id);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const applicant = {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+          transferredDate: data.transferredDate?.toDate(),
+          dateOfBirth: data.dateOfBirth?.toDate(),
+        } as Applicant;
+        
+        set({ selectedApplicant: applicant, loading: false });
+      } else {
+        set({ error: 'Applicant not found', loading: false });
+      }
+    } catch (error) {
+      console.error('Error fetching applicant:', error);
+      set({
+        error: error instanceof Error ? error.message : 'Failed to fetch applicant',
+        loading: false
+      });
+    }
+  },
 
+  createApplicant: async (applicant) => {
+    try {
+      const docRef = doc(collection(firestore, 'applicants'));
+      await setDoc(docRef, {
+        ...applicant,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating applicant:', error);
+      throw error;
+    }
+  },
+
+  updateApplicant: async (id, data) => {
+    try {
+      const docRef = doc(firestore, 'applicants', id);
+      await updateDoc(docRef, {
+        ...data,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error updating applicant:', error);
+      throw error;
+    }
+  },
+
+  deleteApplicant: async (id) => {
+    try {
+      const docRef = doc(firestore, 'applicants', id);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error('Error deleting applicant:', error);
+      throw error;
+    }
+  },
+
+  updatePipeline: async (applicantId, pipeline) => {
+    try {
+      const docRef = doc(firestore, 'applicants', applicantId);
+      await updateDoc(docRef, {
+        currentStage: pipeline.stage,
+        updatedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error updating pipeline:', error);
+      throw error;
+    }
+  },
+
+  requestTransfer: async (transfer) => {
+    try {
+      const docRef = doc(collection(firestore, 'transfers'));
+      await setDoc(docRef, {
+        ...transfer,
+        requestedDate: serverTimestamp(),
+        transferStatus: 'pending',
+      });
+    } catch (error) {
+      console.error('Error requesting transfer:', error);
+      throw error;
+    }
+  },
+
+  approveTransfer: async (transferId, assignedOfficerId) => {
+    try {
+      const docRef = doc(firestore, 'transfers', transferId);
+      await updateDoc(docRef, {
+        assignedOfficerId,
+        transferStatus: 'approved',
+        approvedDate: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error approving transfer:', error);
+      throw error;
+    }
+  },
+
+  rejectTransfer: async (transferId, reason) => {
+    try {
+      const docRef = doc(firestore, 'transfers', transferId);
+      await updateDoc(docRef, {
+        transferStatus: 'rejected',
+        rejectionReason: reason,
+        rejectedDate: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error('Error rejecting transfer:', error);
+      throw error;
+    }
+  },
+
+  uploadDocument: async (document) => {
+    try {
+      const docRef = doc(collection(firestore, 'documents'));
+      await setDoc(docRef, {
+        ...document,
+        uploadDate: serverTimestamp(),
+        status: 'pending',
+      });
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      throw error;
+    }
+  },
+
+  verifyDocument: async (documentId, verifiedBy) => {
+    try {
+      const docRef = doc(firestore, 'documents', documentId);
+      await updateDoc(docRef, {
+        verifiedBy,
+        verifiedAt: serverTimestamp(),
+        status: 'verified',
+      });
+    } catch (error) {
+      console.error('Error verifying document:', error);
+      throw error;
+    }
+  },
 }));
