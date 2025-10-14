@@ -20,6 +20,7 @@ import {
   ChartBarIcon,
   ArrowsRightLeftIcon,
   DocumentDuplicateIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline';
 
 // Time-based greeting helper
@@ -118,11 +119,13 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
       admin: [
         { label: 'Add User', icon: UserPlusIcon, href: '/users/new', color: 'from-blue-500 to-blue-600' },
         { label: 'Add Branch', icon: PlusIcon, href: '/branches/new', color: 'from-green-500 to-green-600' },
+        { label: 'Manage Agents', icon: UsersIcon, href: '/agents', color: 'from-teal-500 to-teal-600' },
         { label: 'View Transfers', icon: ArrowsRightLeftIcon, href: '/applicants/transfers', color: 'from-purple-500 to-purple-600' },
         { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-indigo-500 to-indigo-600' },
         { label: 'Financial', icon: CurrencyDollarIcon, href: '/financial-dashboard', color: 'from-orange-500 to-orange-600' },
       ],
       president: [
+        { label: 'View Agents', icon: UsersIcon, href: '/agents', color: 'from-teal-500 to-teal-600' },
         { label: 'View Transfers', icon: ArrowsRightLeftIcon, href: '/applicants/transfers', color: 'from-purple-500 to-purple-600' },
         { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-indigo-500 to-indigo-600' },
         { label: 'Financial', icon: CurrencyDollarIcon, href: '/financial-dashboard', color: 'from-orange-500 to-orange-600' },
@@ -131,6 +134,7 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
       ],
       branch_manager: [
         { label: 'New Applicant', icon: UserPlusIcon, href: '/applicants/register', color: 'from-indigo-500 to-indigo-600' },
+        { label: 'My Agents', icon: UsersIcon, href: '/agents', color: 'from-teal-500 to-teal-600' },
         { label: 'Submit Expense', icon: CurrencyDollarIcon, href: '/expenses/new', color: 'from-green-500 to-green-600' },
         { label: 'View Pipeline', icon: ArrowPathIcon, href: '/applicants', color: 'from-purple-500 to-purple-600' },
         { label: 'Commissions', icon: CurrencyDollarIcon, href: '/commissions', color: 'from-blue-500 to-blue-600' },

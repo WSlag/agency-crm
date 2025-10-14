@@ -75,6 +75,16 @@ export const routes = {
       detail: ':id',
       edit: ':id/edit'
     }
+  },
+  agents: {
+    path: '/agents',
+    roles: ['admin', 'president', 'branch_manager', 'ho_accountant'] as UserRole[],
+    children: {
+      list: '',
+      create: 'new',
+      detail: ':id',
+      edit: ':id/edit'
+    }
   }
 } as const;
 

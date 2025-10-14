@@ -54,12 +54,6 @@ export const navigation: NavigationItem[] = [
         roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
       },
       {
-        name: 'Transfers',
-        href: '/applicants/transfers',
-        icon: ArrowsRightLeftIcon,
-        roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
-      },
-      {
         name: 'Documents',
         href: '/applicants/documents',
         icon: DocumentDuplicateIcon,

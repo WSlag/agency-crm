@@ -25,6 +25,11 @@ import { DocumentsDashboard } from './pages/applicants/DocumentsDashboard';
 // Officer Management
 import { OfficerManagement } from './pages/officers/OfficerManagement';
 
+// Agent Management
+import { AgentManagement } from './pages/agents/AgentManagement';
+import { AgentDetail } from './pages/agents/AgentDetail';
+import { AgentForm } from './pages/agents/AgentForm';
+
 // Document Management
 import DocumentList from './components/documents/DocumentList';
 import { DocumentUpload } from './components/documents/DocumentUpload';
@@ -249,6 +254,21 @@ const App: React.FC = () => {
           <Route path="/commissions">
             <Route index element={<CommissionsPage />} />
             <Route path="request" element={<CommissionRequest />} />
+          </Route>
+
+          {/* Agent Routes */}
+          <Route
+            path="/agents"
+            element={
+              <RoleGuard allowedRoles={['admin', 'president', 'branch_manager', 'ho_accountant']}>
+                <Outlet />
+              </RoleGuard>
+            }
+          >
+            <Route index element={<AgentManagement />} />
+            <Route path="new" element={<AgentForm />} />
+            <Route path=":id" element={<AgentDetail />} />
+            <Route path=":id/edit" element={<AgentForm />} />
           </Route>
 
           {/* Branch Routes */}

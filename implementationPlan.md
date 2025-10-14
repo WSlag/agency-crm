@@ -364,7 +364,7 @@ Medical Stage (Commission Triggered)
 Processing Stage
   → Documents: TESDA Certificate OR OWWA OR Employment Contract
   ↓
-Transfer to Head Office (Optional)
+Transfer to Head Office 
   → Admin/President assigns HO Recruitment Officer
   → HO Recruitment Officer takes over management
   ↓
