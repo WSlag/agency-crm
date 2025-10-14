@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ProfileHeader } from '../../components/applicants/profile/ProfileHeader';
 import { ProfileDetails } from '../../components/applicants/profile/ProfileDetails';
+import { StageProgress } from '../../components/applicants/StageProgress';
+import { AdvanceStageButton } from '../../components/applicants/AdvanceStageButton';
 import { useApplicantStore } from '../../stores/applicantStore';
 import { 
   SparklesIcon, 
@@ -119,12 +121,36 @@ export const ApplicantProfile = () => {
 
       {/* Content */}
       <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto space-y-6">
           <ProfileHeader
             applicant={selectedApplicant}
             onStatusChange={handleStatusChange}
             onEdit={handleEdit}
           />
+          
+          {/* Stage Progress Section */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Recruitment Pipeline Progress</h2>
+            <StageProgress 
+              currentStage={selectedApplicant.currentStageEnum || selectedApplicant.currentStage}
+              status={selectedApplicant.currentStatus || selectedApplicant.status}
+              commissionMedicalTriggered={selectedApplicant.commissionMedicalTriggered}
+              commissionDeploymentTriggered={selectedApplicant.commissionDeploymentTriggered}
+            />
+            
+            {/* Stage Actions */}
+            <div className="mt-6 pt-6 border-t border-gray-200 flex gap-3">
+              <AdvanceStageButton 
+                applicant={selectedApplicant}
+                onSuccess={() => {
+                  if (id) {
+                    fetchApplicantById(id);
+                  }
+                }}
+              />
+            </div>
+          </div>
+          
           <ProfileDetails applicant={selectedApplicant} />
         </div>
       </div>

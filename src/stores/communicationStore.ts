@@ -15,6 +15,8 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { firestore } from '../config/firebase';
+import { canCreateCommunication, PermissionDeniedError } from '../utils/permissions';
+import type { User } from '../types/auth';
 import type {
   Communication,
   CreateCommunicationData,
@@ -33,7 +35,7 @@ interface CommunicationState {
   // Actions
   fetchCommunications: (applicantId: string) => Promise<void>;
   fetchCommunicationById: (id: string) => Promise<void>;
-  createCommunication: (data: CreateCommunicationData, userId: string, userName: string) => Promise<string>;
+  createCommunication: (data: CreateCommunicationData, user: User) => Promise<string>;
   updateCommunicationStatus: (id: string, status: CommunicationStatus) => Promise<void>;
   deleteCommunication: (id: string) => Promise<void>;
   fetchCommunicationStats: (applicantId: string) => Promise<void>;
@@ -131,15 +133,22 @@ export const useCommunicationStore = create<CommunicationState>((set, get) => ({
     }
   },
 
-  createCommunication: async (data: CreateCommunicationData, userId: string, userName: string) => {
+  createCommunication: async (data: CreateCommunicationData, user: User) => {
     try {
       set({ loading: true, error: null });
+
+      // SECURITY: Check permission before creating
+      const hasPermission = await canCreateCommunication(data.applicantId, user);
+      if (!hasPermission) {
+        throw new PermissionDeniedError('create communication for', 'this applicant');
+      }
+
       const timestamp = serverTimestamp();
 
       const communicationData = {
         ...data,
-        createdBy: userId,
-        createdByName: userName,
+        createdBy: user.uid,
+        createdByName: user.displayName || user.email,
         status: data.type === 'note' ? 'sent' : 'draft',
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -155,7 +164,7 @@ export const useCommunicationStore = create<CommunicationState>((set, get) => ({
         action: 'communication_created',
         entityId: docRef.id,
         entityType: 'communication',
-        performedBy: userId,
+        performedBy: user.uid,
         performedAt: timestamp,
         details: {
           applicantId: data.applicantId,

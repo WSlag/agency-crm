@@ -1,4 +1,4 @@
-import { enableIndexedDbPersistence, getFirestore } from 'firebase/firestore';
+import { enableIndexedDbPersistence } from 'firebase/firestore';
 import { firestore } from '../config/firebase';
 
 export class OfflineStore {
@@ -18,7 +18,8 @@ export class OfflineStore {
     if (this.isInitialized) return;
 
     try {
-      await enableIndexedDbPersistence(db);
+      // Use the singleton firestore instance
+      await enableIndexedDbPersistence(firestore);
       this.isInitialized = true;
       console.log('Offline persistence enabled');
     } catch (error: any) {
@@ -36,7 +37,8 @@ export class OfflineStore {
   }
 
   getFirestore() {
-    return getFirestore();
+    // Return the singleton firestore instance, not a new one
+    return firestore;
   }
 
   isOfflinePersistenceEnabled(): boolean {

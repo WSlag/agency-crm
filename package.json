@@ -8,6 +8,7 @@
     "migrate:rules": "firebase deploy --only firestore:rules,storage:rules",
     "migrate:backup": "firebase firestore:export ./backup/firestore",
     "migrate:rollback": "tsx src/migrations/rollback.ts",
+    "migrate:stage-fields": "tsx src/migrations/init-stage-fields.ts",
     "init-db": "tsx src/scripts/runInitialization.ts",
     "dev": "vite --mode development",
     "build:staging": "tsc && vite build --mode staging",

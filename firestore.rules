@@ -1,7 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper functions
+    // ==========================================
+    // HELPER FUNCTIONS
+    // ==========================================
+    
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -14,58 +17,375 @@ service cloud.firestore {
       return request.auth.token.branchId == branchId;
     }
     
-    // Users collection
+    function isAdmin() {
+      return hasRole('admin');
+    }
+    
+    function isPresident() {
+      return hasRole('president');
+    }
+    
+    function isBranchManager() {
+      return hasRole('branch_manager');
+    }
+    
+    function isHORecruitmentOfficer() {
+      return hasRole('ho_recruitment_officer');
+    }
+    
+    function isHOAccountant() {
+      return hasRole('ho_accountant');
+    }
+    
+    // ==========================================
+    // VALIDATION FUNCTIONS
+    // ==========================================
+    
+    function isValidBudget() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['name', 'branchId', 'category', 'allocatedAmount', 'currency', 'startDate', 'endDate', 'createdBy'])
+        && data.name is string
+        && data.name.size() > 0
+        && data.allocatedAmount is number
+        && data.allocatedAmount > 0
+        && data.spentAmount >= 0
+        && data.currency in ['PHP', 'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'AED']
+        && data.category in ['branch', 'department', 'project', 'applicant', 'general']
+        && data.startDate is timestamp
+        && data.endDate is timestamp
+        && data.endDate > data.startDate
+        && data.createdBy == request.auth.uid;
+    }
+    
+    function isValidCommunication() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['applicantId', 'type', 'direction', 'status', 'createdBy'])
+        && data.applicantId is string
+        && data.type in ['email', 'phone', 'sms', 'whatsapp', 'meeting', 'other']
+        && data.direction in ['inbound', 'outbound']
+        && data.status in ['pending', 'completed', 'failed']
+        && data.createdBy == request.auth.uid;
+    }
+    
+    function isValidJob() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['title', 'country', 'status', 'createdBy'])
+        && data.title is string
+        && data.title.size() > 0
+        && data.country is string
+        && data.status in ['active', 'inactive', 'closed']
+        && data.createdBy == request.auth.uid;
+    }
+    
+    function isValidTransfer() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['applicantId', 'fromBranchId', 'toBranchId', 'requestedBy', 'transferStatus'])
+        && data.applicantId is string
+        && data.fromBranchId is string
+        && data.toBranchId is string
+        && data.fromBranchId != data.toBranchId
+        && data.requestedBy == request.auth.uid
+        && data.transferStatus in ['pending', 'approved', 'rejected', 'completed'];
+    }
+    
+    function isValidNotification() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['recipientId', 'type', 'title', 'message', 'status'])
+        && data.recipientId is string
+        && data.type in ['info', 'success', 'warning', 'error']
+        && data.title is string
+        && data.message is string
+        && data.status in ['unread', 'read', 'archived'];
+    }
+    
+    // ==========================================
+    // USERS COLLECTION
+    // ==========================================
+    
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if isAuthenticated() && (
-        request.auth.uid == userId || hasRole('admin')
+        request.auth.uid == userId || isAdmin()
       );
-      allow delete: if hasRole('admin');
+      allow delete: if isAdmin();
     }
     
-    // Branches collection
+    // ==========================================
+    // BRANCHES COLLECTION
+    // ==========================================
+    
     match /branches/{branchId} {
       allow read: if isAuthenticated();
-      allow create, update, delete: if hasRole('admin');
-      allow update: if hasRole('branch_manager') && belongsToBranch(branchId);
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isBranchManager() && belongsToBranch(branchId));
     }
     
-    // Agents collection
+    // ==========================================
+    // AGENTS COLLECTION
+    // ==========================================
+    
     match /agents/{agentId} {
       allow read: if isAuthenticated();
-      allow create: if hasRole('admin') || 
-        (hasRole('branch_manager') && belongsToBranch(resource.data.branchId));
-      allow update, delete: if hasRole('admin') || 
-        (hasRole('branch_manager') && belongsToBranch(resource.data.branchId));
+      allow create: if isAdmin() || 
+        (isBranchManager() && belongsToBranch(request.resource.data.branchId));
+      allow update, delete: if isAdmin() || 
+        (isBranchManager() && belongsToBranch(resource.data.branchId));
     }
     
-    // Applicants collection
+    // ==========================================
+    // APPLICANTS COLLECTION
+    // ==========================================
+    
     match /applicants/{applicantId} {
       allow read: if isAuthenticated();
-      allow create: if hasRole('admin') || hasRole('branch_manager');
-      allow update: if hasRole('admin') || 
-        (hasRole('branch_manager') && belongsToBranch(resource.data.branchId)) ||
-        (hasRole('ho_recruitment_officer') && resource.data.assignedRecruitmentOfficerId == request.auth.uid);
+      allow create: if isAdmin() || isBranchManager();
+      allow update: if isAdmin() || 
+        (isBranchManager() && belongsToBranch(resource.data.branchId)) ||
+        (isHORecruitmentOfficer() && resource.data.assignedRecruitmentOfficerId == request.auth.uid);
+      allow delete: if isAdmin();
       
+      // Applicant Documents Subcollection
       match /documents/{documentId} {
         allow read: if isAuthenticated();
-        allow write: if hasRole('admin') ||
-          (hasRole('branch_manager') && belongsToBranch(get(/databases/$(database)/documents/applicants/$(applicantId)).data.branchId)) ||
-          (hasRole('ho_recruitment_officer') && get(/databases/$(database)/documents/applicants/$(applicantId)).data.assignedRecruitmentOfficerId == request.auth.uid);
+        allow create: if isAuthenticated() && (
+          isAdmin() ||
+          (isBranchManager() && belongsToBranch(get(/databases/$(database)/documents/applicants/$(applicantId)).data.branchId)) ||
+          (isHORecruitmentOfficer() && get(/databases/$(database)/documents/applicants/$(applicantId)).data.assignedRecruitmentOfficerId == request.auth.uid)
+        );
+        allow update: if isAdmin() || 
+          (isHORecruitmentOfficer() && get(/databases/$(database)/documents/applicants/$(applicantId)).data.assignedRecruitmentOfficerId == request.auth.uid);
+        allow delete: if isAdmin();
       }
       
+      // Applicant Expenses Subcollection
       match /expenses/{expenseId} {
         allow read: if isAuthenticated();
-        allow create: if hasRole('admin') || hasRole('branch_manager') || hasRole('ho_accountant');
-        allow update: if hasRole('admin') || hasRole('president') || hasRole('ho_accountant');
+        allow create: if isAuthenticated() && (
+          isAdmin() ||
+          isHOAccountant() ||
+          (isBranchManager() && belongsToBranch(get(/databases/$(database)/documents/applicants/$(applicantId)).data.branchId))
+        );
+        allow update: if isAdmin() || isPresident() || isHOAccountant();
+        allow delete: if isAdmin();
       }
     }
     
-    // Other collections
-    match /{collection=**}/{document} {
+    // ==========================================
+    // COMMUNICATIONS COLLECTION
+    // ==========================================
+    
+    match /communications/{commId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || 
+        isPresident() ||
+        (isHORecruitmentOfficer() && 
+          get(/databases/$(database)/documents/applicants/$(resource.data.applicantId)).data.assignedRecruitmentOfficerId == request.auth.uid) ||
+        (isBranchManager() && 
+          belongsToBranch(get(/databases/$(database)/documents/applicants/$(resource.data.applicantId)).data.branchId))
+      );
+      allow create: if isAuthenticated() && isValidCommunication();
+      allow update, delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // BUDGETS COLLECTION
+    // ==========================================
+    
+    match /budgets/{budgetId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || 
+        isPresident() ||
+        isHOAccountant() ||
+        (isBranchManager() && belongsToBranch(resource.data.branchId))
+      );
+      allow create: if (isAdmin() || isHOAccountant()) && isValidBudget();
+      allow update: if (isAdmin() || isHOAccountant() || isPresident()) && 
+        request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // BUDGET ALERTS COLLECTION
+    // ==========================================
+    
+    match /budget_alerts/{alertId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        request.auth.uid in resource.data.recipients
+      );
+      allow write: if isAdmin() || isHOAccountant();
+    }
+    
+    // ==========================================
+    // REPORT SHARES COLLECTION
+    // ==========================================
+    
+    match /report_shares/{shareId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        request.auth.uid in resource.data.sharedWith ||
+        request.auth.token.email in resource.data.sharedWith ||
+        request.auth.uid == resource.data.sharedBy
+      );
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.sharedBy;
+      allow update, delete: if request.auth.uid == resource.data.sharedBy || isAdmin();
+    }
+    
+    // ==========================================
+    // JOBS COLLECTION
+    // ==========================================
+    
+    match /jobs/{jobId} {
       allow read: if isAuthenticated();
-      allow write: if hasRole('admin');
+      allow create: if (isAdmin() || isPresident() || isHORecruitmentOfficer()) && isValidJob();
+      allow update: if isAdmin() || isPresident() || isHORecruitmentOfficer();
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // JOB ASSIGNMENTS COLLECTION
+    // ==========================================
+    
+    match /job_assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isPresident() || isHORecruitmentOfficer();
+      allow update: if isAdmin() || isPresident() || isHORecruitmentOfficer();
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // TRANSFERS COLLECTION
+    // ==========================================
+    
+    match /transfers/{transferId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        (isBranchManager() && (
+          belongsToBranch(resource.data.fromBranchId) ||
+          belongsToBranch(resource.data.toBranchId)
+        )) ||
+        (isHORecruitmentOfficer() && resource.data.assignedOfficerId == request.auth.uid)
+      );
+      allow create: if isBranchManager() && 
+        belongsToBranch(request.resource.data.fromBranchId) && 
+        isValidTransfer();
+      allow update: if isAdmin() || isPresident();
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // NOTIFICATIONS COLLECTION
+    // ==========================================
+    
+    match /notifications/{notifId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.recipientId == request.auth.uid ||
+        resource.data.recipientEmail == request.auth.token.email
+      );
+      allow create: if isAuthenticated() && isValidNotification();
+      allow update: if resource.data.recipientId == request.auth.uid || isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // AUDIT LOGS COLLECTION
+    // ==========================================
+    
+    match /audit_logs/{logId} {
+      allow read: if isAdmin() || isPresident();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Audit logs are immutable
+    }
+    
+    // ==========================================
+    // DOCUMENTS COLLECTION (main collection)
+    // ==========================================
+    
+    match /documents/{documentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isBranchManager() || isHORecruitmentOfficer();
+      allow update: if isAdmin() || 
+        (isHORecruitmentOfficer() && resource.data.verifiedBy == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // OFFICERS COLLECTION
+    // ==========================================
+    
+    match /officers/{officerId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isPresident();
+      allow update: if isAdmin() || isPresident() || request.auth.uid == officerId;
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // COMMISSIONS COLLECTION
+    // ==========================================
+    
+    match /commissions/{commissionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHOAccountant();
+      allow update: if isAdmin() || isHOAccountant();
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // REPORTS COLLECTION
+    // ==========================================
+    
+    match /reports/{reportId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        (isBranchManager() && belongsToBranch(resource.data.branchId)) ||
+        resource.data.generatedBy == request.auth.uid
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAdmin() || resource.data.generatedBy == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // STAGE HISTORY COLLECTION
+    // ==========================================
+    
+    match /stage_history/{historyId} {
+      // Anyone authenticated can read stage history
+      allow read: if isAuthenticated();
+      
+      // Create: Users who can manage applicants at that stage
+      allow create: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        isBranchManager() ||
+        isHORecruitmentOfficer() ||
+        isHOAccountant()
+      );
+      
+      // Update: Only for approvals by authorized users
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        (isPresident() && resource.data.toStage == 'transfer') ||
+        (isBranchManager() && resource.data.toStage in ['interview', 'medical']) ||
+        (isHORecruitmentOfficer() && resource.data.toStage in ['processing', 'deployment', 'deployed'])
+      ) && resource.data.status == 'pending';
+      
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // CATCH-ALL RULE (restricted)
+    // ==========================================
+    
+    match /{collection}/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
   }
 }

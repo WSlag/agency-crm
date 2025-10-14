@@ -73,7 +73,7 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
   },
   pagination: {
     page: 1,
-    limit: 10,
+    limit: 50, // PERFORMANCE: Increased from 10 to 50 for better UX
     total: 0,
   },
 
@@ -144,8 +144,10 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
         ];
       }
 
-      // Apply pagination
-      queryConstraints.push(limit(pagination.limit));
+      // PERFORMANCE: Apply pagination with limit (default 50, max 100)
+      const pageLimit = Math.min(pagination.limit || 50, 100);
+      queryConstraints.push(limit(pageLimit));
+      
       if (pagination.page > 1 && get().applicants.length > 0) {
         const lastDoc = get().applicants[get().applicants.length - 1];
         queryConstraints.push(startAfter(lastDoc[sort.field]));

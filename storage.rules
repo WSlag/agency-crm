@@ -1,7 +1,10 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Helper functions
+    // ==========================================
+    // HELPER FUNCTIONS
+    // ==========================================
+    
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -14,46 +17,187 @@ service firebase.storage {
       return request.auth.token.branchId == branchId;
     }
     
-    function isValidFileSize() {
-      return request.resource.size <= 10 * 1024 * 1024; // 10MB limit
+    function isAdmin() {
+      return hasRole('admin');
     }
     
-    function isValidContentType() {
+    function isPresident() {
+      return hasRole('president');
+    }
+    
+    function isBranchManager() {
+      return hasRole('branch_manager');
+    }
+    
+    function isHORecruitmentOfficer() {
+      return hasRole('ho_recruitment_officer');
+    }
+    
+    function isHOAccountant() {
+      return hasRole('ho_accountant');
+    }
+    
+    function isValidFileSize(maxSizeMB) {
+      return request.resource.size <= maxSizeMB * 1024 * 1024;
+    }
+    
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidDocumentType() {
       return request.resource.contentType.matches('image/.*') ||
              request.resource.contentType.matches('application/pdf') ||
              request.resource.contentType.matches('application/msword') ||
-             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+             request.resource.contentType.matches('application/vnd.ms-excel') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
     
-    // Applicant documents
-    match /applicants/{applicantId}/{document=**} {
-      allow read: if isAuthenticated() &&
-        (hasRole('admin') ||
-         hasRole('president') ||
-         hasRole('ho_recruitment_officer') ||
-         (hasRole('branch_manager') && belongsToBranch(resource.metadata.branchId)));
+    // ==========================================
+    // APPLICANT DOCUMENTS
+    // ==========================================
+    
+    match /documents/{applicantId}/{documentId} {
+      allow read: if isAuthenticated();
       
       allow write: if isAuthenticated() &&
-        isValidFileSize() &&
-        isValidContentType() &&
-        (hasRole('admin') ||
-         hasRole('ho_recruitment_officer') ||
-         (hasRole('branch_manager') && belongsToBranch(resource.metadata.branchId)));
+        isValidFileSize(10) &&
+        isValidDocumentType() &&
+        (isAdmin() ||
+         isHORecruitmentOfficer() ||
+         isBranchManager());
+      
+      allow delete: if isAdmin();
     }
     
-    // Profile pictures
-    match /profiles/{userId} {
+    // Legacy path for applicant documents
+    match /applicants/{applicantId}/{document=**} {
+      allow read: if isAuthenticated() &&
+        (isAdmin() ||
+         isPresident() ||
+         isHORecruitmentOfficer() ||
+         isBranchManager());
+      
+      allow write: if isAuthenticated() &&
+        isValidFileSize(10) &&
+        isValidDocumentType() &&
+        (isAdmin() ||
+         isHORecruitmentOfficer() ||
+         isBranchManager());
+      
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // RECEIPTS (Branch-specific)
+    // ==========================================
+    
+    match /receipts/{branchId}/{receiptId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        isHOAccountant() ||
+        belongsToBranch(branchId)
+      );
+      
+      allow write: if isAuthenticated() &&
+        isValidFileSize(5) &&
+        isValidDocumentType() &&
+        (isAdmin() ||
+         isHOAccountant() ||
+         (isBranchManager() && belongsToBranch(branchId)));
+      
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // PROFILE PICTURES
+    // ==========================================
+    
+    match /profiles/{userId}/{fileName} {
       allow read: if isAuthenticated();
+      
       allow write: if isAuthenticated() &&
         request.auth.uid == userId &&
-        isValidFileSize() &&
-        request.resource.contentType.matches('image/.*');
+        isValidFileSize(2) &&
+        isValidImageType();
+      
+      allow delete: if isAuthenticated() && 
+        (request.auth.uid == userId || isAdmin());
     }
     
-    // Public assets
+    // ==========================================
+    // EXPENSE RECEIPTS
+    // ==========================================
+    
+    match /expense_receipts/{expenseId}/{receiptId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        isHOAccountant()
+      );
+      
+      allow write: if isAuthenticated() &&
+        isValidFileSize(5) &&
+        isValidDocumentType() &&
+        (isAdmin() ||
+         isHOAccountant() ||
+         isBranchManager());
+      
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // REPORTS (Generated reports)
+    // ==========================================
+    
+    match /reports/{reportId}/{fileName} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        isBranchManager() ||
+        isHOAccountant()
+      );
+      
+      allow write: if isAuthenticated() &&
+        isValidFileSize(20) &&
+        (isAdmin() || isPresident() || isBranchManager());
+      
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // PUBLIC ASSETS
+    // ==========================================
+    
     match /public/{document=**} {
       allow read: if true;
-      allow write: if hasRole('admin');
+      allow write: if isAdmin() && isValidFileSize(10);
+    }
+    
+    // ==========================================
+    // COMPANY DOCUMENTS (HR, Policies, etc.)
+    // ==========================================
+    
+    match /company_documents/{category}/{documentId} {
+      allow read: if isAuthenticated();
+      
+      allow write: if isAdmin() &&
+        isValidFileSize(20) &&
+        isValidDocumentType();
+      
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // TEMP UPLOADS (7 days auto-delete)
+    // ==========================================
+    
+    match /temp/{userId}/{fileName} {
+      allow read, write: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        isValidFileSize(10);
     }
   }
 }

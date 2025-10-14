@@ -1,44 +1,117 @@
+# ==========================================
 # Firebase Configuration (Required)
-VITE_FIREBASE_API_KEY=
-VITE_FIREBASE_AUTH_DOMAIN=
-VITE_FIREBASE_PROJECT_ID=
-VITE_FIREBASE_STORAGE_BUCKET=
-VITE_FIREBASE_MESSAGING_SENDER_ID=
-VITE_FIREBASE_APP_ID=
+# ==========================================
+# Get these values from Firebase Console > Project Settings > General
+VITE_FIREBASE_API_KEY=your_api_key_here
+VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
+VITE_FIREBASE_MEASUREMENT_ID=G-XXXXXXXXXX
 
+# ==========================================
+# Firebase Vapor Key (FCM - Cloud Messaging)
+# ==========================================
+# Get this from Firebase Console > Project Settings > Cloud Messaging
+VITE_FIREBASE_VAPID_KEY=your_vapid_key_here
+
+# ==========================================
 # Environment Settings
-VITE_APP_ENV=development # development, staging, or production
+# ==========================================
+VITE_APP_ENV=development
 VITE_APP_NAME=Agency CRM
-VITE_APP_URL=http://localhost:3000
+VITE_APP_URL=http://localhost:5173
+VITE_STORAGE_PREFIX=agency_crm_
+VITE_LOG_LEVEL=debug
 
-# Feature Flags (Optional - defaults to false if not set)
+# ==========================================
+# Sentry Configuration (Optional)
+# ==========================================
+# Get these from Sentry.io dashboard
+VITE_SENTRY_DSN=https://xxx@sentry.io/xxx
+VITE_SENTRY_ENVIRONMENT=development
+VITE_SENTRY_TRACES_SAMPLE_RATE=0.1
+VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE=0.1
+VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE=1.0
+
+# ==========================================
+# Feature Flags
+# ==========================================
+VITE_ENABLE_ANALYTICS=true
 VITE_ENABLE_OFFLINE_MODE=true
+VITE_ENABLE_PWA=true
 VITE_ENABLE_FILE_UPLOAD=true
-VITE_ENABLE_NOTIFICATIONS=false # Set to true when implementing notifications
+VITE_ENABLE_NOTIFICATIONS=true
 
-# Firebase Performance Settings (Optional)
+# ==========================================
+# Firebase Performance Settings
+# ==========================================
 VITE_FIRESTORE_CACHE_SIZE_MB=50
 VITE_STORAGE_MAX_UPLOAD_SIZE_MB=10
-VITE_STORAGE_ALLOWED_TYPES=image/jpeg,image/png,application/pdf,application/msword
+VITE_STORAGE_ALLOWED_TYPES=image/jpeg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document
 
-# Security Settings (Optional)
+# ==========================================
+# Security Settings
+# ==========================================
 VITE_MAX_FILE_SIZE_MB=10
 VITE_MAX_FILES_PER_UPLOAD=5
-VITE_ALLOWED_FILE_TYPES=.jpg,.jpeg,.png,.pdf,.doc,.docx
+VITE_ALLOWED_FILE_TYPES=.jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx
 
-# Rate Limiting (Optional)
-VITE_API_RATE_LIMIT=100 # requests per minute
-VITE_API_RATE_LIMIT_WINDOW=60000 # milliseconds
+# ==========================================
+# Rate Limiting
+# ==========================================
+VITE_API_RATE_LIMIT=100
+VITE_API_RATE_LIMIT_WINDOW=60000
 
-# Cache Settings (Optional)
-VITE_CACHE_TTL=3600 # seconds
+# ==========================================
+# Cache Settings
+# ==========================================
+VITE_CACHE_TTL=3600
 VITE_STATIC_CACHE_VERSION=1
 
-# Instructions:
-# 1. Rename this file to .env.local for local development
-# 2. Fill in the Firebase configuration values from your Firebase project
-# 3. Adjust other values as needed
-# 4. Never commit .env.local to version control
+# ==========================================
+# Admin Initialization (CRITICAL - DO NOT COMMIT ACTUAL VALUES!)
+# ==========================================
+# These are ONLY used for database initialization scripts
+# Use strong passwords and CHANGE IMMEDIATELY after first login!
+# NEVER commit .env.local with real credentials to version control!
+ADMIN_EMAIL=admin@youragency.com
+ADMIN_PASSWORD=ChangeThisStrongPassword123!
+ADMIN_DISPLAY_NAME=System Administrator
 
-# Note: All variables must be prefixed with VITE_ to be accessible in the frontend code
-# Values provided here are examples/defaults - adjust according to your needs
+# ==========================================
+# Development Settings (Firebase Emulators)
+# ==========================================
+# Set to 'true' to use Firebase Emulators for local development
+VITE_USE_EMULATORS=false
+VITE_FIRESTORE_EMULATOR_HOST=localhost:8080
+VITE_AUTH_EMULATOR_HOST=localhost:9099
+VITE_STORAGE_EMULATOR_HOST=localhost:9199
+VITE_FUNCTIONS_EMULATOR_HOST=localhost:5001
+
+# ==========================================
+# External API Keys (Optional)
+# ==========================================
+# Add any third-party service API keys here
+# VITE_GOOGLE_MAPS_API_KEY=your_key_here
+# VITE_SENDGRID_API_KEY=your_key_here
+# VITE_TWILIO_ACCOUNT_SID=your_sid_here
+# VITE_TWILIO_AUTH_TOKEN=your_token_here
+
+# ==========================================
+# INSTRUCTIONS FOR USE
+# ==========================================
+# 1. Copy this file and rename to .env.local for local development
+# 2. Fill in your actual Firebase configuration values
+# 3. Update admin credentials with STRONG passwords
+# 4. NEVER commit .env.local to version control
+# 5. For production, use Firebase Hosting environment configuration
+# 6. All variables must be prefixed with VITE_ to be accessible in frontend
+#
+# SECURITY REMINDERS:
+# - Change default admin password immediately after first login
+# - Use different credentials for development/staging/production
+# - Enable MFA for all admin accounts
+# - Regularly rotate API keys and credentials
+# - Review Firebase Security Rules after deployment

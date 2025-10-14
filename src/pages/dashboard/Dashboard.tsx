@@ -3,6 +3,7 @@ import { useDashboardMetrics } from '../../hooks/useDashboardMetrics';
 import { DashboardSkeleton } from '../../components/dashboard/DashboardSkeleton';
 import { DashboardError } from '../../components/dashboard/DashboardError';
 import { EnhancedDashboard, QuickStats } from '../../components/dashboard/EnhancedDashboard';
+import { PendingApprovals } from '../../components/applicants/PendingApprovals';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
@@ -497,6 +498,16 @@ export const Dashboard = () => {
 
       {/* Content - Optimized 4-Column Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* Pending Approvals Section - Full Width */}
+        {(customClaims?.role === 'admin' || 
+          customClaims?.role === 'president' || 
+          customClaims?.role === 'branch_manager' || 
+          customClaims?.role === 'ho_recruitment_officer') && (
+          <div className="mb-6">
+            <PendingApprovals />
+          </div>
+        )}
+        
         {/* Main Grid Layout - 4 Columns */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           

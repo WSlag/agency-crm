@@ -16,15 +16,30 @@ const auth = getAuth(app);
 // Helper function to authenticate as admin
 const authenticateAsAdmin = async () => {
   try {
-    // First create admin user
-    const adminEmail = 'admin@agency.com';
-    const adminPassword = 'YOUR_ADMIN_PASSWORD';
+    // SECURITY: Get credentials from environment variables
+    // DO NOT hardcode credentials!
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    const adminDisplayName = process.env.ADMIN_DISPLAY_NAME || 'Super Admin';
+    
+    if (!adminEmail || !adminPassword) {
+      throw new Error(
+        'ADMIN_EMAIL and ADMIN_PASSWORD must be set in environment variables. ' +
+        'Please create a .env.local file with these values.'
+      );
+    }
+
+    // Validate password strength (relaxed for existing passwords)
+    if (adminPassword.length < 8) {
+      console.warn('⚠️  WARNING: Admin password is shorter than recommended 12 characters.');
+      console.warn('⚠️  Please change password after first login for better security.');
+    }
     
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         email: adminEmail,
-        displayName: 'Super Admin',
+        displayName: adminDisplayName,
         role: 'admin',
         permissions: ['read', 'write', 'verify', 'approve', 'transfer', 'manage_users', 'manage_branches'],
         verificationAccess: 'full',
@@ -32,10 +47,11 @@ const authenticateAsAdmin = async () => {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       });
-      console.log('Admin user created successfully');
+      console.log('✅ Admin user created successfully');
+      console.warn('⚠️  IMPORTANT: Please change your admin password immediately after first login!');
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
-        console.log('Admin user already exists, signing in...');
+        console.log('ℹ️  Admin user already exists, signing in...');
       } else {
         throw error;
       }
@@ -43,9 +59,9 @@ const authenticateAsAdmin = async () => {
 
     // Sign in as admin
     await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
-    console.log('Authenticated as admin');
+    console.log('✅ Authenticated as admin');
   } catch (error) {
-    console.error('Error authenticating as admin:', error);
+    console.error('❌ Error authenticating as admin:', error);
     throw error;
   }
 };
@@ -62,10 +78,24 @@ const randomStatus = <T extends string>(statuses: T[]): T => {
 
 // Initialize admin users
 const initializeUsers = async () => {
+  // SECURITY WARNING: These are test/demo users with temporary passwords
+  // In production, you should:
+  // 1. Use environment variables for all passwords
+  // 2. Force password change on first login
+  // 3. Enable multi-factor authentication (MFA)
+  // 4. Use Firebase Admin SDK with service accounts instead
+  
+  const defaultPassword = process.env.DEFAULT_USER_PASSWORD || 'YOUR_DEFAULT_USER_PASSWORD';
+  
+  if (!process.env.DEFAULT_USER_PASSWORD) {
+    console.warn('⚠️  DEFAULT_USER_PASSWORD not set. Using temporary password.');
+    console.warn('⚠️  IMPORTANT: Change all user passwords after initialization!');
+  }
+
   const users = [
     {
       email: 'admin@agency.com',
-      password: 'YOUR_ADMIN_PASSWORD',
+      password: process.env.ADMIN_PASSWORD || defaultPassword,
       data: {
         displayName: 'Super Admin',
         role: 'admin',
@@ -76,7 +106,7 @@ const initializeUsers = async () => {
     },
     {
       email: 'president@agency.com',
-      password: 'YOUR_DEFAULT_USER_PASSWORD',
+      password: defaultPassword,
       data: {
         displayName: 'Agency President',
         role: 'president',
@@ -87,7 +117,7 @@ const initializeUsers = async () => {
     },
     {
       email: 'recruitment1@agency.com',
-      password: 'YOUR_DEFAULT_USER_PASSWORD',
+      password: defaultPassword,
       data: {
         displayName: 'HO Recruitment Officer 1',
         role: 'ho_recruitment_officer',
@@ -98,7 +128,7 @@ const initializeUsers = async () => {
     },
     {
       email: 'recruitment2@agency.com',
-      password: 'YOUR_DEFAULT_USER_PASSWORD',
+      password: defaultPassword,
       data: {
         displayName: 'HO Recruitment Officer 2',
         role: 'ho_recruitment_officer',
@@ -109,7 +139,7 @@ const initializeUsers = async () => {
     },
     {
       email: 'accountant@agency.com',
-      password: 'YOUR_DEFAULT_USER_PASSWORD',
+      password: defaultPassword,
       data: {
         displayName: 'HO Accountant',
         role: 'ho_accountant',
@@ -189,7 +219,7 @@ const initializeBranches = async () => {
       // Create branch manager for each branch
       const manager = {
         email: `manager.${branch.code.toLowerCase()}@agency.com`,
-        password: 'YOUR_DEFAULT_USER_PASSWORD',
+        password: process.env.DEFAULT_USER_PASSWORD || 'YOUR_DEFAULT_USER_PASSWORD',
         data: {
           displayName: `${branch.name} Manager`,
           role: 'branch_manager',

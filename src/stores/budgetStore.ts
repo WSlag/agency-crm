@@ -15,6 +15,8 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { firestore } from '../config/firebase';
+import { canCreateBudget, canUpdateBudget, PermissionDeniedError } from '../utils/permissions';
+import type { User } from '../types/auth';
 import type {
   Budget,
   CreateBudgetData,
@@ -35,8 +37,8 @@ interface BudgetState {
   // Actions
   fetchBudgets: (filter?: BudgetFilter) => Promise<void>;
   fetchBudgetById: (id: string) => Promise<void>;
-  createBudget: (data: CreateBudgetData, userId: string, userName: string) => Promise<string>;
-  updateBudget: (id: string, data: Partial<Budget>) => Promise<void>;
+  createBudget: (data: CreateBudgetData, user: User) => Promise<string>;
+  updateBudget: (id: string, data: Partial<Budget>, user: User) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
   updateBudgetSpent: (budgetId: string, amount: number) => Promise<void>;
   fetchBudgetStats: () => Promise<void>;
@@ -69,19 +71,26 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   fetchBudgets: async (filter?: BudgetFilter) => {
     try {
       set({ loading: true, error: null });
-      let q = query(collection(firestore, 'budgets'), orderBy('createdAt', 'desc'));
+      
+      // PERFORMANCE: Build query with proper constraints and limit
+      let queryConstraints: any[] = [orderBy('createdAt', 'desc')];
 
       if (filter?.branchId) {
-        q = query(q, where('branchId', '==', filter.branchId));
+        queryConstraints.push(where('branchId', '==', filter.branchId));
       }
       if (filter?.category) {
-        q = query(q, where('category', '==', filter.category));
+        queryConstraints.push(where('category', '==', filter.category));
       }
       if (filter?.status) {
-        q = query(q, where('status', '==', filter.status));
+        queryConstraints.push(where('status', '==', filter.status));
       }
 
+      // PERFORMANCE: Add pagination limit (default 50)
+      queryConstraints.push(limit(filter?.limit || 50));
+
+      const q = query(collection(firestore, 'budgets'), ...queryConstraints);
       const snapshot = await getDocs(q);
+      
       const budgets = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -138,9 +147,16 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     }
   },
 
-  createBudget: async (data: CreateBudgetData, userId: string, userName: string) => {
+  createBudget: async (data: CreateBudgetData, user: User) => {
     try {
       set({ loading: true, error: null });
+
+      // SECURITY: Check permission before creating
+      const hasPermission = await canCreateBudget(data.branchId, user);
+      if (!hasPermission) {
+        throw new PermissionDeniedError('create', 'budget');
+      }
+
       const timestamp = serverTimestamp();
 
       const budgetData = {
@@ -148,8 +164,8 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
         spentAmount: 0,
         remainingAmount: data.allocatedAmount,
         status: 'active' as BudgetStatus,
-        createdBy: userId,
-        createdByName: userName,
+        createdBy: user.uid,
+        createdByName: user.displayName || user.email,
         createdAt: timestamp,
         updatedAt: timestamp,
       };
@@ -174,7 +190,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
         action: 'budget_created',
         entityId: docRef.id,
         entityType: 'budget',
-        performedBy: userId,
+        performedBy: user.uid,
         performedAt: timestamp,
         details: {
           name: data.name,
@@ -195,9 +211,16 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     }
   },
 
-  updateBudget: async (id: string, data: Partial<Budget>) => {
+  updateBudget: async (id: string, data: Partial<Budget>, user: User) => {
     try {
       set({ loading: true, error: null });
+
+      // SECURITY: Check permission before updating
+      const hasPermission = await canUpdateBudget(id, user);
+      if (!hasPermission) {
+        throw new PermissionDeniedError('update', 'budget');
+      }
+
       const docRef = doc(firestore, 'budgets', id);
       const updateData = {
         ...data,
