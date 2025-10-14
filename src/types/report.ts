@@ -302,6 +302,18 @@ export interface ReportSchedule {
   updatedAt: Date;
 }
 
+export interface ReportShare {
+  id: string;
+  reportId: string;
+  sharedBy: string;
+  sharedByName?: string;
+  sharedWith: string[]; // user IDs or emails
+  accessLevel: 'view' | 'download';
+  expiresAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface ReportPermissions {
   canCreate: boolean;
   canEdit: boolean;

@@ -3,6 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
+import { getFunctions } from 'firebase/functions';
 import { environment, isProduction } from './environment';
 
 const firebaseConfig = environment.firebase;
@@ -42,6 +43,7 @@ initializeFirestore().then(db => {
 
 export const storage = getStorage(app);
 export const analytics = isProduction ? getAnalytics(app) : null;
+export const functions = getFunctions(app);
 
 // Export a function to get the current Firebase instance
 export const getFirebaseInstance = () => {
@@ -51,5 +53,6 @@ export const getFirebaseInstance = () => {
     firestore,
     storage,
     analytics,
+    functions,
   };
 };

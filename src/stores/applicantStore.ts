@@ -12,6 +12,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  addDoc,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
@@ -349,10 +350,104 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
   updatePipeline: async (applicantId, pipeline) => {
     try {
       const docRef = doc(firestore, 'applicants', applicantId);
+      const applicantSnap = await getDoc(docRef);
+      
+      if (!applicantSnap.exists()) {
+        throw new Error('Applicant not found');
+      }
+      
+      const applicantData = applicantSnap.data();
+      const oldStage = applicantData.currentStage;
+      const newStage = pipeline.stage;
+      
+      // Update applicant stage
       await updateDoc(docRef, {
-        currentStage: pipeline.stage,
+        currentStage: newStage,
         updatedAt: serverTimestamp(),
       });
+      
+      // Create pipeline history entry
+      await addDoc(collection(firestore, `applicants/${applicantId}/pipeline`), {
+        stage: newStage,
+        enteredDate: serverTimestamp(),
+        notes: pipeline.notes || `Stage changed from ${oldStage} to ${newStage}`,
+        status: 'completed',
+      });
+      
+      // Create audit log
+      await addDoc(collection(firestore, 'audit_logs'), {
+        action: 'pipeline_stage_updated',
+        entityId: applicantId,
+        entityType: 'applicant',
+        performedBy: 'system', // Should be replaced with actual user ID
+        performedAt: serverTimestamp(),
+        details: {
+          applicantName: applicantData.fullName,
+          oldStage,
+          newStage,
+          notes: pipeline.notes,
+        },
+      });
+      
+      // Send notifications to relevant parties
+      const notificationsToSend = [];
+      
+      // Notify assigned recruitment officer (if exists)
+      if (applicantData.assignedRecruitmentOfficerId) {
+        notificationsToSend.push({
+          type: 'stage_change',
+          recipientId: applicantData.assignedRecruitmentOfficerId,
+          title: 'Applicant Stage Updated',
+          body: `${applicantData.fullName} has progressed to ${newStage} stage`,
+          metadata: {
+            applicantId,
+            applicantName: applicantData.fullName,
+            oldStage,
+            newStage,
+          },
+          channels: ['in-app', 'push'],
+          read: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          status: 'active',
+        });
+      }
+      
+      // Notify branch manager
+      if (applicantData.branchId) {
+        // Query branch manager
+        const branchUsersQuery = query(
+          collection(firestore, 'users'),
+          where('branchId', '==', applicantData.branchId),
+          where('role', '==', 'branch_manager')
+        );
+        const branchUsersSnap = await getDocs(branchUsersQuery);
+        
+        branchUsersSnap.forEach((userDoc) => {
+          notificationsToSend.push({
+            type: 'stage_change',
+            recipientId: userDoc.id,
+            title: 'Applicant Stage Updated',
+            body: `${applicantData.fullName} has progressed to ${newStage} stage`,
+            metadata: {
+              applicantId,
+              applicantName: applicantData.fullName,
+              oldStage,
+              newStage,
+            },
+            channels: ['in-app', 'push'],
+            read: false,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            status: 'active',
+          });
+        });
+      }
+      
+      // Send all notifications
+      for (const notification of notificationsToSend) {
+        await addDoc(collection(firestore, 'notifications'), notification);
+      }
     } catch (error) {
       console.error('Error updating pipeline:', error);
       throw error;
@@ -376,11 +471,89 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
   approveTransfer: async (transferId, assignedOfficerId) => {
     try {
       const docRef = doc(firestore, 'transfers', transferId);
+      const transferSnap = await getDoc(docRef);
+      
+      if (!transferSnap.exists()) {
+        throw new Error('Transfer not found');
+      }
+      
+      const transferData = transferSnap.data();
+      
+      // Update transfer status
       await updateDoc(docRef, {
         assignedOfficerId,
         transferStatus: 'approved',
         approvedDate: serverTimestamp(),
       });
+      
+      // Update applicant with assigned officer and transfer flag
+      const applicantRef = doc(firestore, 'applicants', transferData.applicantId);
+      await updateDoc(applicantRef, {
+        assignedRecruitmentOfficerId: assignedOfficerId,
+        transferredToHO: true,
+        transferredDate: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      
+      // Get applicant and officer details for notifications
+      const applicantSnap = await getDoc(applicantRef);
+      const applicantData = applicantSnap.data();
+      
+      // Create audit log
+      await addDoc(collection(firestore, 'audit_logs'), {
+        action: 'transfer_approved',
+        entityId: transferId,
+        entityType: 'transfer',
+        performedBy: 'system', // Should be replaced with actual user ID
+        performedAt: serverTimestamp(),
+        details: {
+          applicantId: transferData.applicantId,
+          applicantName: applicantData?.fullName,
+          fromBranchId: transferData.fromBranchId,
+          toBranchId: transferData.toBranchId,
+          assignedOfficerId,
+        },
+      });
+      
+      // Send notification to assigned HO Recruitment Officer
+      await addDoc(collection(firestore, 'notifications'), {
+        type: 'applicant_assignment',
+        recipientId: assignedOfficerId,
+        title: 'New Applicant Assigned',
+        body: `You have been assigned to manage ${applicantData?.fullName || 'an applicant'} transferred from branch office`,
+        metadata: {
+          transferId,
+          applicantId: transferData.applicantId,
+          applicantName: applicantData?.fullName,
+          fromBranchId: transferData.fromBranchId,
+        },
+        channels: ['in-app', 'push', 'email'],
+        read: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        status: 'active',
+      });
+      
+      // Send notification to requesting branch manager
+      if (transferData.requestedBy) {
+        await addDoc(collection(firestore, 'notifications'), {
+          type: 'transfer_approved',
+          recipientId: transferData.requestedBy,
+          title: 'Transfer Request Approved',
+          body: `Transfer request for ${applicantData?.fullName || 'applicant'} has been approved`,
+          metadata: {
+            transferId,
+            applicantId: transferData.applicantId,
+            applicantName: applicantData?.fullName,
+            assignedOfficerId,
+          },
+          channels: ['in-app', 'push'],
+          read: false,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          status: 'active',
+        });
+      }
     } catch (error) {
       console.error('Error approving transfer:', error);
       throw error;

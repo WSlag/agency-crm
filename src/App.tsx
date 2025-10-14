@@ -30,6 +30,11 @@ import { AgentManagement } from './pages/agents/AgentManagement';
 import { AgentDetail } from './pages/agents/AgentDetail';
 import { AgentForm } from './pages/agents/AgentForm';
 
+// Job Management
+import { JobManagement } from './pages/jobs/JobManagement';
+import { JobDetail } from './pages/jobs/JobDetail';
+import { JobForm } from './pages/jobs/JobForm';
+
 // Document Management
 import DocumentList from './components/documents/DocumentList';
 import { DocumentUpload } from './components/documents/DocumentUpload';
@@ -41,6 +46,7 @@ import { ExpiryDashboard } from './components/documents/ExpiryDashboard';
 import { ExpenseEntry } from './pages/expenses/ExpenseEntry';
 import { ExpenseDetail } from './pages/expenses/ExpenseDetail';
 import { ExpensesPage } from './pages/expenses/ExpensesPage';
+import { BudgetManagement } from './pages/expenses/BudgetManagement';
 import { CommissionRequest } from './pages/commissions/CommissionRequest';
 import { CommissionsPage } from './pages/commissions/CommissionsPage';
 
@@ -60,7 +66,10 @@ import { FinancialReports } from './pages/reports/FinancialReports';
 import { BranchPerformance } from './pages/reports/BranchPerformance';
 import { AgentPerformance } from './pages/reports/AgentPerformance';
 import { TransferAnalytics } from './pages/reports/TransferAnalytics';
+import { OfficerPerformance } from './pages/reports/OfficerPerformance';
+import { DeploymentReports } from './pages/reports/DeploymentReports';
 import { ReportBuilder } from './pages/reports/ReportBuilder';
+import { SharedReports } from './pages/reports/SharedReports';
 
 // Settings
 import { SystemSettings } from './pages/settings/SystemSettings';
@@ -226,7 +235,9 @@ const App: React.FC = () => {
                 <Outlet />
               </RoleGuard>
             }
-          />
+          >
+            <Route path="shared" element={<SharedReports />} />
+          </Route>
 
           {/* Settings */}
           <Route
@@ -248,6 +259,7 @@ const App: React.FC = () => {
             <Route index element={<ExpensesPage />} />
             <Route path="new" element={<ExpenseEntry />} />
             <Route path=":id" element={<ExpenseDetail />} />
+            <Route path="budgets" element={<BudgetManagement />} />
           </Route>
 
           {/* Commissions Routes */}
@@ -271,6 +283,21 @@ const App: React.FC = () => {
             <Route path=":id/edit" element={<AgentForm />} />
           </Route>
 
+          {/* Job Routes */}
+          <Route
+            path="/jobs"
+            element={
+              <RoleGuard allowedRoles={['admin', 'president', 'ho_recruitment_officer', 'branch_manager']}>
+                <Outlet />
+              </RoleGuard>
+            }
+          >
+            <Route index element={<JobManagement />} />
+            <Route path="new" element={<JobForm />} />
+            <Route path=":id" element={<JobDetail />} />
+            <Route path=":id/edit" element={<JobForm />} />
+          </Route>
+
           {/* Branch Routes */}
           <Route path="/branches">
             <Route index element={<BranchList />} />
@@ -288,6 +315,8 @@ const App: React.FC = () => {
             <Route path="branch-performance" element={<BranchPerformance />} />
             <Route path="agent-performance" element={<AgentPerformance />} />
             <Route path="transfer-analytics" element={<TransferAnalytics />} />
+            <Route path="officer-performance" element={<OfficerPerformance />} />
+            <Route path="deployment" element={<DeploymentReports />} />
           </Route>
         </Route>
 

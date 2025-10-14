@@ -1,5 +1,6 @@
 import { Tab } from '@headlessui/react';
 import { Applicant } from '../../../types/applicant';
+import { CommunicationHistory } from '../CommunicationHistory';
 
 interface ProfileDetailsProps {
   applicant: Applicant;
@@ -12,6 +13,7 @@ export const ProfileDetails = ({ applicant }: ProfileDetailsProps) => {
     { name: 'Education & Experience', content: <EducationExperience applicant={applicant} /> },
     { name: 'Medical Info', content: <MedicalInfo applicant={applicant} /> },
     { name: 'Emergency Contact', content: <EmergencyContact applicant={applicant} /> },
+    { name: 'Communications', content: <CommunicationHistory applicantId={applicant.id} /> },
   ];
 
   return (
