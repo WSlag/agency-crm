@@ -2,8 +2,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useDashboardMetrics } from '../../hooks/useDashboardMetrics';
 import { DashboardSkeleton } from '../../components/dashboard/DashboardSkeleton';
 import { DashboardError } from '../../components/dashboard/DashboardError';
-import { EnhancedDashboard, QuickStats } from '../../components/dashboard/EnhancedDashboard';
 import { PendingApprovals } from '../../components/applicants/PendingApprovals';
+import { BarChart } from '../../components/dashboard/BarChart';
+import { PieChart } from '../../components/dashboard/PieChart';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
@@ -23,6 +24,13 @@ import {
   DocumentDuplicateIcon,
   UsersIcon,
   BriefcaseIcon,
+  TrophyIcon,
+  FireIcon,
+  RocketLaunchIcon,
+  LightBulbIcon,
+  CalendarDaysIcon,
+  ArrowTrendingUpIcon,
+  BoltIcon,
 } from '@heroicons/react/24/outline';
 
 // Time-based greeting helper
@@ -33,45 +41,236 @@ const getTimeBasedGreeting = () => {
   return { text: 'Good Evening', icon: '🌙', color: 'from-indigo-500 to-purple-600' };
 };
 
-// Recent Activity Feed Component
-const RecentActivityFeed: React.FC<{ userId: string; role: string }> = ({ userId }) => {
-  const [activities, setActivities] = useState<any[]>([]);
+// Performance Insights Widget
+const PerformanceInsights: React.FC<{ role: string }> = ({ role }) => {
+  const insights = [
+    {
+      icon: TrophyIcon,
+      title: 'Top Performer',
+      description: 'Great work this week!',
+      color: 'from-yellow-400 to-orange-500',
+      stat: '+25%',
+    },
+    {
+      icon: FireIcon,
+      title: 'Hot Streak',
+      description: '7 days of activity',
+      color: 'from-red-500 to-pink-500',
+      stat: '🔥',
+    },
+    {
+      icon: ArrowTrendingUpIcon,
+      title: 'Trending Up',
+      description: 'Productivity boost',
+      color: 'from-green-500 to-emerald-500',
+      stat: '+18%',
+    },
+  ];
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+      <div className="flex items-center space-x-2 mb-3">
+        <RocketLaunchIcon className="h-4 w-4 text-indigo-600" />
+        <h3 className="text-sm font-semibold text-gray-900">Performance Insights</h3>
+      </div>
+      <div className="space-y-2">
+        {insights.map((insight, index) => (
+          <div
+            key={index}
+            className={`group relative bg-gradient-to-r ${insight.color} p-3 rounded-lg text-white hover:shadow-md transform hover:scale-[1.02] transition-all duration-200`}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <insight.icon className="h-5 w-5 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-bold">{insight.title}</p>
+                  <p className="text-xs opacity-90">{insight.description}</p>
+                </div>
+              </div>
+              <span className="text-lg font-bold">{insight.stat}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Quick Tips Widget
+const QuickTipsWidget: React.FC = () => {
+  const tips = [
+    'Use Quick Actions for faster navigation',
+    'Check pending approvals regularly',
+    'Keep applicant data up to date',
+    'Review financial reports weekly',
+    'Collaborate with your team',
+  ];
+
+  const [currentTip, setCurrentTip] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTip((prev) => (prev + 1) % tips.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [tips.length]);
+
+  return (
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl shadow-lg border-2 border-indigo-200 p-4">
+      <div className="flex items-center space-x-2 mb-3">
+        <LightBulbIcon className="h-5 w-5 text-yellow-500 animate-pulse" />
+        <h3 className="text-sm font-semibold text-gray-900">💡 Quick Tip</h3>
+      </div>
+      <div className="relative overflow-hidden">
+        <p className="text-sm text-gray-700 font-medium leading-relaxed animate-fade-in">
+          {tips[currentTip]}
+        </p>
+      </div>
+      <div className="flex justify-center space-x-1 mt-3">
+        {tips.map((_, index) => (
+          <div
+            key={index}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              index === currentTip ? 'w-6 bg-indigo-600' : 'w-1.5 bg-indigo-300'
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Today's Agenda Widget
+const TodaysAgenda: React.FC = () => {
+  const today = new Date();
+  const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
+  const date = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const events = [
+    { time: '09:00 AM', title: 'Team Meeting', color: 'bg-blue-500' },
+    { time: '02:00 PM', title: 'Review Applications', color: 'bg-green-500' },
+    { time: '04:30 PM', title: 'Financial Check', color: 'bg-purple-500' },
+  ];
+
+  return (
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
+      <div className="flex items-center space-x-2 mb-3">
+        <CalendarDaysIcon className="h-4 w-4 text-indigo-600" />
+        <h3 className="text-sm font-semibold text-gray-900">Today's Agenda</h3>
+      </div>
+      
+      <div className="mb-3 pb-3 border-b border-gray-200">
+        <p className="text-lg font-bold text-gray-900">{dayOfWeek}</p>
+        <p className="text-xs text-gray-500">{date}</p>
+      </div>
+
+      <div className="space-y-2">
+        {events.map((event, index) => (
+          <div
+            key={index}
+            className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-all cursor-pointer group"
+          >
+            <div className={`w-1 h-10 ${event.color} rounded-full group-hover:w-2 transition-all`} />
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-gray-900">{event.title}</p>
+              <p className="text-xs text-gray-500">{event.time}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <button className="mt-3 w-full text-xs text-indigo-600 hover:text-indigo-700 font-medium text-center py-2 hover:bg-indigo-50 rounded-lg transition-all">
+        View Full Calendar →
+      </button>
+    </div>
+  );
+};
+
+// Goal Progress Widget
+const GoalProgressWidget: React.FC<{ role: string }> = ({ role }) => {
+  const goals = [
+    { label: 'Monthly Target', progress: 75, color: 'bg-blue-500', target: 100 },
+    { label: 'Applications', progress: 60, color: 'bg-green-500', target: 80 },
+    { label: 'Approvals', progress: 85, color: 'bg-purple-500', target: 90 },
+  ];
+
+  return (
+    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg border-2 border-purple-200 p-4">
+      <div className="flex items-center space-x-2 mb-3">
+        <BoltIcon className="h-4 w-4 text-purple-600" />
+        <h3 className="text-sm font-semibold text-gray-900">Goal Progress</h3>
+      </div>
+      
+      <div className="space-y-3">
+        {goals.map((goal, index) => (
+          <div key={index} className="space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-gray-700">{goal.label}</span>
+              <span className="text-xs font-bold text-gray-900">{goal.progress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div
+                className={`${goal.color} h-full rounded-full transition-all duration-500 ease-out relative`}
+                style={{ width: `${goal.progress}%` }}
+              >
+                <div className="absolute inset-0 bg-white opacity-30 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="mt-4 pt-3 border-t border-purple-200">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium text-gray-600">Overall Progress</span>
+          <span className="text-sm font-bold text-purple-600">73%</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Stage Distribution Widget - Shows pipeline distribution
+const StageDistributionWidget: React.FC = () => {
+  const [stageData, setStageData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRecentActivities = async () => {
+    const fetchStageData = async () => {
       try {
-        const activitiesRef = collection(firestore, 'audit_logs');
-        const q = query(
-          activitiesRef,
-          orderBy('performedAt', 'desc'),
-          limit(5)
-        );
-        const snapshot = await getDocs(q);
-        setActivities(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const applicantsRef = collection(firestore, 'applicants');
+        const snapshot = await getDocs(applicantsRef);
+        
+        const stageCounts = snapshot.docs.reduce((acc, doc) => {
+          const stage = doc.data().currentStage || 'registration';
+          acc[stage] = (acc[stage] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const data = [
+          { stage: 'Registration', count: stageCounts['registration'] || 0, color: 'bg-gray-500' },
+          { stage: 'Interview', count: stageCounts['interview'] || 0, color: 'bg-blue-500' },
+          { stage: 'Medical', count: stageCounts['medical'] || 0, color: 'bg-green-500' },
+          { stage: 'Processing', count: stageCounts['processing'] || 0, color: 'bg-purple-500' },
+          { stage: 'Deployment', count: stageCounts['deployment'] || 0, color: 'bg-orange-500' },
+          { stage: 'Deployed', count: stageCounts['deployed'] || 0, color: 'bg-teal-500' },
+        ];
+
+        setStageData(data.filter(d => d.count > 0));
       } catch (error) {
-        console.error('Error fetching activities:', error);
+        console.error('Error fetching stage data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchRecentActivities();
-  }, [userId]);
-
-  const getActivityIcon = (action: string) => {
-    if (action.includes('approved')) return '✅';
-    if (action.includes('rejected')) return '❌';
-    if (action.includes('created')) return '➕';
-    if (action.includes('updated')) return '🔄';
-    if (action.includes('transferred')) return '📤';
-    return '📝';
-  };
+    fetchStageData();
+  }, []);
 
   if (loading) {
     return (
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
         <div className="animate-pulse space-y-2">
-          <div className="h-3 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
           <div className="h-10 bg-gray-200 rounded"></div>
           <div className="h-10 bg-gray-200 rounded"></div>
         </div>
@@ -79,36 +278,38 @@ const RecentActivityFeed: React.FC<{ userId: string; role: string }> = ({ userId
     );
   }
 
+  const total = stageData.reduce((sum, item) => sum + item.count, 0);
+
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
       <div className="flex items-center space-x-2 mb-3">
-        <ClockIcon className="h-4 w-4 text-indigo-600" />
-        <h3 className="text-sm font-semibold text-gray-900">Recent Activity</h3>
+        <ChartBarIcon className="h-4 w-4 text-indigo-600" />
+        <h3 className="text-sm font-semibold text-gray-900">Pipeline Distribution</h3>
       </div>
+      
+      <div className="mb-3 text-center">
+        <p className="text-2xl font-bold text-indigo-600">{total}</p>
+        <p className="text-xs text-gray-500">Total in Pipeline</p>
+      </div>
+
       <div className="space-y-2">
-        {activities.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
-            <ClockIcon className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-            <p className="text-xs">No recent activity</p>
-          </div>
-        ) : (
-          activities.slice(0, 3).map((activity) => (
-            <div
-              key={activity.id}
-              className="flex items-start space-x-2 p-2 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 rounded-lg transition-all"
-            >
-              <span className="text-lg">{getActivityIcon(activity.action)}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-gray-900 truncate">
-                  {activity.action?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  {activity.performedAt?.toDate ? new Date(activity.performedAt.toDate()).toLocaleTimeString() : 'Recently'}
-                </p>
+        {stageData.map((item, index) => {
+          const percentage = total > 0 ? (item.count / total) * 100 : 0;
+          return (
+            <div key={index} className="group cursor-pointer">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="font-medium text-gray-700">{item.stage}</span>
+                <span className="font-bold text-gray-900">{item.count}</span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full ${item.color} transition-all duration-500 ease-out group-hover:shadow-lg`}
+                  style={{ width: `${percentage}%` }}
+                />
               </div>
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
     </div>
   );
@@ -329,19 +530,26 @@ const AdminDashboard = () => {
   if (isLoading) return <DashboardSkeleton />;
   if (error) return <DashboardError error={error} />;
   
-  // Assign color schemes to metrics
-  const coloredMetrics = metrics.map((metric, index) => ({
-    ...metric,
-    colorScheme: (['blue', 'green', 'purple', 'orange', 'pink'] as const)[index % 5]
-  }));
-  
   return (
     <div className="space-y-6">
-      <QuickStats metrics={metrics} />
-      <EnhancedDashboard 
-        metrics={coloredMetrics} 
-        breakdowns={breakdowns}
-      />
+      {/* Grid Layout for Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Pie Chart for Stages */}
+        {breakdowns?.applicantsByStage && breakdowns.applicantsByStage.length > 0 && (
+          <PieChart 
+            title="Pipeline Stages"
+            data={breakdowns.applicantsByStage}
+          />
+        )}
+        
+        {/* Bar Chart for Statuses */}
+        {breakdowns?.applicantsByStatus && breakdowns.applicantsByStatus.length > 0 && (
+          <BarChart 
+            title="Applicants By Status"
+            data={breakdowns.applicantsByStatus}
+          />
+        )}
+      </div>
     </div>
   );
 };
@@ -352,20 +560,17 @@ const BranchManagerDashboard = ({ branchId }: { branchId: string | null }) => {
   if (isLoading) return <DashboardSkeleton />;
   if (error) return <DashboardError error={error} />;
   
-  // Assign color schemes to metrics
-  const coloredMetrics = metrics.map((metric, index) => ({
-    ...metric,
-    colorScheme: (['indigo', 'green', 'orange', 'purple'] as const)[index % 4]
-  }));
-  
   return (
     <div className="space-y-6">
       <QuickStats metrics={metrics} />
-      <EnhancedDashboard 
-        metrics={coloredMetrics} 
-        breakdowns={breakdowns}
-        title="Branch Performance Overview"
-      />
+      
+      {/* Bar Chart for Applicants by Status */}
+      {breakdowns?.applicantsByStatus && breakdowns.applicantsByStatus.length > 0 && (
+        <BarChart 
+          title="Branch Applicants By Status"
+          data={breakdowns.applicantsByStatus}
+        />
+      )}
     </div>
   );
 };
@@ -376,20 +581,17 @@ const RecruitmentOfficerDashboard = () => {
   if (isLoading) return <DashboardSkeleton />;
   if (error) return <DashboardError error={error} />;
   
-  // Assign color schemes to metrics
-  const coloredMetrics = metrics.map((metric, index) => ({
-    ...metric,
-    colorScheme: (['purple', 'blue', 'green', 'orange'] as const)[index % 4]
-  }));
-  
   return (
     <div className="space-y-6">
       <QuickStats metrics={metrics} />
-      <EnhancedDashboard 
-        metrics={coloredMetrics} 
-        breakdowns={breakdowns}
-        title="Recruitment Activities"
-      />
+      
+      {/* Bar Chart if available */}
+      {breakdowns?.applicantsByStatus && breakdowns.applicantsByStatus.length > 0 && (
+        <BarChart 
+          title="Recruitment Pipeline Status"
+          data={breakdowns.applicantsByStatus}
+        />
+      )}
     </div>
   );
 };
@@ -400,20 +602,17 @@ const AccountantDashboard = () => {
   if (isLoading) return <DashboardSkeleton />;
   if (error) return <DashboardError error={error} />;
   
-  // Assign color schemes to metrics
-  const coloredMetrics = metrics.map((metric, index) => ({
-    ...metric,
-    colorScheme: (['green', 'blue', 'orange', 'indigo'] as const)[index % 4]
-  }));
-  
   return (
     <div className="space-y-6">
       <QuickStats metrics={metrics} />
-      <EnhancedDashboard 
-        metrics={coloredMetrics} 
-        breakdowns={breakdowns}
-        title="Financial Overview"
-      />
+      
+      {/* Bar Chart for expenses by type if available */}
+      {breakdowns?.expensesByType && breakdowns.expensesByType.length > 0 && (
+        <BarChart 
+          title="Expenses By Type"
+          data={breakdowns.expensesByType}
+        />
+      )}
     </div>
   );
 };
@@ -499,8 +698,8 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Content - Optimized 4-Column Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Content - Enhanced Dashboard Layout */}
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Pending Approvals Section - Full Width */}
         {(customClaims?.role === 'admin' || 
           customClaims?.role === 'president' || 
@@ -511,30 +710,36 @@ export const Dashboard = () => {
           </div>
         )}
         
-        {/* Main Grid Layout - 4 Columns */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          
-          {/* Left Column - Main Dashboard (3 columns) */}
-          <div className="lg:col-span-3 space-y-4">
+        {/* Main Dashboard Content */}
+        <div className="space-y-6">
+          {/* Primary Charts Section - Full Width */}
+          <div className="w-full">
             {renderRoleSpecificContent()}
           </div>
 
-          {/* Right Column - Widgets (1 column) */}
-          <div className="space-y-4">
-            {/* Quick Actions - Compact */}
-            <QuickActionsPanel role={customClaims?.role || ''} />
-            
-            {/* Pending Tasks - Compact */}
-            <PendingTasksWidget 
-              role={customClaims?.role || ''} 
-              userId={user?.uid || ''} 
-            />
-            
-            {/* Recent Activity - Compact */}
-            <RecentActivityFeed 
-              userId={user?.uid || ''} 
-              role={customClaims?.role || ''} 
-            />
+          {/* Secondary Widgets Grid - Organized Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Section - Performance & Goals (8 columns) */}
+            <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <PerformanceInsights role={customClaims?.role || ''} />
+              <GoalProgressWidget role={customClaims?.role || ''} />
+            </div>
+
+            {/* Right Section - Quick Actions & Tools (4 columns) */}
+            <div className="lg:col-span-4 space-y-6">
+              <QuickActionsPanel role={customClaims?.role || ''} />
+              <PendingTasksWidget 
+                role={customClaims?.role || ''} 
+                userId={user?.uid || ''} 
+              />
+            </div>
+          </div>
+
+          {/* Tertiary Widgets Row - Information & Updates */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <StageDistributionWidget />
+            <QuickTipsWidget />
+            <TodaysAgenda />
           </div>
         </div>
       </div>

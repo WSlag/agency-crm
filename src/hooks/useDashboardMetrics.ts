@@ -49,69 +49,78 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
         // Fetch metrics based on role
         switch (role) {
           case 'admin': {
-            const [users, branches, applicants, expenses, commissions] = await Promise.all([
-              getDocs(collection(firestore, 'users')),
-              getDocs(collection(firestore, 'branches')),
+            const [applicants, expenses, commissions] = await Promise.all([
               getDocs(collection(firestore, 'applicants')),
               getDocs(collection(firestore, 'expenses')),
               getDocs(collection(firestore, 'commissions'))
             ]);
 
-            const activeBranches = branches.docs.filter(doc => doc.data().status === 'active').length;
-            const totalApplicants = applicants.size;
-            const pendingExpenses = expenses.docs.filter(doc => doc.data().status === 'pending').length;
-            const totalExpenseAmount = expenses.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
-            const totalCommissionAmount = commissions.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
-
-            // Calculate status breakdowns
-            const applicantsByStatus = applicants.docs.reduce((acc, doc) => {
-              const status = doc.data().status || 'pending';
-              acc[status] = (acc[status] || 0) + 1;
+            // Calculate stage breakdowns
+            const applicantsByStage = applicants.docs.reduce((acc, doc) => {
+              const stage = doc.data().currentStage || 'registration';
+              acc[stage] = (acc[stage] || 0) + 1;
               return acc;
             }, {} as Record<string, number>);
 
+            const interviewCount = applicantsByStage['interview'] || 0;
+            const medicalCount = applicantsByStage['medical'] || 0;
+            const processingCount = applicantsByStage['processing'] || 0;
+            const deploymentCount = applicantsByStage['deployment'] || 0;
+            const deployedCount = applicantsByStage['deployed'] || 0;
+
+            // Calculate specific status counts
+            const activeCount = applicants.docs.filter(doc => doc.data().status === 'active').length;
+            const pendingApprovalCount = applicants.docs.filter(doc => {
+              const data = doc.data();
+              return data.requiresApproval === true && !data.approvedBy;
+            }).length;
+            const withdrawnCount = applicants.docs.filter(doc => doc.data().status === 'withdrawn').length;
+            
             setMetrics([
               {
-                label: 'Total Users',
-                value: users.size,
+                label: 'Interview',
+                value: interviewCount,
                 type: 'number',
-                trendData: generateTrendData(users.size)
+                trendData: generateTrendData(interviewCount),
+                ...calculateTrend(interviewCount, Math.floor(interviewCount * 0.88))
               },
               {
-                label: 'Active Branches',
-                value: activeBranches,
+                label: 'Medical',
+                value: medicalCount,
                 type: 'number',
-                trendData: generateTrendData(activeBranches)
+                trendData: generateTrendData(medicalCount),
+                ...calculateTrend(medicalCount, Math.floor(medicalCount * 0.95))
               },
               {
-                label: 'Total Applicants',
-                value: totalApplicants,
+                label: 'Processing',
+                value: processingCount,
                 type: 'number',
-                trendData: generateTrendData(totalApplicants),
-                ...calculateTrend(totalApplicants, Math.floor(totalApplicants * 0.92))
+                trendData: generateTrendData(processingCount),
+                ...calculateTrend(processingCount, Math.floor(processingCount * 1.05))
               },
               {
-                label: 'Pending Expenses',
-                value: pendingExpenses,
+                label: 'Deployment',
+                value: deploymentCount + deployedCount,
                 type: 'number',
-                description: `₱${totalExpenseAmount.toLocaleString()} total`,
-                ...calculateTrend(pendingExpenses, Math.floor(pendingExpenses * 1.1))
-              },
-              {
-                label: 'Total Commissions',
-                value: totalCommissionAmount,
-                type: 'currency',
-                trendData: generateTrendData(totalCommissionAmount)
+                trendData: generateTrendData(deploymentCount + deployedCount),
+                ...calculateTrend(deploymentCount + deployedCount, Math.floor((deploymentCount + deployedCount) * 0.92))
               }
             ]);
 
-            // Set breakdowns for charts
+            // Set breakdowns for specific statuses
             setBreakdowns({
-              applicantsByStatus: Object.entries(applicantsByStatus).map(([status, count]) => ({
-                label: status.replace('_', ' ').toUpperCase(),
-                value: count,
-                type: 'number'
-              }))
+              applicantsByStage: [
+                { label: 'Interview', value: interviewCount, type: 'number' as const },
+                { label: 'Medical', value: medicalCount, type: 'number' as const },
+                { label: 'Processing', value: processingCount, type: 'number' as const },
+                { label: 'Deployment', value: deploymentCount + deployedCount, type: 'number' as const },
+              ].filter(item => item.value > 0),
+              applicantsByStatus: [
+                { label: 'Active', value: activeCount, type: 'number' as const },
+                { label: 'Pending Approval', value: pendingApprovalCount, type: 'number' as const },
+                { label: 'Withdrawn', value: withdrawnCount, type: 'number' as const },
+                { label: 'Deployed', value: deployedCount, type: 'number' as const },
+              ].filter(item => item.value > 0)
             });
             break;
           }

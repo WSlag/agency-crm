@@ -50,36 +50,61 @@ interface QuickStatsProps {
 
 export const QuickStats: React.FC<QuickStatsProps> = ({ metrics }) => {
   return (
-    <div className="bg-gradient-to-r from-primary-500 to-primary-700 rounded-lg shadow-lg overflow-hidden">
-      <div className="px-4 py-5 sm:p-6">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {metrics.slice(0, 4).map(metric => (
-            <div key={metric.label} className="text-center">
-              <dt className="text-sm font-medium text-primary-100 truncate">
+    <div className="relative bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 rounded-2xl shadow-2xl overflow-hidden">
+      {/* Animated background pattern */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-grid-white/[0.2] bg-[size:20px_20px]" />
+      </div>
+      
+      {/* Content */}
+      <div className="relative px-4 py-6 sm:p-8">
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+          {metrics.slice(0, 4).map((metric, index) => (
+            <div 
+              key={metric.label} 
+              className="text-center group cursor-pointer transform transition-all duration-300 hover:scale-110"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <dt className="text-sm font-semibold text-blue-100 truncate mb-2 transition-colors group-hover:text-white">
                 {metric.label}
               </dt>
-              <dd className="mt-1 text-3xl font-semibold text-white">
+              <dd className="text-4xl font-bold text-white mb-1 tracking-tight">
                 {typeof metric.value === 'number' 
                   ? metric.value.toLocaleString() 
                   : metric.value}
               </dd>
               {metric.trend && metric.change !== undefined && (
-                <div className="mt-1">
-                  <span className={`text-xs font-medium ${
+                <div className="mt-2">
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
                     metric.trend === 'up' 
-                      ? 'text-green-200' 
+                      ? 'bg-green-400/20 text-green-100 group-hover:bg-green-400/30' 
                       : metric.trend === 'down' 
-                      ? 'text-red-200' 
-                      : 'text-primary-200'
+                      ? 'bg-red-400/20 text-red-100 group-hover:bg-red-400/30' 
+                      : 'bg-blue-400/20 text-blue-100 group-hover:bg-blue-400/30'
                   }`}>
                     {metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '−'} {metric.change}%
                   </span>
                 </div>
               )}
+              
+              {/* Decorative line */}
+              <div className="mt-3 h-1 w-full bg-white/20 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-white rounded-full transition-all duration-1000 group-hover:w-full"
+                  style={{ width: '60%' }}
+                />
+              </div>
             </div>
           ))}
         </div>
       </div>
+      
+      {/* Shine effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer pointer-events-none" 
+           style={{ 
+             backgroundSize: '200% 100%',
+           }} 
+      />
     </div>
   );
 };

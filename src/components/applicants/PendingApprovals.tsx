@@ -155,9 +155,17 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
   
   if (pendingApprovals.length === 0) {
     return (
-      <div className={`p-6 text-center ${className}`}>
-        <CheckCircleIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-500">No pending approvals</p>
+      <div className={`bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-lg border-2 border-green-200 p-8 text-center ${className}`}>
+        <div className="relative inline-block">
+          <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4 animate-pulse" />
+          <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-ping" />
+        </div>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">All Caught Up!</h3>
+        <p className="text-gray-600 mb-4">No pending approvals at the moment</p>
+        <div className="inline-flex items-center space-x-2 text-sm text-green-700 bg-green-100 px-4 py-2 rounded-full">
+          <span>✨</span>
+          <span className="font-medium">Everything is up to date</span>
+        </div>
       </div>
     );
   }
