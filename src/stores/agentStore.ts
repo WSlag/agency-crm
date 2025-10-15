@@ -91,7 +91,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const agentsRef = collection(firestore, 'agents');
-      const q = query(agentsRef, where('status', '==', 'active'), orderBy('agentName'));
+      const q = query(agentsRef, where('status', '==', 'active'), orderBy('name'));
       const snapshot = await getDocs(q);
       
       const agents = snapshot.docs.map(doc => {

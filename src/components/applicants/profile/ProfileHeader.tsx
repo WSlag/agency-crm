@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import { Applicant } from '../../../types/applicant';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useBranchStore } from '../../../stores/branchStore';
+import { useAgentStore } from '../../../stores/agentStore';
 
 interface ProfileHeaderProps {
   applicant: Applicant;
@@ -10,8 +12,24 @@ interface ProfileHeaderProps {
 }
 
 export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHeaderProps) => {
-  const { user } = useAuth();
+  const { user, customClaims } = useAuth();
+  const { branches, fetchActiveBranches } = useBranchStore();
+  const { agents, fetchActiveAgents } = useAgentStore();
   const [isChangingStatus, setIsChangingStatus] = useState(false);
+
+  // Fetch branches and agents on mount
+  useEffect(() => {
+    if (branches.length === 0) {
+      fetchActiveBranches();
+    }
+    if (agents.length === 0) {
+      fetchActiveAgents();
+    }
+  }, [branches.length, agents.length, fetchActiveBranches, fetchActiveAgents]);
+
+  // Get branch and agent details
+  const branch = branches.find(b => b.id === applicant.branchId);
+  const agent = applicant.agentId ? agents.find(a => a.id === applicant.agentId) : null;
 
   const handleStatusChange = async (newStatus: 'active' | 'inactive') => {
     try {
@@ -33,9 +51,9 @@ export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHead
     }
   };
 
-  const canEdit = user?.role === 'admin' || 
-    (user?.role === 'branch_manager' && user.branchId === applicant.branchId) ||
-    (user?.role === 'ho_recruitment_officer' && user.uid === applicant.assignedRecruitmentOfficerId);
+  const canEdit = customClaims?.role === 'admin' || 
+    (customClaims?.role === 'branch_manager' && customClaims?.branchId === applicant.branchId) ||
+    (customClaims?.role === 'ho_recruitment_officer' && user?.uid === applicant.assignedRecruitmentOfficerId);
 
   return (
     <div className="bg-white shadow">
@@ -57,16 +75,16 @@ export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHead
                   </div>
                   <div className="mt-2 flex items-center text-sm text-gray-500">
                     <span className="font-medium">Application Type:</span>
-                    <span className="ml-1 capitalize">{applicant.applicationType.replace('_', ' ')}</span>
+                    <span className="ml-1 capitalize">{applicant.applicationType?.replace('_', ' ') || 'N/A'}</span>
                   </div>
                   <div className="mt-2 flex items-center text-sm text-gray-500">
                     <span className="font-medium">Current Stage:</span>
-                    <span className="ml-1 capitalize">{applicant.currentStage}</span>
+                    <span className="ml-1 capitalize">{applicant.currentStage || applicant.currentStageEnum || 'N/A'}</span>
                   </div>
                   <div className="mt-2 flex items-center text-sm">
                     <span className="font-medium">Status:</span>
-                    <span className={`ml-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(applicant.status)}`}>
-                      {applicant.status}
+                    <span className={`ml-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(applicant.status || applicant.currentStatus || 'inactive')}`}>
+                      {applicant.status || applicant.currentStatus || 'inactive'}
                     </span>
                   </div>
                 </div>
@@ -77,7 +95,7 @@ export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHead
           {canEdit && (
             <div className="mt-6 flex space-x-3 md:ml-4 md:mt-0">
               <select
-                value={applicant.status}
+                value={applicant.status || applicant.currentStatus || 'active'}
                 onChange={(e) => handleStatusChange(e.target.value as 'active' | 'inactive')}
                 disabled={isChangingStatus}
                 className="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"
@@ -100,25 +118,61 @@ export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHead
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt className="truncate text-sm font-medium text-gray-500">Email</dt>
-            <dd className="mt-1 text-sm text-gray-900">{applicant.email}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{applicant.email || 'N/A'}</dd>
           </div>
           
           <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt className="truncate text-sm font-medium text-gray-500">Contact Info</dt>
-            <dd className="mt-1 text-sm text-gray-900">{applicant.contactInfo}</dd>
+            <dd className="mt-1 text-sm text-gray-900">{applicant.contactInfo || 'N/A'}</dd>
           </div>
           
           <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt className="truncate text-sm font-medium text-gray-500">Branch</dt>
             <dd className="mt-1 text-sm text-gray-900">
-              {applicant.transferredToHO ? 'Head Office' : 'Branch Office'}
+              {branch?.name || applicant.branchId || 'N/A'}
+              {applicant.transferredToHO && (
+                <span className="ml-2 text-xs text-indigo-600 font-semibold">(Transferred to HO)</span>
+              )}
             </dd>
           </div>
           
           <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
             <dt className="truncate text-sm font-medium text-gray-500">Registration Date</dt>
             <dd className="mt-1 text-sm text-gray-900">
-              {new Date(applicant.createdAt).toLocaleDateString()}
+              {applicant.createdAt ? new Date(applicant.createdAt).toLocaleDateString() : 'N/A'}
+            </dd>
+          </div>
+        </div>
+        
+        {/* Additional Info Row */}
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt className="truncate text-sm font-medium text-gray-500">Application Type</dt>
+            <dd className="mt-1 text-sm text-gray-900">
+              {applicant.applicationType === 'with_agent' ? (
+                <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
+                  With Agent
+                </span>
+              ) : applicant.applicationType === 'direct_hire' ? (
+                <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
+                  Direct Hire
+                </span>
+              ) : (
+                'N/A'
+              )}
+            </dd>
+          </div>
+          
+          <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+            <dt className="truncate text-sm font-medium text-gray-500">Recruited By</dt>
+            <dd className="mt-1 text-sm text-gray-900">
+              {agent ? (
+                <span className="font-medium text-indigo-600">{agent.agentName}</span>
+              ) : applicant.agentId ? (
+                applicant.agentId
+              ) : (
+                <span className="text-gray-400">Direct Hire</span>
+              )}
             </dd>
           </div>
         </div>

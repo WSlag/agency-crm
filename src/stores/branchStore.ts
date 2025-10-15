@@ -62,7 +62,7 @@ export const useBranchStore = create<BranchState>((set, get) => ({
       console.log('Fetching active branches...');
       set({ loading: true, error: null });
       const branchesRef = collection(firestore, 'branches');
-      const q = query(branchesRef, where('active', '==', true));
+      const q = query(branchesRef, where('status', '==', 'active'));
       const snapshot = await getDocs(q);
       const branches = snapshot.docs.map(doc => {
         const data = doc.data();
