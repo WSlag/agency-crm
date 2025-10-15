@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PersonalInfoForm } from '../../components/applicants/registration/PersonalInfoForm';
@@ -15,7 +15,8 @@ import {
   SparklesIcon, 
   ArrowLeftIcon,
   CheckIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
 
 const steps = [
@@ -28,10 +29,14 @@ const steps = [
 
 export const ApplicantRegistration = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const { createApplicant } = useApplicantStore();
+  const { createApplicant, updateApplicant, selectedApplicant, fetchApplicantById } = useApplicantStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!id);
+
+  const isEditMode = !!id;
 
   const methods = useForm<ApplicantRegistrationData>({
     resolver: zodResolver(applicantRegistrationSchema),
@@ -58,6 +63,38 @@ export const ApplicantRegistration = () => {
       },
     },
   });
+
+  // Load existing applicant data if editing
+  useEffect(() => {
+    const loadApplicant = async () => {
+      if (id && isEditMode) {
+        setIsLoading(true);
+        try {
+          await fetchApplicantById(id);
+        } catch (error) {
+          console.error('Failed to load applicant:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    loadApplicant();
+  }, [id, isEditMode, fetchApplicantById]);
+
+  // Pre-fill form with existing data
+  useEffect(() => {
+    if (isEditMode && selectedApplicant && selectedApplicant.id === id) {
+      methods.reset({
+        ...selectedApplicant,
+        // Ensure arrays are properly formatted
+        preferredCountries: selectedApplicant.preferredCountries || [''],
+        preferredPositions: selectedApplicant.preferredPositions || [''],
+        skills: selectedApplicant.skills || [],
+        certifications: selectedApplicant.certifications || [],
+        languages: selectedApplicant.languages || [],
+      });
+    }
+  }, [isEditMode, selectedApplicant, id, methods]);
 
   const { handleSubmit, trigger } = methods;
 
@@ -94,10 +131,17 @@ export const ApplicantRegistration = () => {
   const onSubmit = async (data: ApplicantRegistrationData) => {
     try {
       setIsSubmitting(true);
-      const applicantId = await createApplicant(data);
-      navigate(`/applicants/${applicantId}`);
+      if (isEditMode && id) {
+        // Update existing applicant
+        await updateApplicant(id, data);
+        navigate(`/applicants/${id}`);
+      } else {
+        // Create new applicant
+        const applicantId = await createApplicant(data);
+        navigate(`/applicants/${applicantId}`);
+      }
     } catch (error) {
-      console.error('Failed to create applicant:', error);
+      console.error(`Failed to ${isEditMode ? 'update' : 'create'} applicant:`, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -105,24 +149,48 @@ export const ApplicantRegistration = () => {
 
   const CurrentStepComponent = steps[currentStep].component;
 
+  // Show loading spinner while fetching applicant data
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <SparklesIcon className="h-6 w-6 text-indigo-600 animate-pulse" />
+          </div>
+        </div>
+        <p className="mt-4 text-gray-600 font-medium">Loading applicant data...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-full">
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
         <div className="py-8">
           <button
-            onClick={() => navigate('/applicants')}
+            onClick={() => navigate(isEditMode ? `/applicants/${id}` : '/applicants')}
             className="group mb-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/20 transition-all duration-200"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back to Applicants
+            {isEditMode ? 'Back to Profile' : 'Back to Applicants'}
           </button>
           <div className="flex items-center space-x-3">
-            <SparklesIcon className="h-8 w-8 text-white" />
-            <h1 className="text-3xl font-bold text-white">Register New Applicant</h1>
+            {isEditMode ? (
+              <PencilIcon className="h-8 w-8 text-white" />
+            ) : (
+              <SparklesIcon className="h-8 w-8 text-white" />
+            )}
+            <h1 className="text-3xl font-bold text-white">
+              {isEditMode ? 'Edit Applicant' : 'Register New Applicant'}
+            </h1>
           </div>
           <p className="mt-2 text-indigo-100">
-            Complete all steps to register a new applicant
+            {isEditMode 
+              ? 'Update applicant information across all sections'
+              : 'Complete all steps to register a new applicant'
+            }
           </p>
         </div>
       </div>
@@ -196,10 +264,10 @@ export const ApplicantRegistration = () => {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          Submitting...
+                          {isEditMode ? 'Updating...' : 'Submitting...'}
                         </span>
                       ) : (
-                        'Submit Registration'
+                        isEditMode ? 'Save Changes' : 'Submit Registration'
                       )}
                     </button>
                   ) : (

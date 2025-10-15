@@ -1,11 +1,24 @@
+import { useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { ApplicantRegistrationData } from '../../../types/applicant';
+import { useAgentStore } from '../../../stores/agentStore';
 
 export const PersonalInfoForm = () => {
   const {
     register,
+    watch,
     formState: { errors },
   } = useFormContext<ApplicantRegistrationData>();
+
+  // Fetch agents for the dropdown
+  const { agents, fetchActiveAgents } = useAgentStore();
+
+  useEffect(() => {
+    fetchActiveAgents();
+  }, [fetchActiveAgents]);
+
+  // Watch the applicationType field to conditionally show agent dropdown
+  const applicationType = watch('applicationType');
 
   return (
     <div className="space-y-6">
@@ -75,6 +88,50 @@ export const PersonalInfoForm = () => {
             )}
           </div>
         </div>
+
+        {/* Application Type */}
+        <div>
+          <label htmlFor="applicationType" className="block text-sm font-medium text-gray-700">
+            Application Type <span className="text-red-500">*</span>
+          </label>
+          <div className="mt-1">
+            <select
+              {...register('applicationType')}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+            >
+              <option value="direct_hire">Direct Hire</option>
+              <option value="with_agent">With Agent</option>
+            </select>
+            {errors.applicationType && (
+              <p className="mt-1 text-sm text-red-600">{errors.applicationType.message}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Agent Selection - Only show when "With Agent" is selected */}
+        {applicationType === 'with_agent' && (
+          <div>
+            <label htmlFor="agentId" className="block text-sm font-medium text-gray-700">
+              Select Agent <span className="text-red-500">*</span>
+            </label>
+            <div className="mt-1">
+              <select
+                {...register('agentId')}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              >
+                <option value="">-- Select an Agent --</option>
+                {agents.map(agent => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.agentName}
+                  </option>
+                ))}
+              </select>
+              {errors.agentId && (
+                <p className="mt-1 text-sm text-red-600">{errors.agentId.message}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         <div>
           <label htmlFor="placeOfBirth" className="block text-sm font-medium text-gray-700">

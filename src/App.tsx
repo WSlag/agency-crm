@@ -19,6 +19,7 @@ import { FinancialDashboard } from './pages/dashboard/FinancialDashboard';
 // Applicant Management
 import { ApplicantList } from './pages/applicants/ApplicantList';
 import { ApplicantProfile } from './pages/applicants/ApplicantProfile';
+import { ApplicantRegistration } from './pages/applicants/ApplicantRegistration';
 import { TransfersList } from './pages/applicants/TransfersList';
 import { TransferManagement } from './pages/applicants/TransferManagement';
 import { DocumentsDashboard } from './pages/applicants/DocumentsDashboard';
@@ -137,7 +138,9 @@ const App: React.FC = () => {
             }
           >
             <Route index element={<ApplicantList />} />
+            <Route path="new" element={<ApplicantRegistration />} />
             <Route path=":id" element={<ApplicantProfile />} />
+            <Route path=":id/edit" element={<ApplicantRegistration />} />
             <Route path="transfers" element={<TransfersList />} />
             <Route path="transfers/pending" element={<TransfersList />} />
             <Route path="transfers/active" element={<TransfersList />} />

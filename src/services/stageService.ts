@@ -83,8 +83,32 @@ class StageService {
    * Check if user can initiate stage transition
    */
   canInitiateTransition(user: User, fromStage: ApplicantStage, applicant: any): boolean {
-    // Use same logic as approval for now
-    return this.canApproveStage(user, fromStage, applicant);
+    // Admin can initiate any transition
+    if (user.role === 'admin') {
+      return true;
+    }
+    
+    // President can initiate any transition
+    if (user.role === 'president') {
+      return true;
+    }
+    
+    // Branch Manager can initiate transitions for applicants in their branch
+    if (user.role === 'branch_manager') {
+      return user.branchId === applicant.branchId;
+    }
+    
+    // HO Recruitment Officer can initiate transitions for assigned applicants
+    if (user.role === 'ho_recruitment_officer') {
+      return applicant.assignedRecruitmentOfficerId === user.uid;
+    }
+    
+    // HO Accountant can view but typically doesn't initiate transitions
+    if (user.role === 'ho_accountant') {
+      return false;
+    }
+    
+    return false;
   }
   
   /**

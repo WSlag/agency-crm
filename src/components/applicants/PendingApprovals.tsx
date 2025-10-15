@@ -25,7 +25,7 @@ interface PendingApprovalsProps {
 export const PendingApprovals: React.FC<PendingApprovalsProps> = ({ 
   className = '' 
 }) => {
-  const { user } = useAuth();
+  const { user, customClaims } = useAuth();
   const { 
     pendingApprovals, 
     fetchPendingApprovals, 
@@ -38,14 +38,26 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   
+  // Construct a proper User object with role from customClaims
+  const userWithRole = user && customClaims ? {
+    uid: user.uid,
+    email: user.email || '',
+    displayName: user.displayName || '',
+    role: customClaims.role as any,
+    branchId: customClaims.branchId || null,
+    status: 'active' as const,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  } : null;
+  
   useEffect(() => {
-    if (user) {
-      fetchPendingApprovals(user);
+    if (userWithRole) {
+      fetchPendingApprovals(userWithRole);
     }
-  }, [user]);
+  }, [user, customClaims]);
   
   const handleApprove = async (approval: any) => {
-    if (!user) return;
+    if (!userWithRole) return;
     
     if (!window.confirm(
       `Approve advancement to ${STAGE_LABELS[approval.toStage as ApplicantStage]} stage for ${approval.applicant.fullName}?`
@@ -61,10 +73,10 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
         {
           applicantId: approval.applicantId,
           stage: approval.toStage as ApplicantStage,
-          approvedBy: user.uid,
+          approvedBy: userWithRole.uid,
           approved: true
         },
-        user
+        userWithRole
       );
     } catch (err: any) {
       setError(err.message || 'Failed to approve stage');
@@ -74,7 +86,7 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
   };
   
   const handleReject = async (approval: any) => {
-    if (!user) return;
+    if (!userWithRole) return;
     
     if (!rejectionReason.trim()) {
       setError('Please provide a rejection reason');
@@ -89,11 +101,11 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
         {
           applicantId: approval.applicantId,
           stage: approval.toStage as ApplicantStage,
-          approvedBy: user.uid,
+          approvedBy: userWithRole.uid,
           approved: false,
           rejectionReason
         },
-        user
+        userWithRole
       );
       
       setSelectedApproval(null);

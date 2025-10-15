@@ -277,3 +277,23 @@ export interface StageHistory {
   rejectionReason?: string;
   notes?: string;
 }
+
+// Registration form data type - omits server-generated fields
+export type ApplicantRegistrationData = Omit<
+  Applicant,
+  | 'id'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'currentStageEnum'
+  | 'currentStatus'
+  | 'stageEnteredAt'
+  | 'stageCompletedAt'
+  | 'requiresApproval'
+  | 'approvedBy'
+  | 'approvedAt'
+  | 'rejectionReason'
+  | 'commissionMedicalTriggered'
+  | 'commissionMedicalTriggeredAt'
+  | 'commissionDeploymentTriggered'
+  | 'commissionDeploymentTriggeredAt'
+>;

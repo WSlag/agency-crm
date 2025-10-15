@@ -22,8 +22,8 @@ const workExperienceSchema = z.object({
   company: z.string().min(2, 'Company name is required'),
   position: z.string().min(2, 'Position is required'),
   location: z.string().min(2, 'Location is required'),
-  startDate: z.date(),
-  endDate: z.date().nullable(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date().nullable(),
   isOverseas: z.boolean(),
 });
 
@@ -34,7 +34,7 @@ const languageSchema = z.object({
 
 const medicalStatusSchema = z.object({
   examination: z.object({
-    date: z.date().nullable(),
+    date: z.coerce.date().nullable(),
     result: z.enum(['pending', 'passed', 'failed']).nullable(),
     facility: z.string(),
   }),
@@ -42,7 +42,7 @@ const medicalStatusSchema = z.object({
   allergies: z.array(z.string()),
   vaccinations: z.array(z.object({
     name: z.string(),
-    date: z.date(),
+    date: z.coerce.date(),
   })),
 });
 
@@ -55,8 +55,8 @@ const deploymentSchema = z.object({
     amount: z.number().nullable(),
     currency: z.string().nullable(),
   }),
-  startDate: z.date().nullable(),
-  endDate: z.date().nullable(),
+  startDate: z.coerce.date().nullable(),
+  endDate: z.coerce.date().nullable(),
   status: z.enum(['pending', 'processing', 'deployed', 'completed', 'cancelled']).nullable(),
 });
 
@@ -77,7 +77,7 @@ export const applicantRegistrationSchema = z.object({
   applicationType: z.enum(['with_agent', 'direct_hire']),
   
   // Personal Information
-  dateOfBirth: z.date(),
+  dateOfBirth: z.coerce.date(),
   placeOfBirth: z.string().min(2, 'Place of birth is required'),
   nationality: z.string().min(2, 'Nationality is required'),
   civilStatus: z.enum(['single', 'married', 'widowed', 'divorced']),
@@ -101,7 +101,19 @@ export const applicantRegistrationSchema = z.object({
   
   // Emergency Contact
   emergencyContact: emergencyContactSchema,
-});
+}).refine(
+  (data) => {
+    // If applicationType is 'with_agent', agentId must be provided
+    if (data.applicationType === 'with_agent') {
+      return data.agentId !== null && data.agentId !== '';
+    }
+    return true;
+  },
+  {
+    message: 'Agent is required when application type is "With Agent"',
+    path: ['agentId'],
+  }
+);
 
 // Transfer request schema
 export const transferRequestSchema = z.object({

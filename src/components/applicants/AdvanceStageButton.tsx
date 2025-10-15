@@ -31,13 +31,25 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
   onSuccess,
   className = ''
 }) => {
-  const { user } = useAuth();
+  const { user, customClaims } = useAuth();
   const { requestStageAdvancement, checkDocumentRequirements } = useStageStore();
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [docCheck, setDocCheck] = useState<any>(null);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
+  
+  // Construct a proper User object with role from customClaims
+  const userWithRole = user && customClaims ? {
+    uid: user.uid,
+    email: user.email || '',
+    displayName: user.displayName || '',
+    role: customClaims.role as any,
+    branchId: customClaims.branchId || null,
+    status: 'active' as const,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  } : null;
   
   // Convert current stage to enum
   const currentStage = (applicant.currentStageEnum || applicant.currentStage) as ApplicantStage;
@@ -53,8 +65,8 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
   }
   
   const handleCheckDocuments = async () => {
-    if (!user) {
-      setError('You must be logged in');
+    if (!userWithRole) {
+      setError('You must be logged in with proper role');
       return;
     }
     
@@ -73,8 +85,8 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
   };
   
   const handleAdvance = async () => {
-    if (!user) {
-      setError('You must be logged in');
+    if (!userWithRole) {
+      setError('You must be logged in with proper role');
       return;
     }
     
@@ -92,11 +104,11 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
           applicantId: applicant.id,
           fromStage: currentStage,
           toStage: nextStage,
-          initiatedBy: user.uid,
+          initiatedBy: userWithRole.uid,
           requiresApproval: true,
           notes
         },
-        user
+        userWithRole
       );
       
       setShowModal(false);
