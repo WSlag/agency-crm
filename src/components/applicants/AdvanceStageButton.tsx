@@ -56,16 +56,43 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
   const nextStages = VALID_STAGE_TRANSITIONS[currentStage];
   const nextStage = nextStages && nextStages.length > 0 ? nextStages[0] : null;
   
+  console.log('[AdvanceStageButton] Render check:', {
+    applicantId: applicant.id,
+    applicantName: applicant.fullName,
+    currentStage,
+    nextStage,
+    currentStatus: applicant.currentStatus,
+    status: applicant.status,
+    requiresApproval: applicant.requiresApproval,
+    rejectionReason: applicant.rejectionReason,
+    willShowButton: !(!nextStage || 
+      applicant.currentStatus === ApplicantStatus.PENDING_APPROVAL || 
+      applicant.currentStatus === 'pending_approval' ||
+      applicant.status === 'inactive')
+  });
+  
   // Don't show button if no next stage or already pending approval
   if (!nextStage || 
       applicant.currentStatus === ApplicantStatus.PENDING_APPROVAL || 
       applicant.currentStatus === 'pending_approval' ||
       applicant.status === 'inactive') {
+    console.log('[AdvanceStageButton] Button hidden - conditions not met');
     return null;
   }
   
   const handleCheckDocuments = async () => {
+    console.log('[AdvanceStageButton] Button clicked - checking documents', {
+      applicantId: applicant.id,
+      applicantName: applicant.fullName,
+      currentStage,
+      nextStage,
+      userWithRole: userWithRole ? { uid: userWithRole.uid, role: userWithRole.role } : null,
+      applicantStatus: applicant.status,
+      applicantCurrentStatus: applicant.currentStatus
+    });
+    
     if (!userWithRole) {
+      console.error('[AdvanceStageButton] No userWithRole - user not properly authenticated');
       setError('You must be logged in with proper role');
       return;
     }
@@ -74,10 +101,13 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
     setError(null);
     
     try {
+      console.log('[AdvanceStageButton] Checking document requirements...');
       const result = await checkDocumentRequirements(applicant.id, currentStage);
+      console.log('[AdvanceStageButton] Document check result:', result);
       setDocCheck(result);
       setShowModal(true);
     } catch (err: any) {
+      console.error('[AdvanceStageButton] Error checking documents:', err);
       setError(err.message || 'Failed to check documents');
     } finally {
       setLoading(false);
@@ -98,6 +128,15 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
     setLoading(true);
     setError(null);
     
+    console.log('[AdvanceStageButton] Submitting stage advancement:', {
+      applicantId: applicant.id,
+      applicantName: applicant.fullName,
+      fromStage: currentStage,
+      toStage: nextStage,
+      userRole: userWithRole.role,
+      notes
+    });
+    
     try {
       await requestStageAdvancement(
         {
@@ -111,10 +150,13 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
         userWithRole
       );
       
+      console.log('[AdvanceStageButton] Stage advancement request submitted successfully');
+      
       setShowModal(false);
       setNotes('');
       onSuccess?.();
     } catch (err: any) {
+      console.error('[AdvanceStageButton] Failed to submit stage advancement:', err);
       setError(err.message || 'Failed to advance stage');
     } finally {
       setLoading(false);

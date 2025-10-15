@@ -172,7 +172,7 @@
       "fields": [
         { "fieldPath": "applicantId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "uploadDate", "order": "DESCENDING" }
+        { "fieldPath": "uploadedAt", "order": "DESCENDING" }
       ]
     },
     {
@@ -180,8 +180,16 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "applicantId", "order": "ASCENDING" },
-        { "fieldPath": "documentType", "order": "ASCENDING" },
-        { "fieldPath": "uploadDate", "order": "DESCENDING" }
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "uploadedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "documents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "applicantId", "order": "ASCENDING" },
+        { "fieldPath": "uploadedAt", "order": "DESCENDING" }
       ]
     },
     {

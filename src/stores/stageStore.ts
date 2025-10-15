@@ -51,16 +51,25 @@ export const useStageStore = create<StageStore>((set, get) => ({
   requestStageAdvancement: async (transition: StageTransition, user: User) => {
     set({ loading: true, error: null });
     try {
+      console.log('[StageStore] Requesting stage advancement:', {
+        transition,
+        userRole: user.role
+      });
+      
       await stageService.requestStageAdvancement(transition, user);
+      
+      console.log('[StageStore] Stage advancement request created successfully');
       
       // Refresh pending approvals if user can approve stages
       if (['admin', 'president', 'branch_manager', 'ho_recruitment_officer'].includes(user.role)) {
+        console.log('[StageStore] User can approve stages, fetching pending approvals...');
         await get().fetchPendingApprovals(user);
       }
       
       set({ loading: false });
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to request stage advancement';
+      console.error('[StageStore] Error requesting stage advancement:', error);
       set({ loading: false, error: errorMessage });
       throw error;
     }
@@ -94,10 +103,26 @@ export const useStageStore = create<StageStore>((set, get) => ({
   fetchPendingApprovals: async (user: User) => {
     set({ loading: true, error: null });
     try {
+      console.log('[StageStore] Fetching pending approvals for user:', {
+        userId: user.uid,
+        userRole: user.role
+      });
+      
       const approvals = await stageService.getPendingApprovals(user);
+      
+      console.log('[StageStore] Fetched approvals:', {
+        count: approvals.length,
+        approvals: approvals.map(a => ({ 
+          id: a.id, 
+          applicant: a.applicant?.fullName, 
+          toStage: a.toStage 
+        }))
+      });
+      
       set({ pendingApprovals: approvals, loading: false });
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to fetch pending approvals';
+      console.error('[StageStore] Error fetching pending approvals:', error);
       set({ loading: false, error: errorMessage });
     }
   },

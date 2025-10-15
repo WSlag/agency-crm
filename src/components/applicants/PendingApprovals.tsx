@@ -5,12 +5,15 @@
  */
 
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   CheckCircleIcon, 
   XCircleIcon, 
   ClockIcon,
   UserIcon,
-  CalendarIcon
+  CalendarIcon,
+  ArrowPathIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import { useStageStore } from '../../stores/stageStore';
 import { useAuth } from '../../contexts/AuthContext';
@@ -54,7 +57,18 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
     if (userWithRole) {
       fetchPendingApprovals(userWithRole);
     }
-  }, [user, customClaims]);
+  }, [user, customClaims, fetchPendingApprovals]);
+  
+  // Auto-refresh approvals every 30 seconds
+  useEffect(() => {
+    if (!userWithRole) return;
+    
+    const interval = setInterval(() => {
+      fetchPendingApprovals(userWithRole);
+    }, 30000); // 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [userWithRole, fetchPendingApprovals]);
   
   const handleApprove = async (approval: any) => {
     if (!userWithRole) return;
@@ -78,6 +92,8 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
         },
         userWithRole
       );
+      // Refresh the list after approval
+      await fetchPendingApprovals(userWithRole);
     } catch (err: any) {
       setError(err.message || 'Failed to approve stage');
     } finally {
@@ -110,6 +126,8 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
       
       setSelectedApproval(null);
       setRejectionReason('');
+      // Refresh the list after rejection
+      await fetchPendingApprovals(userWithRole);
     } catch (err: any) {
       setError(err.message || 'Failed to reject stage');
     } finally {
@@ -144,6 +162,12 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
     );
   }
   
+  const handleRefresh = async () => {
+    if (userWithRole) {
+      await fetchPendingApprovals(userWithRole);
+    }
+  };
+  
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="flex items-center justify-between mb-4">
@@ -154,6 +178,15 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
             {pendingApprovals.length}
           </span>
         </h2>
+        <button
+          onClick={handleRefresh}
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          title="Refresh approvals"
+        >
+          <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
       </div>
       
       {error && (
@@ -218,23 +251,36 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
                   </div>
                 </div>
                 
-                <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    onClick={() => handleApprove(approval)}
-                    disabled={isProcessing}
-                    className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  {/* View Documents Button */}
+                  <Link
+                    to={`/applicants/${approval.applicantId}?tab=documents`}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
+                    title="View uploaded documents"
                   >
-                    <CheckCircleIcon className="w-4 h-4" />
-                    {isProcessing ? 'Processing...' : 'Approve'}
-                  </button>
-                  <button
-                    onClick={() => setSelectedApproval(approval)}
-                    disabled={isProcessing}
-                    className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <XCircleIcon className="w-4 h-4" />
-                    Reject
-                  </button>
+                    <DocumentTextIcon className="w-4 h-4" />
+                    View Documents
+                  </Link>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleApprove(approval)}
+                      disabled={isProcessing}
+                      className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <CheckCircleIcon className="w-4 h-4" />
+                      {isProcessing ? 'Processing...' : 'Approve'}
+                    </button>
+                    <button
+                      onClick={() => setSelectedApproval(approval)}
+                      disabled={isProcessing}
+                      className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <XCircleIcon className="w-4 h-4" />
+                      Reject
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

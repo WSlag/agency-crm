@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import { documentUploadSchema } from '../../../schemas/document';
 import { FileUpload } from './FileUpload';
 import { DOCUMENT_CONFIG, DocumentType } from '../../../types/document';
 import { useDocumentStore } from '../../../stores/documentStore';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface DocumentUploadFormProps {
   applicantId: string;
@@ -19,6 +21,7 @@ export const DocumentUploadForm = ({
   onSuccess,
   onCancel,
 }: DocumentUploadFormProps) => {
+  const { user } = useAuth();
   const { uploadDocument } = useDocumentStore();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,13 +31,16 @@ export const DocumentUploadForm = ({
     handleSubmit,
     formState: { errors },
     setValue,
-    watch,
   } = useForm({
     resolver: zodResolver(documentUploadSchema),
     defaultValues: {
       applicantId,
       documentType,
-      metadata: {},
+      metadata: {
+        issuedBy: '',
+        issuedAt: '',
+        documentNumber: '',
+      },
       tags: [],
       notes: '',
     },
@@ -53,22 +59,32 @@ export const DocumentUploadForm = ({
   };
 
   const onSubmit = async (data: any) => {
+    if (!selectedFile) {
+      console.error('No file selected');
+      return;
+    }
+    
+    if (!user) {
+      alert('You must be logged in to upload documents');
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
+      
       await uploadDocument({
         applicantId: data.applicantId,
         documentType: data.documentType,
-        file: data.file,
+        file: selectedFile,
         metadata: {
           ...data.metadata,
-          issuedBy: data.issuedBy,
-          issuedAt: data.issuedAt,
-          documentNumber: data.documentNumber,
+          uploadedBy: user.uid,
         },
       });
       onSuccess?.();
     } catch (error) {
       console.error('Failed to upload document:', error);
+      alert(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -78,13 +94,10 @@ export const DocumentUploadForm = ({
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
         <h3 className="text-lg font-medium leading-6 text-gray-900">
-          Upload {config.name}
+          Upload {config.label}
         </h3>
         <p className="mt-1 text-sm text-gray-500">
-          Required for {config.stage} stage
-          {config.expiryPeriod
-            ? ` (expires after ${config.expiryPeriod / 30} months)`
-            : ''}
+          {config.description}
         </p>
       </div>
 
@@ -92,7 +105,7 @@ export const DocumentUploadForm = ({
         documentType={documentType}
         onFileSelect={handleFileSelect}
         onFileRemove={handleFileRemove}
-        error={errors.file?.message as string}
+        error={errors.file?.message}
       />
 
       <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
@@ -101,15 +114,19 @@ export const DocumentUploadForm = ({
             htmlFor="issuedBy"
             className="block text-sm font-medium text-gray-700"
           >
-            Issued By
+            Issued By <span className="text-red-600">*</span>
           </label>
           <div className="mt-1">
             <input
               type="text"
               {...register('metadata.issuedBy')}
+              required
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
             />
           </div>
+          {errors.metadata?.issuedBy && (
+            <p className="mt-1 text-sm text-red-600">{errors.metadata.issuedBy.message as string}</p>
+          )}
         </div>
 
         <div>
@@ -117,15 +134,19 @@ export const DocumentUploadForm = ({
             htmlFor="issuedAt"
             className="block text-sm font-medium text-gray-700"
           >
-            Issue Date
+            Issue Date <span className="text-red-600">*</span>
           </label>
           <div className="mt-1">
             <input
               type="date"
               {...register('metadata.issuedAt')}
+              required
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
             />
           </div>
+          {errors.metadata?.issuedAt && (
+            <p className="mt-1 text-sm text-red-600">{errors.metadata.issuedAt.message as string}</p>
+          )}
         </div>
 
         <div>
@@ -133,31 +154,63 @@ export const DocumentUploadForm = ({
             htmlFor="documentNumber"
             className="block text-sm font-medium text-gray-700"
           >
-            Document Number
+            Document Number <span className="text-red-600">*</span>
           </label>
           <div className="mt-1">
             <input
               type="text"
               {...register('metadata.documentNumber')}
+              required
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
             />
           </div>
+          {errors.metadata?.documentNumber && (
+            <p className="mt-1 text-sm text-red-600">{errors.metadata.documentNumber.message as string}</p>
+          )}
         </div>
 
-        {config.expiryPeriod && (
+        {config.expiryEnabled && (
           <div>
             <label
               htmlFor="expiryDate"
               className="block text-sm font-medium text-gray-700"
             >
-              Expiry Date
+              Expiry Date <span className="text-red-600">*</span>
             </label>
             <div className="mt-1">
               <input
                 type="date"
                 {...register('expiryDate')}
+                required
+                min={new Date().toISOString().split('T')[0]}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
               />
+            </div>
+            {errors.expiryDate && (
+              <p className="mt-1 text-sm text-red-600">{errors.expiryDate.message as string}</p>
+            )}
+            <p className="mt-1 text-xs text-gray-500">
+              📅 You'll receive notifications 30 days before expiry
+            </p>
+          </div>
+        )}
+
+        {!config.expiryEnabled && documentType === 'owwa' && (
+          <div className="sm:col-span-2">
+            <div className="rounded-md bg-blue-50 p-3">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <CheckCircleIcon className="h-5 w-5 text-blue-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-blue-800">
+                    OWWA Certificate does not expire
+                  </p>
+                  <p className="mt-1 text-xs text-blue-700">
+                    No expiry date required for this document type
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}

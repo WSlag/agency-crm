@@ -14,34 +14,15 @@ const validateFileType = (file: File, allowedTypes: string[]) => {
 // Document upload schema
 export const documentUploadSchema = z.object({
   applicantId: z.string().min(1, 'Applicant ID is required'),
-  documentType: z.enum(Object.keys(DOCUMENT_CONFIG) as [DocumentType, ...DocumentType[]]),
-  file: z
-    .instanceof(File)
-    .refine(
-      (file) => {
-        const config = DOCUMENT_CONFIG[file.name as DocumentType];
-        return validateFileSize(file, config.maxFileSize);
-      },
-      (file) => ({
-        message: `File size must be less than ${
-          DOCUMENT_CONFIG[file.name as DocumentType].maxFileSize / (1024 * 1024)
-        }MB`,
-      })
-    )
-    .refine(
-      (file) => {
-        const config = DOCUMENT_CONFIG[file.name as DocumentType];
-        return validateFileType(file, config.allowedTypes);
-      },
-      (file) => ({
-        message: `File type must be one of: ${
-          DOCUMENT_CONFIG[file.name as DocumentType].allowedTypes.join(', ')
-        }`,
-      })
-    ),
-  expiryDate: z.date().optional().nullable(),
-  metadata: z.record(z.any()).optional(),
-  tags: z.array(z.string()).optional(),
+  documentType: z.string(),
+  file: z.instanceof(File).optional(),
+  expiryDate: z.union([z.date(), z.string()]).optional().nullable(),
+  metadata: z.object({
+    issuedBy: z.string().min(1, 'Issued by is required'),
+    issuedAt: z.string().min(1, 'Issue date is required'),
+    documentNumber: z.string().min(1, 'Document number is required'),
+  }).passthrough(),
+  tags: z.union([z.array(z.string()), z.string()]).optional(),
   notes: z.string().optional(),
 });
 

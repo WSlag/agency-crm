@@ -45,21 +45,7 @@ export const navigation: NavigationItem[] = [
     name: 'Applicants',
     href: '/applicants',
     icon: DocumentTextIcon,
-    roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager'],
-    children: [
-      {
-        name: 'All Applicants',
-        href: '/applicants',
-        icon: ClipboardDocumentListIcon,
-        roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
-      },
-      {
-        name: 'Documents',
-        href: '/applicants/documents',
-        icon: DocumentDuplicateIcon,
-        roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
-      }
-    ]
+    roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
   },
   {
     name: 'Officers',

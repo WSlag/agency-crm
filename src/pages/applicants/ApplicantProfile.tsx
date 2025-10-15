@@ -136,6 +136,7 @@ export const ApplicantProfile = () => {
               status={selectedApplicant.currentStatus || selectedApplicant.status}
               commissionMedicalTriggered={selectedApplicant.commissionMedicalTriggered}
               commissionDeploymentTriggered={selectedApplicant.commissionDeploymentTriggered}
+              rejectionReason={selectedApplicant.rejectionReason}
             />
             
             {/* Stage Actions */}

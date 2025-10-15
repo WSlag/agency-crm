@@ -22,6 +22,7 @@ interface StageProgressProps {
   status?: ApplicantStatus | string;
   commissionMedicalTriggered?: boolean;
   commissionDeploymentTriggered?: boolean;
+  rejectionReason?: string;
   className?: string;
 }
 
@@ -30,6 +31,7 @@ export const StageProgress: React.FC<StageProgressProps> = ({
   status = 'active',
   commissionMedicalTriggered = false,
   commissionDeploymentTriggered = false,
+  rejectionReason,
   className = ''
 }) => {
   const STAGE_ORDER = getAllStagesInOrder();
@@ -88,10 +90,10 @@ export const StageProgress: React.FC<StageProgressProps> = ({
                 {getStageIcon(stage, index)}
                 
                 {/* Commission badges */}
-                {stage === ApplicantStage.MEDICAL && commissionMedicalTriggered && (
+                {stage === ApplicantStage.TRANSFER && commissionMedicalTriggered && (
                   <span 
                     className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center"
-                    title="Commission triggered"
+                    title="1st Commission triggered"
                   >
                     💰
                   </span>
@@ -99,7 +101,7 @@ export const StageProgress: React.FC<StageProgressProps> = ({
                 {stage === ApplicantStage.DEPLOYED && commissionDeploymentTriggered && (
                   <span 
                     className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center"
-                    title="Commission triggered"
+                    title="2nd Commission triggered"
                   >
                     💰
                   </span>
@@ -137,10 +139,19 @@ export const StageProgress: React.FC<StageProgressProps> = ({
       
       {(status === 'rejected' || status === ApplicantStatus.REJECTED) && (
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800 flex items-center gap-2">
-            <XCircleIcon className="w-5 h-5" />
-            Stage advancement was rejected
-          </p>
+          <div className="flex items-start gap-2">
+            <XCircleIcon className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-800">
+                Stage advancement was rejected
+              </p>
+              {rejectionReason && (
+                <p className="text-sm text-red-700 mt-1">
+                  <span className="font-medium">Reason:</span> {rejectionReason}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       )}
       

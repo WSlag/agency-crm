@@ -122,6 +122,7 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
         { label: 'Add User', icon: UserPlusIcon, href: '/users/new', color: 'from-blue-500 to-blue-600' },
         { label: 'Add Branch', icon: PlusIcon, href: '/branches/new', color: 'from-green-500 to-green-600' },
         { label: 'Manage Agents', icon: UsersIcon, href: '/agents', color: 'from-teal-500 to-teal-600' },
+        { label: 'Documents', icon: DocumentDuplicateIcon, href: '/applicants/documents', color: 'from-emerald-500 to-emerald-600' },
         { label: 'Job Postings', icon: BriefcaseIcon, href: '/jobs', color: 'from-cyan-500 to-cyan-600' },
         { label: 'View Transfers', icon: ArrowsRightLeftIcon, href: '/applicants/transfers', color: 'from-purple-500 to-purple-600' },
         { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-indigo-500 to-indigo-600' },
@@ -129,6 +130,7 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
       ],
       president: [
         { label: 'View Agents', icon: UsersIcon, href: '/agents', color: 'from-teal-500 to-teal-600' },
+        { label: 'Documents', icon: DocumentDuplicateIcon, href: '/applicants/documents', color: 'from-emerald-500 to-emerald-600' },
         { label: 'Job Postings', icon: BriefcaseIcon, href: '/jobs', color: 'from-cyan-500 to-cyan-600' },
         { label: 'View Transfers', icon: ArrowsRightLeftIcon, href: '/applicants/transfers', color: 'from-purple-500 to-purple-600' },
         { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-indigo-500 to-indigo-600' },
@@ -139,6 +141,7 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
       branch_manager: [
         { label: 'New Applicant', icon: UserPlusIcon, href: '/applicants/register', color: 'from-indigo-500 to-indigo-600' },
         { label: 'My Agents', icon: UsersIcon, href: '/agents', color: 'from-teal-500 to-teal-600' },
+        { label: 'Documents', icon: DocumentDuplicateIcon, href: '/applicants/documents', color: 'from-emerald-500 to-emerald-600' },
         { label: 'Available Jobs', icon: BriefcaseIcon, href: '/jobs', color: 'from-cyan-500 to-cyan-600' },
         { label: 'Submit Expense', icon: CurrencyDollarIcon, href: '/expenses/new', color: 'from-green-500 to-green-600' },
         { label: 'View Pipeline', icon: ArrowPathIcon, href: '/applicants', color: 'from-purple-500 to-purple-600' },

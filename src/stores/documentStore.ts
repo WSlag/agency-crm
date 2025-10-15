@@ -83,7 +83,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   error: null,
   filter: {},
   sort: {
-    field: 'uploadDate',
+    field: 'uploadedAt',
     direction: 'desc',
   },
   pagination: {
@@ -101,32 +101,37 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       set({ loading: true, error: null });
       const { filter, sort, pagination } = get();
 
-      let q = collection(firestore, 'documents');
+      let queryConstraints: any[] = [];
 
       // Apply filters
       if (filter.applicantId) {
-        q = query(q, where('applicantId', '==', filter.applicantId));
+        queryConstraints.push(where('applicantId', '==', filter.applicantId));
       }
       if (filter.documentType) {
-        q = query(q, where('documentType', '==', filter.documentType));
+        queryConstraints.push(where('type', '==', filter.documentType)); // Changed from 'documentType' to 'type'
       }
       if (filter.status) {
-        q = query(q, where('status', '==', filter.status));
+        queryConstraints.push(where('status', '==', filter.status));
       }
       if (filter.verifiedBy) {
-        q = query(q, where('verifiedBy', '==', filter.verifiedBy));
+        queryConstraints.push(where('verifiedBy', '==', filter.verifiedBy));
       }
 
-      // Apply sorting
-      q = query(q, orderBy(sort.field, sort.direction));
+      // Apply sorting if we have documents or no filters
+      if (sort.field && sort.direction) {
+        queryConstraints.push(orderBy(sort.field, sort.direction));
+      }
 
       // Apply pagination
-      q = query(q, limit(pagination.limit));
+      queryConstraints.push(limit(pagination.limit));
       if (pagination.page > 1 && get().documents.length > 0) {
         const lastDoc = get().documents[get().documents.length - 1];
-        q = query(q, startAfter(lastDoc[sort.field]));
+        if (lastDoc[sort.field]) {
+          queryConstraints.push(startAfter(lastDoc[sort.field]));
+        }
       }
 
+      const q = query(collection(firestore, 'documents'), ...queryConstraints);
       const snapshot = await getDocs(q);
       const documents = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -135,6 +140,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
       set({ documents, loading: false });
     } catch (error) {
+      console.error('Error fetching documents:', error);
       set({
         error: error instanceof Error ? error.message : 'Failed to fetch documents',
         loading: false,
@@ -187,46 +193,26 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       
       const documentData = {
         applicantId,
-        documentType,
-        documentStage: config.stage,
+        type: documentType,
         fileUrl,
         fileName: file.name,
         fileSize: file.size,
-        fileType: file.type,
-        uploadDate: timestamp,
-        expiryDate: config.expiryPeriod
-          ? new Date(Date.now() + config.expiryPeriod * 24 * 60 * 60 * 1000)
-          : null,
+        mimeType: file.type,
+        uploadedBy: metadata.uploadedBy || 'system',
+        uploadedAt: timestamp,
+        status: 'pending' as const,
+        expiryDate: config.expiryEnabled ? null : null, // Can be set later
         verifiedBy: null,
         verifiedAt: null,
-        status: 'pending',
-        version: 1,
         metadata: {
           ...metadata,
-          pageCount: null,
-          issuedBy: null,
-          issuedAt: null,
-          documentNumber: null,
         },
-        tags: [],
-        notes: '',
-        createdAt: timestamp,
-        updatedAt: timestamp,
       };
 
       await setDoc(docRef, documentData);
 
-      // Create history record
-      await setDoc(doc(collection(firestore, 'document_history')), {
-        documentId: docRef.id,
-        action: 'created',
-        performedBy: 'system',
-        performedAt: timestamp,
-        details: {
-          newStatus: 'pending',
-          newVersion: 1,
-        },
-      });
+      // Refresh documents list
+      await get().fetchDocuments();
 
       return docRef.id;
     } catch (error) {

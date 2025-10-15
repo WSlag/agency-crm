@@ -1,24 +1,48 @@
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tab } from '@headlessui/react';
 import { Applicant } from '../../../types/applicant';
 import { CommunicationHistory } from '../CommunicationHistory';
+import { DocumentsTab } from './DocumentsTab';
 
 interface ProfileDetailsProps {
   applicant: Applicant;
 }
 
 export const ProfileDetails = ({ applicant }: ProfileDetailsProps) => {
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  
   const tabs = [
-    { name: 'Personal Info', content: <PersonalInfo applicant={applicant} /> },
-    { name: 'Job Preferences', content: <JobPreferences applicant={applicant} /> },
-    { name: 'Education & Experience', content: <EducationExperience applicant={applicant} /> },
-    { name: 'Medical Info', content: <MedicalInfo applicant={applicant} /> },
-    { name: 'Emergency Contact', content: <EmergencyContact applicant={applicant} /> },
-    { name: 'Communications', content: <CommunicationHistory applicantId={applicant.id} /> },
+    { name: 'Personal Info', key: 'personal', content: <PersonalInfo applicant={applicant} /> },
+    { name: 'Job Preferences', key: 'job', content: <JobPreferences applicant={applicant} /> },
+    { name: 'Education & Experience', key: 'education', content: <EducationExperience applicant={applicant} /> },
+    { name: 'Medical Info', key: 'medical', content: <MedicalInfo applicant={applicant} /> },
+    { name: 'Emergency Contact', key: 'emergency', content: <EmergencyContact applicant={applicant} /> },
+    { name: 'Documents', key: 'documents', content: <DocumentsTab applicant={applicant} /> },
+    { name: 'Communications', key: 'communications', content: <CommunicationHistory applicantId={applicant.id} /> },
   ];
+  
+  // Find the initial tab index based on URL parameter
+  const getInitialTabIndex = () => {
+    if (tabParam) {
+      const index = tabs.findIndex(tab => tab.key === tabParam);
+      return index !== -1 ? index : 0;
+    }
+    return 0;
+  };
+  
+  const [selectedIndex, setSelectedIndex] = useState(getInitialTabIndex());
+  
+  // Update selected tab when URL parameter changes
+  useEffect(() => {
+    const newIndex = getInitialTabIndex();
+    setSelectedIndex(newIndex);
+  }, [tabParam]);
 
   return (
     <div className="mt-8">
-      <Tab.Group>
+      <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
         <Tab.List className="border-b border-gray-200">
           <div className="-mb-px flex space-x-8">
             {tabs.map((tab) => (

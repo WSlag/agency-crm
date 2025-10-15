@@ -58,6 +58,21 @@ service firebase.storage {
     // APPLICANT DOCUMENTS
     // ==========================================
     
+    // New path structure: documents/{applicantId}/{documentType}/{fileName}
+    match /documents/{applicantId}/{documentType}/{fileName} {
+      allow read: if isAuthenticated();
+      
+      allow write: if isAuthenticated() &&
+        isValidFileSize(10) &&
+        isValidDocumentType() &&
+        (isAdmin() ||
+         isHORecruitmentOfficer() ||
+         isBranchManager());
+      
+      allow delete: if isAdmin();
+    }
+    
+    // Also support simpler path for backward compatibility
     match /documents/{applicantId}/{documentId} {
       allow read: if isAuthenticated();
       

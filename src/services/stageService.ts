@@ -133,37 +133,45 @@ class StageService {
       return { complete: true, missing: [] };
     }
     
-    // Get all verified documents for this applicant
+    // Get all uploaded documents for this applicant (pending or verified)
     const docsRef = collection(firestore, 'documents');
     const q = query(
       docsRef,
-      where('applicantId', '==', applicantId),
-      where('status', '==', 'verified')
+      where('applicantId', '==', applicantId)
     );
     const snapshot = await getDocs(q);
-    const verifiedDocs = snapshot.docs.map(doc => {
+    const uploadedDocs = snapshot.docs.map(doc => {
       const data = doc.data();
-      return data.type || data.documentType; // Handle both new and legacy field names
+      return {
+        type: data.type || data.documentType, // Handle both new and legacy field names
+        status: data.status
+      };
     });
+    
+    // Extract just the types of uploaded documents (verified or pending)
+    const verifiedDocs = uploadedDocs
+      .filter(doc => doc.status === 'verified' || doc.status === 'pending')
+      .map(doc => doc.type);
     
     // Check each requirement
     for (const req of stageConfig.documents) {
-      if (req.required || !req.alternatives || req.alternatives.length === 0) {
-        // Required document - must have main document
-        const hasRequired = verifiedDocs.includes(req.type);
-        
-        if (!hasRequired) {
-          // Check alternatives if available
-          if (req.alternatives && req.alternatives.length > 0) {
-            const hasAlternative = req.alternatives.some(alt => 
-              verifiedDocs.includes(alt)
-            );
-            if (!hasAlternative) {
-              missing.push(req.description);
-            }
-          } else {
+      // Check if the main document type is present
+      const hasMainDoc = verifiedDocs.includes(req.type);
+      
+      if (!hasMainDoc) {
+        // If main document is missing, check alternatives
+        if (req.alternatives && req.alternatives.length > 0) {
+          const hasAlternative = req.alternatives.some(alt => 
+            verifiedDocs.includes(alt)
+          );
+          
+          // If no alternative is found, this requirement is not met
+          if (!hasAlternative) {
             missing.push(req.description);
           }
+        } else if (req.required) {
+          // No alternatives and it's required - it's missing
+          missing.push(req.description);
         }
       }
     }
@@ -236,7 +244,10 @@ class StageService {
     // Update applicant status
     const updateData: any = {
       requiresApproval: transition.requiresApproval,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
+      rejectionReason: null, // Clear any previous rejection
+      approvedBy: null,
+      approvedAt: null
     };
     
     if (transition.requiresApproval) {
@@ -244,6 +255,14 @@ class StageService {
     } else {
       updateData.currentStatus = ApplicantStatus.ACTIVE;
     }
+    
+    console.log('[StageService] Creating stage advancement request:', {
+      applicantId: transition.applicantId,
+      fromStage: transition.fromStage,
+      toStage: transition.toStage,
+      historyId: historyDoc.id,
+      requiresApproval: transition.requiresApproval
+    });
     
     await updateDoc(applicantRef, updateData);
     
@@ -301,6 +320,7 @@ class StageService {
     }
     
     const historyDoc = snapshot.docs[0];
+    const historyData = historyDoc.data();
     
     // Update stage history
     await updateDoc(doc(firestore, 'stage_history', historyDoc.id), {
@@ -311,6 +331,13 @@ class StageService {
     });
     
     if (approval.approved) {
+      // Auto-verify documents for the FROM stage (the stage they just completed)
+      await this.autoVerifyStageDocuments(
+        approval.applicantId,
+        historyData.fromStage as ApplicantStage,
+        user.uid
+      );
+      
       // Advance to next stage
       await this.advanceStage(
         approval.applicantId,
@@ -344,6 +371,68 @@ class StageService {
         'stage_advancement_rejected'
       );
     }
+  }
+  
+  /**
+   * Auto-verify documents for a completed stage
+   */
+  private async autoVerifyStageDocuments(
+    applicantId: string,
+    stage: ApplicantStage,
+    verifiedBy: string
+  ): Promise<void> {
+    const stageConfig = STAGE_CONFIGURATION[stage];
+    
+    // If no documents required for this stage, return
+    if (!stageConfig.documents || stageConfig.documents.length === 0) {
+      return;
+    }
+    
+    console.log(`[StageService] Auto-verifying documents for stage: ${stage}`);
+    
+    // Get all pending documents for this applicant
+    const docsRef = collection(firestore, 'documents');
+    const q = query(
+      docsRef,
+      where('applicantId', '==', applicantId),
+      where('status', '==', 'pending')
+    );
+    
+    const snapshot = await getDocs(q);
+    
+    // Build a list of document types that are required for this stage
+    const requiredTypes: string[] = [];
+    for (const req of stageConfig.documents) {
+      requiredTypes.push(req.type);
+      if (req.alternatives) {
+        requiredTypes.push(...req.alternatives);
+      }
+    }
+    
+    console.log(`[StageService] Required document types:`, requiredTypes);
+    
+    // Auto-verify matching documents
+    const verifyPromises = snapshot.docs
+      .filter(docSnap => {
+        const data = docSnap.data();
+        const docType = data.type || data.documentType;
+        return requiredTypes.includes(docType);
+      })
+      .map(async (docSnap) => {
+        const data = docSnap.data();
+        console.log(`[StageService] Auto-verifying document:`, docSnap.id, data.type || data.documentType);
+        
+        await updateDoc(doc(firestore, 'documents', docSnap.id), {
+          status: 'verified',
+          verifiedBy,
+          verifiedAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        });
+      });
+    
+    await Promise.all(verifyPromises);
+    
+    console.log(`[StageService] Auto-verified ${verifyPromises.length} document(s)`);
   }
   
   /**
@@ -577,10 +666,23 @@ class StageService {
     const q = query(historyRef, where('status', '==', 'pending'));
     const snapshot = await getDocs(q);
     
+    console.log('[StageService] getPendingApprovals:', {
+      userId: user.uid,
+      userRole: user.role,
+      totalPendingInDB: snapshot.size
+    });
+    
     const approvals = [];
     
     for (const historyDoc of snapshot.docs) {
       const data = historyDoc.data();
+      
+      console.log('[StageService] Checking pending approval:', {
+        id: historyDoc.id,
+        applicantId: data.applicantId,
+        toStage: data.toStage,
+        status: data.status
+      });
       
       // Get applicant details
       const applicantRef = doc(firestore, 'applicants', data.applicantId);
@@ -590,7 +692,16 @@ class StageService {
         const applicant = { id: applicantSnap.id, ...applicantSnap.data() };
         
         // Check if user can approve
-        if (this.canApproveStage(user, data.toStage as ApplicantStage, applicant)) {
+        const canApprove = this.canApproveStage(user, data.toStage as ApplicantStage, applicant);
+        
+        console.log('[StageService] Can user approve?', {
+          historyId: historyDoc.id,
+          toStage: data.toStage,
+          userRole: user.role,
+          canApprove
+        });
+        
+        if (canApprove) {
           approvals.push({
             id: historyDoc.id,
             ...data,
@@ -599,6 +710,11 @@ class StageService {
         }
       }
     }
+    
+    console.log('[StageService] Final approvals for user:', {
+      count: approvals.length,
+      approvals: approvals.map(a => ({ id: a.id, applicant: a.applicant.fullName, toStage: a.toStage }))
+    });
     
     return approvals;
   }

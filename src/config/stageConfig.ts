@@ -17,7 +17,7 @@ import {
 const INTERVIEW_DOCUMENTS: DocumentRequirement[] = [
   {
     type: DocumentType.PASSPORT,
-    required: false,
+    required: true, // At least one of these is required
     alternatives: [DocumentType.NBI_CLEARANCE, DocumentType.BARANGAY_CERT],
     description: 'Passport OR NBI Clearance OR Barangay Certificate'
   }
@@ -34,7 +34,7 @@ const MEDICAL_DOCUMENTS: DocumentRequirement[] = [
 const PROCESSING_DOCUMENTS: DocumentRequirement[] = [
   {
     type: DocumentType.TESDA_CERT,
-    required: false,
+    required: true, // At least one of these is required
     alternatives: [DocumentType.OWWA, DocumentType.EMPLOYMENT_CONTRACT],
     description: 'TESDA Certificate OR OWWA OR Employment Contract'
   }
