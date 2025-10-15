@@ -84,15 +84,50 @@ export const ApplicantRegistration = () => {
   // Pre-fill form with existing data
   useEffect(() => {
     if (isEditMode && selectedApplicant && selectedApplicant.id === id) {
-      methods.reset({
-        ...selectedApplicant,
-        // Ensure arrays are properly formatted
+      // Convert Firestore Timestamps to Dates and filter out server-generated fields
+      const formData: any = {
+        fullName: selectedApplicant.fullName,
+        contactInfo: selectedApplicant.contactInfo,
+        email: selectedApplicant.email,
+        agentId: selectedApplicant.agentId,
+        branchId: selectedApplicant.branchId,
+        assignedRecruitmentOfficerId: selectedApplicant.assignedRecruitmentOfficerId,
+        applicationType: selectedApplicant.applicationType,
+        currentStage: selectedApplicant.currentStage,
+        transferredToHO: selectedApplicant.transferredToHO,
+        transferredDate: selectedApplicant.transferredDate,
+        status: selectedApplicant.status,
+        
+        // Personal Information - convert dates
+        dateOfBirth: selectedApplicant.dateOfBirth instanceof Date 
+          ? selectedApplicant.dateOfBirth 
+          : selectedApplicant.dateOfBirth?.toDate?.() || new Date(selectedApplicant.dateOfBirth),
+        placeOfBirth: selectedApplicant.placeOfBirth,
+        nationality: selectedApplicant.nationality,
+        civilStatus: selectedApplicant.civilStatus,
+        gender: selectedApplicant.gender,
+        address: selectedApplicant.address,
+        
+        // Job Preferences
         preferredCountries: selectedApplicant.preferredCountries || [''],
         preferredPositions: selectedApplicant.preferredPositions || [''],
+        expectedSalary: selectedApplicant.expectedSalary,
+        
+        // Skills and Qualifications
+        education: selectedApplicant.education || [],
+        workExperience: selectedApplicant.workExperience || [],
         skills: selectedApplicant.skills || [],
         certifications: selectedApplicant.certifications || [],
         languages: selectedApplicant.languages || [],
-      });
+        
+        // Medical Information
+        medicalStatus: selectedApplicant.medicalStatus,
+        
+        // Emergency Contact
+        emergencyContact: selectedApplicant.emergencyContact,
+      };
+      
+      methods.reset(formData);
     }
   }, [isEditMode, selectedApplicant, id, methods]);
 
@@ -133,15 +168,20 @@ export const ApplicantRegistration = () => {
       setIsSubmitting(true);
       if (isEditMode && id) {
         // Update existing applicant
+        console.log('Updating applicant with data:', data);
         await updateApplicant(id, data);
+        console.log('Update successful, navigating to profile');
         navigate(`/applicants/${id}`);
       } else {
         // Create new applicant
+        console.log('Creating applicant with data:', data);
         const applicantId = await createApplicant(data);
+        console.log('Creation successful, navigating to profile');
         navigate(`/applicants/${applicantId}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to ${isEditMode ? 'update' : 'create'} applicant:`, error);
+      alert(`Error: ${error.message || 'Failed to save applicant. Please try again.'}`);
     } finally {
       setIsSubmitting(false);
     }

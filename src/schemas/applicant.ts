@@ -7,7 +7,7 @@ const addressSchema = z.object({
 });
 
 const salarySchema = z.object({
-  amount: z.number().min(0, 'Salary amount must be positive'),
+  amount: z.coerce.number().min(0, 'Salary amount must be positive'),
   currency: z.string().min(3, 'Currency code must be at least 3 characters'),
 });
 
@@ -15,7 +15,7 @@ const educationSchema = z.object({
   level: z.string().min(2, 'Education level is required'),
   course: z.string().min(2, 'Course name is required'),
   school: z.string().min(2, 'School name is required'),
-  yearCompleted: z.number().min(1900).max(new Date().getFullYear()),
+  yearCompleted: z.coerce.number().min(1900).max(new Date().getFullYear()),
 });
 
 const workExperienceSchema = z.object({
@@ -50,9 +50,9 @@ const deploymentSchema = z.object({
   employer: z.string().nullable(),
   position: z.string().nullable(),
   country: z.string().nullable(),
-  contractPeriod: z.number().nullable(),
+  contractPeriod: z.coerce.number().nullable(),
   salary: z.object({
-    amount: z.number().nullable(),
+    amount: z.coerce.number().nullable(),
     currency: z.string().nullable(),
   }),
   startDate: z.coerce.date().nullable(),

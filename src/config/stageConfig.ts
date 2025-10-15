@@ -77,7 +77,6 @@ export const STAGE_CONFIGURATION: Record<ApplicantStage, StageRequirement> = {
     stage: ApplicantStage.MEDICAL,
     documents: MEDICAL_DOCUMENTS,
     approvers: ['admin', 'branch_manager'],
-    commissionTrigger: 'medical',
     autoAdvance: false
   },
   
@@ -85,6 +84,7 @@ export const STAGE_CONFIGURATION: Record<ApplicantStage, StageRequirement> = {
     stage: ApplicantStage.TRANSFER,
     documents: [],
     approvers: ['admin', 'president'],
+    commissionTrigger: 'medical', // 1st commission trigger - when transferred to HO
     autoAdvance: false // Requires Admin/President approval and officer assignment
   },
   
@@ -179,8 +179,8 @@ export const STAGE_LABELS: Record<ApplicantStage, string> = {
 export const STAGE_DESCRIPTIONS: Record<ApplicantStage, string> = {
   [ApplicantStage.REGISTRATION]: 'Initial applicant registration with agent or direct hire',
   [ApplicantStage.INTERVIEW]: 'Interview stage with identification document verification',
-  [ApplicantStage.MEDICAL]: 'Medical examination and certificate verification (1st commission trigger)',
-  [ApplicantStage.TRANSFER]: 'Transfer from Branch to Head Office',
+  [ApplicantStage.MEDICAL]: 'Medical examination and certificate verification',
+  [ApplicantStage.TRANSFER]: 'Transfer from Branch to Head Office (1st commission trigger)',
   [ApplicantStage.PROCESSING]: 'Processing stage with certificates and contract verification',
   [ApplicantStage.DEPLOYMENT]: 'Final deployment preparation with PDOS and plane ticket',
   [ApplicantStage.DEPLOYED]: 'Successfully deployed (2nd commission trigger)'
