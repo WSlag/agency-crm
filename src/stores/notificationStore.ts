@@ -97,7 +97,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      let q = collection(db, 'notifications');
+      let q = collection(firestore, 'notifications');
 
       // Apply filters
       q = query(q, where('recipientId', '==', user.uid));
@@ -129,10 +129,15 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       }
 
       const snapshot = await getDocs(q);
-      const notifications = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Notification[];
+      const notifications = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+          readAt: data.readAt?.toDate ? data.readAt.toDate() : data.readAt ? new Date(data.readAt) : undefined,
+        };
+      }) as Notification[];
 
       set({ notifications, loading: false });
     } catch (error) {
@@ -146,14 +151,17 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   fetchNotificationById: async (id) => {
     try {
       set({ loading: true, error: null });
-      const docRef = doc(db, 'notifications', id);
+      const docRef = doc(firestore, 'notifications', id);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
+        const data = docSnap.data();
         set({
           selectedNotification: {
             id: docSnap.id,
-            ...docSnap.data(),
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+            readAt: data.readAt?.toDate ? data.readAt.toDate() : data.readAt ? new Date(data.readAt) : undefined,
           } as Notification,
           loading: false,
         });
@@ -176,7 +184,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
 
-      await updateDoc(doc(db, 'notifications', id), {
+      await updateDoc(doc(firestore, 'notifications', id), {
         status: 'read',
         readAt: timestamp,
       });
@@ -205,7 +213,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      const batch = db.batch();
+      const batch = firestore.batch();
       const timestamp = serverTimestamp();
 
       // Update all unread notifications
@@ -214,7 +222,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       );
 
       unreadNotifications.forEach((notification) => {
-        const docRef = doc(db, 'notifications', notification.id);
+        const docRef = doc(firestore, 'notifications', notification.id);
         batch.update(docRef, {
           status: 'read',
           readAt: timestamp,
@@ -243,7 +251,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
 
-      await updateDoc(doc(db, 'notifications', id), {
+      await updateDoc(doc(firestore, 'notifications', id), {
         status: 'archived',
         updatedAt: timestamp,
       });
@@ -264,7 +272,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   deleteNotification: async (id) => {
     try {
       set({ loading: true, error: null });
-      await deleteDoc(doc(db, 'notifications', id));
+      await deleteDoc(doc(firestore, 'notifications', id));
 
       // Update local state
       const notifications = get().notifications.filter((n) => n.id !== id);
@@ -288,7 +296,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      const docRef = doc(db, 'notification_preferences', user.uid);
+      const docRef = doc(firestore, 'notification_preferences', user.uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -341,7 +349,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       }
 
       const timestamp = serverTimestamp();
-      const docRef = doc(db, 'notification_preferences', user.uid);
+      const docRef = doc(firestore, 'notification_preferences', user.uid);
 
       await updateDoc(docRef, {
         ...preferences,
@@ -374,7 +382,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      const docRef = doc(db, 'push_subscriptions', user.uid);
+      const docRef = doc(firestore, 'push_subscriptions', user.uid);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
@@ -401,7 +409,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       }
 
       const timestamp = serverTimestamp();
-      const docRef = doc(db, 'push_subscriptions', user.uid);
+      const docRef = doc(firestore, 'push_subscriptions', user.uid);
 
       await setDoc(docRef, {
         ...subscription,
@@ -426,7 +434,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         throw new Error('User not authenticated');
       }
 
-      await deleteDoc(doc(db, 'push_subscriptions', user.uid));
+      await deleteDoc(doc(firestore, 'push_subscriptions', user.uid));
       set({ subscription: null });
     } catch (error) {
       set({
@@ -449,7 +457,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       // Get notification counts
       const q = query(
-        collection(db, 'notifications'),
+        collection(firestore, 'notifications'),
         where('recipientId', '==', user.uid)
       );
       const snapshot = await getDocs(q);

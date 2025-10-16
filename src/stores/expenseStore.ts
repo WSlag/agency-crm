@@ -123,10 +123,19 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       }
 
       const snapshot = await getDocs(q);
-      const expenses = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Expense[];
+      const expenses = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          expenseDate: data.expenseDate?.toDate ? data.expenseDate.toDate() : data.expenseDate ? new Date(data.expenseDate) : new Date(),
+          verifiedAt: data.verifiedAt?.toDate ? data.verifiedAt.toDate() : data.verifiedAt ? new Date(data.verifiedAt) : null,
+          approvedAt: data.approvedAt?.toDate ? data.approvedAt.toDate() : data.approvedAt ? new Date(data.approvedAt) : null,
+          paidAt: data.paidAt?.toDate ? data.paidAt.toDate() : data.paidAt ? new Date(data.paidAt) : null,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
+        };
+      }) as Expense[];
 
       set({ expenses, loading: false });
     } catch (error) {
@@ -144,10 +153,17 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
+        const data = docSnap.data();
         set({
           selectedExpense: {
             id: docSnap.id,
-            ...docSnap.data(),
+            ...data,
+            expenseDate: data.expenseDate?.toDate ? data.expenseDate.toDate() : data.expenseDate ? new Date(data.expenseDate) : new Date(),
+            verifiedAt: data.verifiedAt?.toDate ? data.verifiedAt.toDate() : data.verifiedAt ? new Date(data.verifiedAt) : null,
+            approvedAt: data.approvedAt?.toDate ? data.approvedAt.toDate() : data.approvedAt ? new Date(data.approvedAt) : null,
+            paidAt: data.paidAt?.toDate ? data.paidAt.toDate() : data.paidAt ? new Date(data.paidAt) : null,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
           } as Expense,
           loading: false,
         });

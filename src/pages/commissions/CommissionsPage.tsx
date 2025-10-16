@@ -65,11 +65,18 @@ export const CommissionsPage = () => {
 
   const formatDate = (date: Date) => {
     if (!date) return '—';
+    
+    // Create a Date object and check if it's valid
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return '—';
+    }
+    
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    }).format(new Date(date));
+    }).format(dateObj);
   };
 
   const getStatusBadgeColor = (status: Commission['status']) => {
@@ -380,13 +387,13 @@ export const CommissionsPage = () => {
                             {formatDate(commission.createdAt)}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
-                            {COMMISSION_CONFIG[commission.commissionType].name}
+                            {COMMISSION_CONFIG[commission.commissionType]?.name || commission.commissionType || 'Unknown'}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-gray-900">
-                            {formatCurrency(commission.amount, commission.currency)}
+                            {formatCurrency(commission.amount || 0, commission.currency || 'PHP')}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
-                            {commission.agentId}
+                            {commission.agentId || '—'}
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm">
                             <span
@@ -394,7 +401,7 @@ export const CommissionsPage = () => {
                                 commission.status
                               )} shadow-sm`}
                             >
-                              {commission.status.charAt(0).toUpperCase() + commission.status.slice(1)}
+                              {commission.status ? commission.status.charAt(0).toUpperCase() + commission.status.slice(1) : 'Unknown'}
                             </span>
                           </td>
                           <td className="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">

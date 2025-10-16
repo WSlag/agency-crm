@@ -131,10 +131,14 @@ export const useReportStore = create<ReportState>((set, get) => ({
       q = query(q, limit(pagination.limit));
 
       const snapshot = await getDocs(q);
-      const reports = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Report[];
+      const reports = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          generatedAt: data.generatedAt?.toDate ? data.generatedAt.toDate() : data.generatedAt ? new Date(data.generatedAt) : new Date(),
+        };
+      }) as Report[];
 
       set({ reports, loading: false });
     } catch (error) {
@@ -253,10 +257,15 @@ export const useReportStore = create<ReportState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const snapshot = await getDocs(collection(firestore, 'report_templates'));
-      const templates = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as ReportTemplate[];
+      const templates = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
+        };
+      }) as ReportTemplate[];
 
       set({ templates, loading: false });
     } catch (error) {
@@ -372,10 +381,17 @@ export const useReportStore = create<ReportState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const snapshot = await getDocs(collection(firestore, 'report_schedules'));
-      const schedules = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as ReportSchedule[];
+      const schedules = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          nextRunAt: data.nextRunAt?.toDate ? data.nextRunAt.toDate() : data.nextRunAt ? new Date(data.nextRunAt) : new Date(),
+          lastRunAt: data.lastRunAt?.toDate ? data.lastRunAt.toDate() : data.lastRunAt ? new Date(data.lastRunAt) : undefined,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
+        };
+      }) as ReportSchedule[];
 
       set({ schedules, loading: false });
     } catch (error) {

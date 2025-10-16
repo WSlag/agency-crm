@@ -133,10 +133,16 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
 
       const q = query(collection(firestore, 'documents'), ...queryConstraints);
       const snapshot = await getDocs(q);
-      const documents = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Document[];
+      const documents = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          uploadedAt: data.uploadedAt?.toDate ? data.uploadedAt.toDate() : data.uploadedAt ? new Date(data.uploadedAt) : new Date(),
+          verifiedAt: data.verifiedAt?.toDate ? data.verifiedAt.toDate() : data.verifiedAt ? new Date(data.verifiedAt) : undefined,
+          expiryDate: data.expiryDate?.toDate ? data.expiryDate.toDate() : data.expiryDate ? new Date(data.expiryDate) : undefined,
+        };
+      }) as Document[];
 
       set({ documents, loading: false });
     } catch (error) {
@@ -155,10 +161,14 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
+        const data = docSnap.data();
         set({
           selectedDocument: {
             id: docSnap.id,
-            ...docSnap.data(),
+            ...data,
+            uploadedAt: data.uploadedAt?.toDate ? data.uploadedAt.toDate() : data.uploadedAt ? new Date(data.uploadedAt) : new Date(),
+            verifiedAt: data.verifiedAt?.toDate ? data.verifiedAt.toDate() : data.verifiedAt ? new Date(data.verifiedAt) : undefined,
+            expiryDate: data.expiryDate?.toDate ? data.expiryDate.toDate() : data.expiryDate ? new Date(data.expiryDate) : undefined,
           } as Document,
           loading: false,
         });

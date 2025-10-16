@@ -202,10 +202,27 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       }
 
       const snapshot = await getDocs(q);
-      const commissions = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Commission[];
+      const commissions = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        
+        // Log any commissions with missing required fields
+        if (!data.commissionType || !data.status || data.amount === undefined) {
+          console.warn('Commission with missing fields:', {
+            id: doc.id,
+            commissionType: data.commissionType,
+            status: data.status,
+            amount: data.amount,
+            allData: data
+          });
+        }
+        
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : null,
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : null,
+        };
+      }) as Commission[];
 
       set({ commissions, loading: false });
     } catch (error) {
@@ -223,10 +240,13 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
+        const data = docSnap.data();
         set({
           selectedCommission: {
             id: docSnap.id,
-            ...docSnap.data(),
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : null,
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : null,
           } as Commission,
           loading: false,
         });

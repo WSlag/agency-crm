@@ -42,10 +42,15 @@ export const useBranchStore = create<BranchState>((set, get) => ({
       const branchesRef = collection(firestore, 'branches');
       const q = query(branchesRef);
       const snapshot = await getDocs(q);
-      const branches = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Branch[];
+      const branches = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
+        };
+      }) as Branch[];
       console.log('Branches fetched:', branches.length);
       set({ branches, loading: false });
     } catch (error) {
@@ -71,6 +76,8 @@ export const useBranchStore = create<BranchState>((set, get) => ({
           id: doc.id,
           name: data.name || data.branchName || 'Unknown Branch',
           ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
         };
       }) as Branch[];
       console.log('Active branches fetched:', branches);
@@ -93,10 +100,13 @@ export const useBranchStore = create<BranchState>((set, get) => ({
       const docRef = doc(firestore, 'branches', id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
+        const data = docSnap.data();
         set({
           selectedBranch: {
             id: docSnap.id,
-            ...docSnap.data(),
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
           } as Branch,
           loading: false,
         });

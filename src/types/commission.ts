@@ -5,11 +5,14 @@ export type CommissionStatus =
   | 'rejected'
   | 'paid';
 
+export type CommissionType = 'standard' | 'medical' | 'deployed';
+
 export interface Commission {
   id: string;
   agentId: string;
   applicantId: string;
   branchId: string;
+  commissionType: CommissionType;
   amount: number;
   currency: string;
   status: CommissionStatus;
@@ -22,6 +25,8 @@ export interface Commission {
   paidAt?: Date;
   notes?: string;
   metadata?: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CommissionRule {
@@ -39,8 +44,6 @@ export interface CommissionConfig {
   maxAmount?: number;
   rules: CommissionRule[];
 }
-
-export type CommissionType = 'standard' | 'medical' | 'deployed';
 
 export const COMMISSION_RULES: Record<string, CommissionRule> = {
   medical: {
