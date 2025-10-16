@@ -329,9 +329,39 @@ service cloud.firestore {
     
     match /commissions/{commissionId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isHOAccountant();
-      allow update: if isAdmin() || isHOAccountant();
+      allow create: if isAdmin() || isHOAccountant() || isBranchManager();
+      allow update: if isAdmin() || isHOAccountant() || isPresident();
       allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // COMMISSION VERIFICATIONS COLLECTION
+    // ==========================================
+    
+    match /commission_verifications/{verificationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHOAccountant() || isPresident();
+      allow update, delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // COMMISSION APPROVALS COLLECTION
+    // ==========================================
+    
+    match /commission_approvals/{approvalId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHOAccountant() || isPresident();
+      allow update, delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // COMMISSION PAYMENTS COLLECTION
+    // ==========================================
+    
+    match /commission_payments/{paymentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHOAccountant();
+      allow update, delete: if isAdmin();
     }
     
     // ==========================================

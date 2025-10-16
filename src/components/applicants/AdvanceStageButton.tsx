@@ -51,15 +51,17 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
     updatedAt: new Date()
   } : null;
   
-  // Convert current stage to enum
-  const currentStage = (applicant.currentStageEnum || applicant.currentStage) as ApplicantStage;
-  const nextStages = VALID_STAGE_TRANSITIONS[currentStage];
-  const nextStage = nextStages && nextStages.length > 0 ? nextStages[0] : null;
+  // Convert current stage to enum with fallback to REGISTRATION
+  const currentStage = (applicant.currentStageEnum || applicant.currentStage || ApplicantStage.REGISTRATION) as ApplicantStage;
+  const nextStages = VALID_STAGE_TRANSITIONS[currentStage] || [];
+  const nextStage = nextStages.length > 0 ? nextStages[0] : null;
   
   console.log('[AdvanceStageButton] Render check:', {
     applicantId: applicant.id,
     applicantName: applicant.fullName,
     currentStage,
+    currentStageFromApplicant: applicant.currentStageEnum || applicant.currentStage,
+    nextStages,
     nextStage,
     currentStatus: applicant.currentStatus,
     status: applicant.status,

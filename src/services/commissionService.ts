@@ -48,7 +48,7 @@ export class CommissionService {
     metadata: Record<string, any> = {}
   ): Promise<string> {
     try {
-      const docRef = await addDoc(collection(db, this.COLLECTION), {
+      const docRef = await addDoc(collection(firestore, this.COLLECTION), {
         agentId,
         applicantId,
         branchId,
@@ -72,7 +72,7 @@ export class CommissionService {
    */
   static async getCommission(commissionId: string): Promise<Commission | null> {
     try {
-      const docRef = doc(db, this.COLLECTION, commissionId);
+      const docRef = doc(firestore, this.COLLECTION, commissionId);
       const docSnap = await getDoc(docRef);
 
       if (!docSnap.exists()) {
@@ -95,7 +95,7 @@ export class CommissionService {
   static async getAgentCommissions(agentId: string): Promise<Commission[]> {
     try {
       const q = query(
-        collection(db, this.COLLECTION),
+        collection(firestore, this.COLLECTION),
         where('agentId', '==', agentId),
         orderBy('requestedAt', 'desc')
       );
@@ -117,7 +117,7 @@ export class CommissionService {
   static async getBranchCommissions(branchId: string): Promise<Commission[]> {
     try {
       const q = query(
-        collection(db, this.COLLECTION),
+        collection(firestore, this.COLLECTION),
         where('branchId', '==', branchId),
         orderBy('requestedAt', 'desc')
       );
@@ -143,7 +143,7 @@ export class CommissionService {
     notes?: string
   ): Promise<void> {
     try {
-      const docRef = doc(db, this.COLLECTION, commissionId);
+      const docRef = doc(firestore, this.COLLECTION, commissionId);
       await updateDoc(docRef, {
         status,
         verifiedBy,
@@ -165,7 +165,7 @@ export class CommissionService {
     notes?: string
   ): Promise<void> {
     try {
-      const docRef = doc(db, this.COLLECTION, commissionId);
+      const docRef = doc(firestore, this.COLLECTION, commissionId);
       await updateDoc(docRef, {
         status: 'approved',
         approvedBy,
@@ -183,7 +183,7 @@ export class CommissionService {
    */
   static async markAsPaid(commissionId: string): Promise<void> {
     try {
-      const docRef = doc(db, this.COLLECTION, commissionId);
+      const docRef = doc(firestore, this.COLLECTION, commissionId);
       await updateDoc(docRef, {
         status: 'paid',
         paidAt: Timestamp.now()

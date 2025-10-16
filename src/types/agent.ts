@@ -5,7 +5,8 @@ export interface Agent {
   contactNumber: string;
   address: string;
   branchId: string;
-  commissionRate: number; // percentage
+  commissionRate?: number; // percentage (deprecated, use commissionAmount)
+  commissionAmount: number; // fixed amount in currency
   licenseNumber?: string;
   licenseExpiry?: Date;
   status: 'active' | 'inactive' | 'suspended';
@@ -43,7 +44,7 @@ export interface CreateAgentData {
   contactNumber: string;
   address: string;
   branchId: string;
-  commissionRate: number;
+  commissionAmount: number;
   licenseNumber?: string;
   licenseExpiry?: Date;
   status?: 'active' | 'inactive' | 'suspended';

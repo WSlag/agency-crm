@@ -19,7 +19,7 @@ export const AgentForm = () => {
     contactNumber: '',
     address: '',
     branchId: customClaims?.branchId || '',
-    commissionRate: 5,
+    commissionAmount: 0,
     licenseNumber: '',
     licenseExpiry: undefined,
     status: 'active',
@@ -41,7 +41,7 @@ export const AgentForm = () => {
         contactNumber: selectedAgent.contactNumber,
         address: selectedAgent.address,
         branchId: selectedAgent.branchId,
-        commissionRate: selectedAgent.commissionRate,
+        commissionAmount: selectedAgent.commissionAmount || 0,
         licenseNumber: selectedAgent.licenseNumber || '',
         licenseExpiry: selectedAgent.licenseExpiry,
         status: selectedAgent.status,
@@ -53,7 +53,7 @@ export const AgentForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'commissionRate' ? parseFloat(value) || 0 : value
+      [name]: name === 'commissionAmount' ? parseFloat(value) || 0 : value
     }));
   };
 
@@ -130,7 +130,7 @@ export const AgentForm = () => {
             {isEdit ? 'Edit Agent' : 'Add New Agent'}
           </h1>
           <p className="mt-2 text-teal-100">
-            {isEdit ? 'Update agent information and commission rate' : 'Create a new agent profile'}
+            {isEdit ? 'Update agent information and commission amount' : 'Create a new agent profile'}
           </p>
         </div>
       </div>
@@ -233,18 +233,17 @@ export const AgentForm = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="commissionRate" className="block text-sm font-medium text-gray-700">
-                      Commission Rate (%) *
+                    <label htmlFor="commissionAmount" className="block text-sm font-medium text-gray-700">
+                      Commission Amount *
                     </label>
                     <input
                       type="number"
-                      id="commissionRate"
-                      name="commissionRate"
+                      id="commissionAmount"
+                      name="commissionAmount"
                       required
                       min="0"
-                      max="100"
-                      step="0.1"
-                      value={formData.commissionRate}
+                      step="0.01"
+                      value={formData.commissionAmount}
                       onChange={handleChange}
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500"
                     />

@@ -7,7 +7,7 @@ import { BarChart } from '../../components/dashboard/BarChart';
 import { PieChart } from '../../components/dashboard/PieChart';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, onSnapshot } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
 import {
   SparklesIcon,
@@ -400,54 +400,162 @@ const PendingTasksWidget: React.FC<{ role: string; userId: string }> = ({ role, 
     pendingExpenses: 0,
     pendingCommissions: 0,
     pendingTransfers: 0,
+    pendingDocuments: 0,
+    pendingStageAdvancements: 0,
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPendingTasks = async () => {
-      try {
-        // Fetch pending expenses
-        if (role === 'ho_accountant' || role === 'admin' || role === 'president') {
-          const expensesQuery = query(
-            collection(firestore, 'expenses'),
-            where('status', '==', 'pending'),
-            limit(100)
-          );
-          const expensesSnapshot = await getDocs(expensesQuery);
-          setTasks(prev => ({ ...prev, pendingExpenses: expensesSnapshot.size }));
-        }
+    const unsubscribers: (() => void)[] = [];
+    let loadedCount = 0;
+    
+    // Calculate expected loads
+    let expectedLoads = 0;
+    if (role === 'ho_accountant' || role === 'admin' || role === 'president') {
+      expectedLoads += 2; // expenses and commissions
+    }
+    if (role === 'admin' || role === 'president') {
+      expectedLoads += 1; // transfers
+    }
+    if (role === 'admin' || role === 'president' || role === 'ho_recruitment_officer') {
+      expectedLoads += 2; // documents and stage advancements
+    }
+    
+    setLoading(true);
 
-        // Fetch pending commissions
-        if (role === 'ho_accountant' || role === 'admin' || role === 'president') {
-          const commissionsQuery = query(
-            collection(firestore, 'commissions'),
-            where('status', '==', 'pending'),
-            limit(100)
-          );
-          const commissionsSnapshot = await getDocs(commissionsQuery);
-          setTasks(prev => ({ ...prev, pendingCommissions: commissionsSnapshot.size }));
-        }
-
-        // Fetch pending transfers
-        if (role === 'admin' || role === 'president') {
-          const transfersQuery = query(
-            collection(firestore, 'transfers'),
-            where('status', '==', 'pending'),
-            limit(100)
-          );
-          const transfersSnapshot = await getDocs(transfersQuery);
-          setTasks(prev => ({ ...prev, pendingTransfers: transfersSnapshot.size }));
-        }
-      } catch (error) {
-        console.error('Error fetching pending tasks:', error);
-      } finally {
+    const checkLoadingComplete = () => {
+      loadedCount++;
+      if (loadedCount >= expectedLoads) {
         setLoading(false);
       }
     };
-    fetchPendingTasks();
+
+    try {
+      // Listen to pending expenses
+      if (role === 'ho_accountant' || role === 'admin' || role === 'president') {
+        const expensesQuery = query(
+          collection(firestore, 'expenses'),
+          where('status', '==', 'pending'),
+          limit(100)
+        );
+        const unsubExpenses = onSnapshot(
+          expensesQuery,
+          (snapshot) => {
+            setTasks(prev => ({ ...prev, pendingExpenses: snapshot.size }));
+            checkLoadingComplete();
+          },
+          (error) => {
+            console.error('Error listening to pending expenses:', error);
+            checkLoadingComplete();
+          }
+        );
+        unsubscribers.push(unsubExpenses);
+      }
+
+      // Listen to pending commissions
+      if (role === 'ho_accountant' || role === 'admin' || role === 'president') {
+        const commissionsQuery = query(
+          collection(firestore, 'commissions'),
+          where('status', '==', 'pending'),
+          limit(100)
+        );
+        const unsubCommissions = onSnapshot(
+          commissionsQuery,
+          (snapshot) => {
+            setTasks(prev => ({ ...prev, pendingCommissions: snapshot.size }));
+            checkLoadingComplete();
+          },
+          (error) => {
+            console.error('Error listening to pending commissions:', error);
+            checkLoadingComplete();
+          }
+        );
+        unsubscribers.push(unsubCommissions);
+      }
+
+      // Listen to pending transfers
+      if (role === 'admin' || role === 'president') {
+        const transfersQuery = query(
+          collection(firestore, 'transfers'),
+          where('status', '==', 'pending'),
+          limit(100)
+        );
+        const unsubTransfers = onSnapshot(
+          transfersQuery,
+          (snapshot) => {
+            setTasks(prev => ({ ...prev, pendingTransfers: snapshot.size }));
+            checkLoadingComplete();
+          },
+          (error) => {
+            console.error('Error listening to pending transfers:', error);
+            checkLoadingComplete();
+          }
+        );
+        unsubscribers.push(unsubTransfers);
+      }
+
+      // Listen to pending documents (need verification)
+      if (role === 'admin' || role === 'president' || role === 'ho_recruitment_officer') {
+        const documentsQuery = query(
+          collection(firestore, 'documents'),
+          where('status', '==', 'pending'),
+          limit(100)
+        );
+        const unsubDocuments = onSnapshot(
+          documentsQuery,
+          (snapshot) => {
+            setTasks(prev => ({ ...prev, pendingDocuments: snapshot.size }));
+            checkLoadingComplete();
+          },
+          (error) => {
+            console.error('Error listening to pending documents:', error);
+            checkLoadingComplete();
+          }
+        );
+        unsubscribers.push(unsubDocuments);
+      }
+
+      // Listen to pending stage advancements
+      if (role === 'admin' || role === 'president' || role === 'ho_recruitment_officer') {
+        const stageAdvancementsQuery = query(
+          collection(firestore, 'stage_history'),
+          where('status', '==', 'pending'),
+          limit(100)
+        );
+        const unsubStageAdvancements = onSnapshot(
+          stageAdvancementsQuery,
+          (snapshot) => {
+            setTasks(prev => ({ ...prev, pendingStageAdvancements: snapshot.size }));
+            checkLoadingComplete();
+          },
+          (error) => {
+            console.error('Error listening to pending stage advancements:', error);
+            checkLoadingComplete();
+          }
+        );
+        unsubscribers.push(unsubStageAdvancements);
+      }
+
+      // If no listeners were added, stop loading immediately
+      if (unsubscribers.length === 0) {
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error setting up listeners:', error);
+      setLoading(false);
+    }
+
+    // Cleanup function to unsubscribe from all listeners
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
   }, [role, userId]);
 
-  const hasPendingTasks = tasks.pendingExpenses > 0 || tasks.pendingCommissions > 0 || tasks.pendingTransfers > 0;
+  const hasPendingTasks = tasks.pendingExpenses > 0 || 
+                          tasks.pendingCommissions > 0 || 
+                          tasks.pendingTransfers > 0 || 
+                          tasks.pendingDocuments > 0 || 
+                          tasks.pendingStageAdvancements > 0;
 
   if (loading) {
     return (
@@ -515,6 +623,32 @@ const PendingTasksWidget: React.FC<{ role: string; userId: string }> = ({ role, 
             </span>
             <span className="px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold rounded-full">
               {tasks.pendingTransfers}
+            </span>
+          </Link>
+        )}
+        {tasks.pendingDocuments > 0 && (
+          <Link
+            to="/applicants/documents"
+            className="flex items-center justify-between p-2 bg-white rounded-lg hover:shadow-md transition-all"
+          >
+            <span className="text-xs font-medium text-gray-700">
+              Documents
+            </span>
+            <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-xs font-bold rounded-full">
+              {tasks.pendingDocuments}
+            </span>
+          </Link>
+        )}
+        {tasks.pendingStageAdvancements > 0 && (
+          <Link
+            to="/applicants"
+            className="flex items-center justify-between p-2 bg-white rounded-lg hover:shadow-md transition-all"
+          >
+            <span className="text-xs font-medium text-gray-700">
+              Stage Approvals
+            </span>
+            <span className="px-2 py-0.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white text-xs font-bold rounded-full">
+              {tasks.pendingStageAdvancements}
             </span>
           </Link>
         )}

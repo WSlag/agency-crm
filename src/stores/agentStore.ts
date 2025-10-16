@@ -62,7 +62,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           contactNumber: data.contactNumber || data.phone || '',
           address: data.address || '',
           branchId: data.branchId || '',
-          commissionRate: data.commissionRate || 0,
+          commissionRate: data.commissionRate, // deprecated, kept for backward compatibility
+          commissionAmount: data.commissionAmount || data.commissionRate || 0,
           licenseNumber: data.licenseNumber || '',
           licenseExpiry: data.licenseExpiry?.toDate(),
           status: data.status || 'active',
@@ -91,7 +92,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const agentsRef = collection(firestore, 'agents');
-      const q = query(agentsRef, where('status', '==', 'active'), orderBy('name'));
+      const q = query(agentsRef, where('status', '==', 'active'), orderBy('agentName'));
       const snapshot = await getDocs(q);
       
       const agents = snapshot.docs.map(doc => {
@@ -103,7 +104,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           contactNumber: data.contactNumber || data.phone || '',
           address: data.address || '',
           branchId: data.branchId || '',
-          commissionRate: data.commissionRate || 0,
+          commissionRate: data.commissionRate, // deprecated, kept for backward compatibility
+          commissionAmount: data.commissionAmount || data.commissionRate || 0,
           licenseNumber: data.licenseNumber || '',
           licenseExpiry: data.licenseExpiry?.toDate(),
           status: data.status || 'active',
@@ -146,7 +148,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         contactNumber: data.contactNumber || data.phone || '',
         address: data.address || '',
         branchId: data.branchId || '',
-        commissionRate: data.commissionRate || 0,
+        commissionRate: data.commissionRate, // deprecated, kept for backward compatibility
+        commissionAmount: data.commissionAmount || data.commissionRate || 0,
         licenseNumber: data.licenseNumber || '',
         licenseExpiry: data.licenseExpiry?.toDate(),
         status: data.status || 'active',
@@ -183,7 +186,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           contactNumber: data.contactNumber || data.phone || '',
           address: data.address || '',
           branchId: data.branchId || '',
-          commissionRate: data.commissionRate || 0,
+          commissionRate: data.commissionRate, // deprecated, kept for backward compatibility
+          commissionAmount: data.commissionAmount || data.commissionRate || 0,
           licenseNumber: data.licenseNumber || '',
           licenseExpiry: data.licenseExpiry?.toDate(),
           status: data.status || 'active',
@@ -219,7 +223,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         contactNumber: data.contactNumber,
         address: data.address,
         branchId: data.branchId,
-        commissionRate: data.commissionRate,
+        commissionAmount: data.commissionAmount,
         licenseNumber: data.licenseNumber || '',
         licenseExpiry: data.licenseExpiry ? Timestamp.fromDate(data.licenseExpiry) : null,
         status: data.status || 'active',

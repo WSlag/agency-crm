@@ -83,8 +83,8 @@ export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHead
                   </div>
                   <div className="mt-2 flex items-center text-sm">
                     <span className="font-medium">Status:</span>
-                    <span className={`ml-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(applicant.status || applicant.currentStatus || 'inactive')}`}>
-                      {applicant.status || applicant.currentStatus || 'inactive'}
+                    <span className={`ml-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(applicant.status || applicant.currentStatus || 'active')}`}>
+                      {applicant.status || applicant.currentStatus || 'active'}
                     </span>
                   </div>
                 </div>

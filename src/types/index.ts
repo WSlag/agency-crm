@@ -27,7 +27,7 @@ export interface Agent {
   agentName: string;
   contactInfo: string;
   branchId: string;
-  commissionRate: number;
+  commissionAmount: number;
   status: 'active' | 'inactive';
   createdAt: Date;
 }

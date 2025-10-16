@@ -316,6 +316,10 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
       const docRef = doc(collection(firestore, 'applicants'));
       await setDoc(docRef, {
         ...applicant,
+        // Ensure status defaults to 'active' if not provided
+        status: applicant.status || 'active',
+        // Set initial stage if not provided
+        currentStage: applicant.currentStage || 'registration',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

@@ -229,8 +229,8 @@ export const AgentDetail = () => {
                       <p className="mt-1 text-sm text-gray-900">{selectedAgent.branchId}</p>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">Commission Rate</h3>
-                      <p className="mt-1 text-sm text-gray-900">{selectedAgent.commissionRate}%</p>
+                      <h3 className="text-sm font-medium text-gray-500">Commission Amount</h3>
+                      <p className="mt-1 text-sm text-gray-900">₱{selectedAgent.commissionAmount.toLocaleString()}</p>
                     </div>
                     <div className="md:col-span-2">
                       <h3 className="text-sm font-medium text-gray-500">Address</h3>

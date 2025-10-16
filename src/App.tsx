@@ -51,6 +51,7 @@ import { ExpensesPage } from './pages/expenses/ExpensesPage';
 import { BudgetManagement } from './pages/expenses/BudgetManagement';
 import { CommissionRequest } from './pages/commissions/CommissionRequest';
 import { CommissionsPage } from './pages/commissions/CommissionsPage';
+import { CommissionDetailPage } from './pages/commissions/CommissionDetailPage';
 
 // Branch Management
 import { BranchList } from './pages/admin/branches/BranchList';
@@ -271,6 +272,7 @@ const App: React.FC = () => {
           <Route path="/commissions">
             <Route index element={<CommissionsPage />} />
             <Route path="request" element={<CommissionRequest />} />
+            <Route path=":id" element={<CommissionDetailPage />} />
           </Route>
 
           {/* Agent Routes */}

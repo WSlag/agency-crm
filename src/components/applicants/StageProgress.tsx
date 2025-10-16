@@ -36,8 +36,8 @@ export const StageProgress: React.FC<StageProgressProps> = ({
 }) => {
   const STAGE_ORDER = getAllStagesInOrder();
   
-  // Convert string stage to enum if needed
-  const currentStageEnum = currentStage as ApplicantStage;
+  // Convert string stage to enum if needed, with fallback to REGISTRATION
+  const currentStageEnum = (currentStage || ApplicantStage.REGISTRATION) as ApplicantStage;
   const currentIndex = STAGE_ORDER.indexOf(currentStageEnum);
   
   const getStageIcon = (stage: ApplicantStage, index: number) => {

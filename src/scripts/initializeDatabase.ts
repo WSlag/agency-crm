@@ -260,7 +260,7 @@ const initializeAgents = async () => {
         phone: `+1234567${Math.floor(Math.random() * 1000)}`,
         branchId,
         status: randomStatus(statuses),
-        commissionRate: Math.floor(Math.random() * 5) + 5, // 5-10%
+        commissionAmount: (Math.floor(Math.random() * 5) + 5) * 1000, // 5000-10000 PHP
         totalCommission: 0,
         applicantsCount: 0
       };

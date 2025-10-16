@@ -32,9 +32,9 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
   const [selectedDocType, setSelectedDocType] = useState<DocumentType | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // Get current stage
-  const currentStage = (applicant.currentStageEnum || applicant.currentStage) as ApplicantStage;
-  const stageConfig = STAGE_CONFIGURATION[currentStage];
+  // Get current stage with fallback to REGISTRATION
+  const currentStage = (applicant.currentStageEnum || applicant.currentStage || ApplicantStage.REGISTRATION) as ApplicantStage;
+  const stageConfig = STAGE_CONFIGURATION[currentStage] || STAGE_CONFIGURATION[ApplicantStage.REGISTRATION];
   
   // Load documents on mount
   useEffect(() => {

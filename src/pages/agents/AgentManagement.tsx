@@ -258,7 +258,7 @@ export const AgentManagement = () => {
                       </div>
                       <div className="flex items-center text-gray-600">
                         <BanknotesIcon className="h-4 w-4 mr-2" />
-                        <span>Commission Rate: {agent.commissionRate}%</span>
+                        <span>Commission Amount: ₱{agent.commissionAmount.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <UserGroupIcon className="h-4 w-4 mr-2" />

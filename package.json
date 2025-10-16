@@ -10,6 +10,8 @@
     "migrate:rollback": "tsx src/migrations/rollback.ts",
     "migrate:stage-fields": "tsx src/migrations/init-stage-fields.ts",
     "fix:applicant-rejection": "tsx src/scripts/fixApplicantRejection.ts",
+    "fix:applicant-status": "tsx src/scripts/fixApplicantStatus.ts",
+    "fix:applicant-stage": "tsx src/scripts/fixApplicantStage.ts",
     "fix:verify-documents": "tsx src/scripts/verifyPendingDocuments.ts",
     "check:document-expiry": "tsx src/scripts/checkDocumentExpiry.ts",
     "init-db": "tsx src/scripts/runInitialization.ts",
