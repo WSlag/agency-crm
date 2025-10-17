@@ -32,7 +32,7 @@ interface DocumentsTabProps {
 
 export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
   const { documents, fetchDocuments, setFilter, verifyDocument } = useDocumentStore();
-  const { user } = useAuth();
+  const { user, customClaims } = useAuth();
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedDocType, setSelectedDocType] = useState<DocumentType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,8 +124,8 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
   };
   
   const canVerifyDocuments = () => {
-    if (!user?.role) return false;
-    return ['admin', 'branch_manager', 'ho_recruitment_officer'].includes(user.role);
+    if (!customClaims?.role) return false;
+    return ['admin', 'branch_manager', 'ho_recruitment_officer'].includes(customClaims.role);
   };
   
   const hasPendingDocuments = () => {

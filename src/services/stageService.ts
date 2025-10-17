@@ -529,7 +529,7 @@ class StageService {
       return;
     }
     
-    // Get agent commission rate
+    // Get agent commission amount
     const agentRef = doc(firestore, 'agents', applicant.agentId);
     const agentSnap = await getDoc(agentRef);
     
@@ -539,14 +539,21 @@ class StageService {
     }
     
     const agent = agentSnap.data();
-    const commissionRate = agent.commissionRate || 0;
     
-    // Calculate commission amount based on stage
-    // Medical: 50% of total commission
-    // Deployed: 50% of total commission
-    const baseCommission = 10000; // Default base in PHP (can be configured per agent/job)
+    // Use commissionAmount directly (fixed amount per applicant)
+    // Medical: 50% of agent's commission
+    // Deployed: 50% of agent's commission
+    const agentCommissionAmount = agent.commissionAmount || 0;
     const percentage = triggerStage === 'medical' ? 0.5 : 0.5;
-    const amount = baseCommission * percentage * (commissionRate / 100);
+    const amount = agentCommissionAmount * percentage;
+    
+    console.log('[triggerCommission]', {
+      agentId: applicant.agentId,
+      agentCommissionAmount,
+      triggerStage,
+      percentage,
+      calculatedAmount: amount
+    });
     
     // Create commission record
     const commissionsRef = collection(firestore, 'commissions');
@@ -561,10 +568,10 @@ class StageService {
       triggeredAt: Timestamp.now(),
       autoCalculated: true,
       calculationDetails: {
-        baseCommission,
-        commissionRate,
+        agentCommissionAmount,
         percentage,
-        stage: triggerStage
+        stage: triggerStage,
+        calculationMethod: 'fixed_amount_percentage'
       },
       status: 'pending',
       requestedBy: 'system_auto_trigger',

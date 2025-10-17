@@ -14,9 +14,9 @@ const formatMetricValue = (value: string | number, type: 'number' | 'currency' |
 
   switch (type) {
     case 'currency':
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('en-PH', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'PHP'
       }).format(value);
     case 'percentage':
       return `${value}%`;

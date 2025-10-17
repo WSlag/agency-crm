@@ -7,7 +7,7 @@ import { useReportStore } from '../../stores/reportStore';
 import { useAuthStore } from '../../stores/authStore';
 
 const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('en-US', {
+  new Intl.NumberFormat('en-PH', {
     style: 'currency',
     currency: 'PHP',
     minimumFractionDigits: 0,
@@ -15,7 +15,7 @@ const formatCurrency = (value: number) =>
   }).format(value);
 
 export const DashboardGrid: React.FC = () => {
-  const { user } = useAuthStore();
+  const { user, customClaims } = useAuthStore();
   const {
     dashboardMetrics,
     loading,
@@ -88,7 +88,7 @@ export const DashboardGrid: React.FC = () => {
       </div>
 
       {/* Transfer Metrics */}
-      {(user?.role === 'admin' || user?.role === 'president') && (
+      {(customClaims?.role === 'admin' || customClaims?.role === 'president') && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <MetricGroup title="Transfers" metrics={dashboardMetrics.transfers} />
           <BreakdownChart
@@ -99,7 +99,7 @@ export const DashboardGrid: React.FC = () => {
       )}
 
       {/* Officer Metrics */}
-      {(user?.role === 'admin' || user?.role === 'president') && (
+      {(customClaims?.role === 'admin' || customClaims?.role === 'president') && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <MetricGroup
             title="Recruitment Officers"
@@ -127,7 +127,7 @@ export const DashboardGrid: React.FC = () => {
       </div>
 
       {/* Performance Tables */}
-      {(user?.role === 'admin' || user?.role === 'president') && (
+      {(customClaims?.role === 'admin' || customClaims?.role === 'president') && (
         <div className="grid grid-cols-1 gap-6">
           <PerformanceTable
             title="Branch Performance"

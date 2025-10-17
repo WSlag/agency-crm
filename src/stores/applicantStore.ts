@@ -195,7 +195,7 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
             preferredPositions: data.preferredPositions || [],
             expectedSalary: {
               amount: data.expectedSalary?.amount || 0,
-              currency: data.expectedSalary?.currency || 'USD'
+              currency: data.expectedSalary?.currency || 'PHP'
             },
             education: data.education || [],
             workExperience: data.workExperience || [],

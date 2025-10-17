@@ -7,11 +7,11 @@ import { PlusIcon, SparklesIcon, CurrencyDollarIcon, CheckCircleIcon, ClockIcon,
 
 export const ExpensesPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, customClaims } = useAuthStore();
   const { expenses, loading, fetchExpenses } = useExpenseStore();
 
   const canCreateExpense = ['admin', 'branch_manager', 'ho_accountant'].includes(
-    user?.role || ''
+    customClaims?.role || ''
   );
 
   useEffect(() => {

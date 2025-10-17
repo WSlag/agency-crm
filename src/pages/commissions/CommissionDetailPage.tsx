@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useCommissionStore } from '../../stores/commissionStore';
+import { useApplicantStore } from '../../stores/applicantStore';
+import { useAgentStore } from '../../stores/agentStore';
 import { CommissionService } from '../../services/commissionService';
 import { Commission, COMMISSION_CONFIG } from '../../types/commission';
 import { PartialPaymentModal } from '../../components/commissions/PartialPaymentModal';
@@ -12,18 +14,20 @@ import {
   XCircleIcon,
   ClockIcon,
   CurrencyDollarIcon,
-  UserIcon,
   CalendarIcon,
   DocumentTextIcon,
   SparklesIcon,
   BanknotesIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline';
 
 export const CommissionDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, customClaims } = useAuthStore();
   const { recordPartialPayment } = useCommissionStore();
+  const { fetchApplicantById, selectedApplicant } = useApplicantStore();
+  const { fetchAgentById, selectedAgent } = useAgentStore();
   const [commission, setCommission] = useState<Commission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +51,18 @@ export const CommissionDetailPage = () => {
       } else {
         setCommission(data);
         setError(null);
+        
+        // Fetch related applicant and agent details
+        if (data.applicantId) {
+          fetchApplicantById(data.applicantId).catch(err => 
+            console.error('Error loading applicant:', err)
+          );
+        }
+        if (data.agentId) {
+          fetchAgentById(data.agentId).catch(err => 
+            console.error('Error loading agent:', err)
+          );
+        }
       }
     } catch (err) {
       setError('Failed to load commission details');
@@ -90,18 +106,56 @@ export const CommissionDetailPage = () => {
   };
 
   const canApprove = () => {
-    if (!commission || !user) return false;
+    if (!commission || !user || !customClaims) return false;
     
     const approverRoles = ['admin', 'president', 'ho_accountant'];
-    return approverRoles.includes(user.role) && commission.status === 'pending';
+    
+    // Only show approve button for manually requested commissions (not auto-triggered)
+    // Auto-triggered commissions can be paid directly without approval
+    return approverRoles.includes(customClaims.role || '') && 
+      commission.status === 'pending' &&
+      commission.requestedBy !== 'system_auto_trigger';
   };
 
   const canRecordPayment = () => {
-    if (!commission || !user) return false;
+    console.log('[DEBUG] canRecordPayment called', {
+      hasCommission: !!commission,
+      hasUser: !!user,
+      hasCustomClaims: !!customClaims,
+      userRole: customClaims?.role,
+      commissionStatus: commission?.status,
+      requestedBy: commission?.requestedBy,
+      fullUser: user,
+      fullCustomClaims: customClaims,
+      fullCommission: commission
+    });
+    
+    if (!commission || !user || !customClaims) {
+      console.log('[DEBUG] Missing commission, user, or customClaims');
+      return false;
+    }
     
     const paymentRoles = ['admin', 'president', 'ho_accountant'];
-    return paymentRoles.includes(user.role) && 
-      (commission.status === 'approved' || commission.status === 'partially_paid');
+    const userRole = customClaims.role || '';
+    
+    // Allow payment for approved, partially_paid, OR pending auto-triggered commissions
+    const canPay = paymentRoles.includes(userRole) && 
+      (commission.status === 'approved' || 
+       commission.status === 'partially_paid' ||
+       (commission.status === 'pending' && commission.requestedBy === 'system_auto_trigger'));
+    
+    console.log('[DEBUG] canRecordPayment result:', {
+      canPay,
+      userRole,
+      isRoleAllowed: paymentRoles.includes(userRole),
+      statusCheck: {
+        isApproved: commission.status === 'approved',
+        isPartiallyPaid: commission.status === 'partially_paid',
+        isPendingAutoTrigger: commission.status === 'pending' && commission.requestedBy === 'system_auto_trigger'
+      }
+    });
+    
+    return canPay;
   };
 
   const handleRecordPartialPayment = async (
@@ -121,11 +175,9 @@ export const CommissionDetailPage = () => {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(amount);
+  const formatCurrency = (amount: number, _currency: string = 'PHP') => {
+    // Always format as Philippine Peso
+    return `₱${amount.toLocaleString()}`;
   };
 
   const formatDate = (date: Date | undefined) => {
@@ -273,6 +325,88 @@ export const CommissionDetailPage = () => {
               </div>
             </div>
 
+            {/* Applicant & Agent Info Card */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <UsersIcon className="h-5 w-5 mr-2 text-indigo-600" />
+                Commission For
+              </h2>
+              <div className="space-y-4">
+                {/* Applicant Info */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">Applicant</p>
+                      {selectedApplicant ? (
+                        <>
+                          <p className="mt-1 text-lg font-bold text-gray-900">
+                            {selectedApplicant.fullName}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {selectedApplicant.email}
+                          </p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              {selectedApplicant.currentStage}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              ID: {commission.applicantId.slice(0, 8)}...
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="mt-1 text-sm text-gray-500">
+                          Loading applicant details...
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => navigate(`/applicants/${commission.applicantId}`)}
+                      className="ml-2 p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                      title="View Applicant Profile"
+                    >
+                      <ArrowLeftIcon className="h-4 w-4 transform rotate-180" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Agent Info */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border-2 border-purple-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="text-xs font-medium text-purple-600 uppercase tracking-wide">Agent</p>
+                      {selectedAgent ? (
+                        <>
+                          <p className="mt-1 text-lg font-bold text-gray-900">
+                            {selectedAgent.agentName}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {selectedAgent.email || selectedAgent.contactNumber}
+                          </p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                              ₱{selectedAgent.commissionAmount?.toLocaleString()} per applicant
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="mt-1 text-sm text-gray-500">
+                          Loading agent details...
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => navigate(`/agents/${commission.agentId}`)}
+                      className="ml-2 p-2 text-purple-600 hover:bg-purple-100 rounded-lg transition-colors"
+                      title="View Agent Profile"
+                    >
+                      <ArrowLeftIcon className="h-4 w-4 transform rotate-180" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Details Card */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -280,16 +414,6 @@ export const CommissionDetailPage = () => {
                 Commission Information
               </h2>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <dt className="text-sm font-medium text-gray-500 flex items-center">
-                    <UserIcon className="h-4 w-4 mr-1" />
-                    Agent ID
-                  </dt>
-                  <dd className="mt-1 text-sm font-semibold text-gray-900">
-                    {commission.agentId || '—'}
-                  </dd>
-                </div>
-
                 <div className="bg-gray-50 rounded-lg p-4">
                   <dt className="text-sm font-medium text-gray-500 flex items-center">
                     <CalendarIcon className="h-4 w-4 mr-1" />
@@ -323,33 +447,6 @@ export const CommissionDetailPage = () => {
                     <dt className="text-sm font-medium text-gray-500">Approved At</dt>
                     <dd className="mt-1 text-sm font-semibold text-gray-900">
                       {formatDate(commission.approvedAt)}
-                    </dd>
-                  </div>
-                )}
-
-                {commission.rejectedBy && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <dt className="text-sm font-medium text-gray-500">Rejected By</dt>
-                    <dd className="mt-1 text-sm font-semibold text-gray-900">
-                      {commission.rejectedBy}
-                    </dd>
-                  </div>
-                )}
-
-                {commission.rejectedAt && (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <dt className="text-sm font-medium text-gray-500">Rejected At</dt>
-                    <dd className="mt-1 text-sm font-semibold text-gray-900">
-                      {formatDate(commission.rejectedAt)}
-                    </dd>
-                  </div>
-                )}
-
-                {commission.rejectionReason && (
-                  <div className="bg-red-50 rounded-lg p-4 sm:col-span-2 border border-red-200">
-                    <dt className="text-sm font-medium text-red-700">Rejection Reason</dt>
-                    <dd className="mt-1 text-sm text-red-900">
-                      {commission.rejectionReason}
                     </dd>
                   </div>
                 )}
@@ -459,20 +556,6 @@ export const CommissionDetailPage = () => {
                       <div className="ml-3">
                         <p className="text-xs font-medium text-gray-900">Approved</p>
                         <p className="text-xs text-gray-500">{formatDate(commission.approvedAt)}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {commission.rejectedAt && (
-                    <div className="flex items-start">
-                      <div className="flex-shrink-0">
-                        <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                          <XCircleIcon className="h-4 w-4 text-red-600" />
-                        </div>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-xs font-medium text-gray-900">Rejected</p>
-                        <p className="text-xs text-gray-500">{formatDate(commission.rejectedAt)}</p>
                       </div>
                     </div>
                   )}

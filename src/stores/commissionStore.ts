@@ -13,6 +13,7 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  Timestamp,
   Query,
   CollectionReference,
   DocumentData,
@@ -521,6 +522,9 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
   recordPartialPayment: async (commissionId, amount, paidBy, paymentReference, notes) => {
     try {
       set({ loading: true, error: null });
+      
+      // Use Timestamp.now() for document updates (serverTimestamp for top-level fields only)
+      const now = Timestamp.now();
       const timestamp = serverTimestamp();
 
       // Get current commission to calculate new balances
@@ -549,11 +553,11 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       const existingInstallments = commissionData.installments || [];
       const installmentNumber = existingInstallments.length + 1;
 
-      // Create new installment record
+      // Create new installment record (use Timestamp.now() for array fields)
       const newInstallment = {
         installmentNumber,
         amount,
-        paidDate: timestamp,
+        paidDate: now, // ✅ Fixed: Use Timestamp.now() instead of serverTimestamp()
         paidBy,
         paymentReference: paymentReference || `PAY-${installmentNumber}-${Date.now()}`,
         notes: notes || '',
@@ -561,6 +565,9 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
 
       // Determine new status
       const newStatus: CommissionStatus = newRemaining === 0 ? 'paid' : 'partially_paid';
+      
+      // Auto-approve if commission is still pending (for system-triggered commissions)
+      const needsAutoApproval = commissionData.status === 'pending';
 
       // Update commission with partial payment
       await updateDoc(commissionRef, {
@@ -572,6 +579,12 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
         installments: [...existingInstallments, newInstallment],
         updatedAt: timestamp,
         ...(newStatus === 'paid' ? { paidAt: timestamp, paidBy } : {}),
+        // Auto-approve if pending
+        ...(needsAutoApproval ? { 
+          approvedBy: paidBy, 
+          approvedAt: timestamp,
+          approvalNotes: 'Auto-approved on first payment' 
+        } : {}),
       });
 
       // Create payment record
@@ -601,6 +614,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
           remaining: newRemaining,
           paymentReference: newInstallment.paymentReference,
           notes,
+          autoApproved: needsAutoApproval,
         },
       });
 

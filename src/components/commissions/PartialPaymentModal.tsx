@@ -66,10 +66,6 @@ export const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
     setAmount(remaining.toString());
   };
 
-  const handlePayHalf = () => {
-    setAmount((remaining / 2).toFixed(2));
-  };
-
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -172,19 +168,12 @@ export const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
                       />
                     </div>
                     
-                    {/* Quick Amount Buttons */}
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={handlePayHalf}
-                        className="flex-1 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                      >
-                        Pay Half (₱{(remaining / 2).toLocaleString()})
-                      </button>
+                    {/* Quick Amount Button */}
+                    <div className="mt-2">
                       <button
                         type="button"
                         onClick={handlePayFull}
-                        className="flex-1 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                        className="w-full px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg transition-all shadow-sm"
                       >
                         Pay Full (₱{remaining.toLocaleString()})
                       </button>

@@ -17,7 +17,7 @@ const budgetSchema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
   allocatedAmount: z.number().min(1, 'Amount must be greater than 0'),
-  currency: z.enum(['PHP', 'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'AED']),
+  currency: z.enum(['PHP', 'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'AED']).default('PHP'),
 });
 
 type BudgetFormData = z.infer<typeof budgetSchema>;

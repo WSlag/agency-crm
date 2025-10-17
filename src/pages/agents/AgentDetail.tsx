@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAgentStore } from '../../stores/agentStore';
 import { useAuth } from '../../contexts/AuthContext';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
 import {
   ArrowLeftIcon,
@@ -81,7 +81,37 @@ export const AgentDetail = () => {
       const commissionsRef = collection(firestore, 'commissions');
       const q = query(commissionsRef, where('agentId', '==', id), orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
-      setCommissions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      
+      // Fetch applicant details for each commission
+      const commissionsWithApplicants = await Promise.all(
+        snapshot.docs.map(async (commissionDoc) => {
+          const commissionData = { id: commissionDoc.id, ...commissionDoc.data() };
+          
+          // Fetch applicant name if applicantId exists
+          if (commissionData.applicantId) {
+            try {
+              const applicantDocRef = doc(firestore, 'applicants', commissionData.applicantId);
+              const applicantSnapshot = await getDoc(applicantDocRef);
+              
+              if (applicantSnapshot.exists()) {
+                const applicantData = applicantSnapshot.data();
+                commissionData.applicantName = applicantData.fullName || 'Unknown';
+              } else {
+                commissionData.applicantName = 'Not Found';
+              }
+            } catch (err) {
+              console.error('Error fetching applicant:', err);
+              commissionData.applicantName = 'Error';
+            }
+          } else {
+            commissionData.applicantName = 'N/A';
+          }
+          
+          return commissionData;
+        })
+      );
+      
+      setCommissions(commissionsWithApplicants);
     } catch (error) {
       console.error('Error loading commissions:', error);
     } finally {
@@ -361,6 +391,7 @@ export const AgentDetail = () => {
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applicant</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requested</th>
@@ -369,13 +400,28 @@ export const AgentDetail = () => {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                           {commissions.map((commission) => (
-                            <tr key={commission.id} className="hover:bg-gray-50">
+                            <tr key={commission.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => navigate(`/commissions/${commission.id}`)}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                <div className="flex items-center">
+                                  <div>
+                                    <div className="font-medium text-gray-900">
+                                      {commission.applicantName || 'Loading...'}
+                                    </div>
+                                    {commission.applicantId && (
+                                      <div className="text-xs text-gray-500">
+                                        ID: {commission.applicantId.slice(0, 8)}...
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                ${commission.amount?.toLocaleString() || 0}
+                                ₱{commission.amount?.toLocaleString() || 0}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                   commission.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                  commission.status === 'partially_paid' ? 'bg-orange-100 text-orange-800' :
                                   commission.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                   'bg-gray-100 text-gray-800'
                                 }`}>
@@ -386,7 +432,8 @@ export const AgentDetail = () => {
                                 {commission.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A'}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {commission.paid_at?.toDate?.()?.toLocaleDateString() || '-'}
+                                {commission.lastPaymentDate?.toDate?.()?.toLocaleDateString() || 
+                                 commission.paidAt?.toDate?.()?.toLocaleDateString() || '-'}
                               </td>
                             </tr>
                           ))}

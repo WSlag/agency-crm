@@ -35,10 +35,10 @@ export const ExpenseList = () => {
     setSort({ field, direction: newDirection });
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
+  const formatCurrency = (amount: number, currency: string = 'PHP') => {
+    return new Intl.NumberFormat('en-PH', {
       style: 'currency',
-      currency,
+      currency: currency || 'PHP',
     }).format(amount);
   };
 

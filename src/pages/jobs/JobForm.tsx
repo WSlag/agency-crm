@@ -29,7 +29,7 @@ export const JobForm = () => {
     salaryRange: {
       min: 0,
       max: 0,
-      currency: 'USD'
+      currency: 'PHP'
     },
     openings: 1,
     deadline: undefined,

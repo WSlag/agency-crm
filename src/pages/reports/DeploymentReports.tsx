@@ -109,7 +109,7 @@ export const DeploymentReports = () => {
             employer: data.deployment.employer || 'Unknown',
             salary: {
               amount: data.deployment.salary?.amount || 0,
-              currency: data.deployment.salary?.currency || 'USD',
+              currency: data.deployment.salary?.currency || 'PHP',
             },
             startDate: data.deployment.startDate?.toDate(),
             contractPeriod: data.deployment.contractPeriod || 0,

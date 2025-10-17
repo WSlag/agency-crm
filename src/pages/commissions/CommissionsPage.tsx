@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCommissionStore } from '../../stores/commissionStore';
 import { useAuthStore } from '../../stores/authStore';
 import { COMMISSION_CONFIG, type Commission, type CommissionType, type CommissionStatus } from '../../types/commission';
+import { doc, getDoc } from 'firebase/firestore';
+import { firestore } from '../../config/firebase';
 import { 
   PlusIcon, 
   SparklesIcon, 
@@ -18,7 +20,7 @@ import {
 
 export const CommissionsPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, customClaims } = useAuthStore();
   const {
     commissions,
     loading,
@@ -32,12 +34,83 @@ export const CommissionsPage = () => {
     fetchCommissions,
   } = useCommissionStore();
 
+  const [commissionsWithNames, setCommissionsWithNames] = useState<any[]>([]);
+  const [loadingNames, setLoadingNames] = useState(false);
+
   useEffect(() => {
     fetchCommissions();
   }, [fetchCommissions]);
 
+  // Fetch agent and applicant names when commissions change
+  useEffect(() => {
+    const fetchNames = async () => {
+      if (!commissions || commissions.length === 0) {
+        setCommissionsWithNames([]);
+        return;
+      }
+
+      setLoadingNames(true);
+      try {
+        const commissionsWithDetails = await Promise.all(
+          commissions.map(async (commission) => {
+            const commissionWithNames = { ...commission };
+
+            // Fetch agent name
+            if (commission.agentId) {
+              try {
+              const agentDocRef = doc(firestore, 'agents', commission.agentId);
+              const agentSnapshot = await getDoc(agentDocRef);
+              if (agentSnapshot.exists()) {
+                const agentData = agentSnapshot.data();
+                commissionWithNames.agentName = agentData.agentName || 'Unknown';
+                } else {
+                  commissionWithNames.agentName = 'Not Found';
+                }
+              } catch (err) {
+                console.error('Error fetching agent:', err);
+                commissionWithNames.agentName = 'Error';
+              }
+            } else {
+              commissionWithNames.agentName = 'N/A';
+            }
+
+            // Fetch applicant name
+            if (commission.applicantId) {
+              try {
+                const applicantDocRef = doc(firestore, 'applicants', commission.applicantId);
+                const applicantSnapshot = await getDoc(applicantDocRef);
+                if (applicantSnapshot.exists()) {
+                  const applicantData = applicantSnapshot.data();
+                  commissionWithNames.applicantName = applicantData.fullName || 'Unknown';
+                } else {
+                  commissionWithNames.applicantName = 'Not Found';
+                }
+              } catch (err) {
+                console.error('Error fetching applicant:', err);
+                commissionWithNames.applicantName = 'Error';
+              }
+            } else {
+              commissionWithNames.applicantName = 'N/A';
+            }
+
+            return commissionWithNames;
+          })
+        );
+
+        setCommissionsWithNames(commissionsWithDetails);
+      } catch (error) {
+        console.error('Error fetching names:', error);
+        setCommissionsWithNames(commissions);
+      } finally {
+        setLoadingNames(false);
+      }
+    };
+
+    fetchNames();
+  }, [commissions]);
+
   const canCreateCommission = ['admin', 'branch_manager', 'ho_accountant'].includes(
-    user?.role || ''
+    customClaims?.role || ''
   );
 
   const handleFilterChange = (key: keyof typeof filter, value: any) => {
@@ -56,11 +129,9 @@ export const CommissionsPage = () => {
     setSort({ field, direction: newDirection });
   };
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(amount);
+  const formatCurrency = (amount: number, _currency: string = 'PHP') => {
+    // Always format as Philippine Peso
+    return `₱${amount.toLocaleString()}`;
   };
 
   const formatDate = (date: Date) => {
@@ -136,7 +207,7 @@ export const CommissionsPage = () => {
   ];
 
   const totalAmount = commissions?.reduce((sum, commission) => {
-    if (commission.status === 'approved' || commission.status === 'paid') {
+    if (commission.status === 'approved' || commission.status === 'paid' || commission.status === 'partially_paid') {
       return sum + (commission.amount || 0);
     }
     return sum;
@@ -367,6 +438,12 @@ export const CommissionsPage = () => {
                           scope="col"
                           className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
                         >
+                          Applicant
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+                        >
                           Agent
                         </th>
                         <th
@@ -381,7 +458,7 @@ export const CommissionsPage = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {commissions.map((commission) => (
+                      {(loadingNames ? commissions : commissionsWithNames).map((commission) => (
                         <tr
                           key={commission.id}
                           className="hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200 group"
@@ -395,8 +472,29 @@ export const CommissionsPage = () => {
                           <td className="whitespace-nowrap px-3 py-4 text-sm font-semibold text-gray-900">
                             {formatCurrency(commission.amount || 0, commission.currency || 'PHP')}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
-                            {commission.agentId || '—'}
+                          <td className="px-3 py-4 text-sm">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-900">
+                                {loadingNames ? 'Loading...' : (commission.applicantName || '—')}
+                              </span>
+                              {commission.applicantId && !loadingNames && (
+                                <span className="text-xs text-gray-500">
+                                  ID: {commission.applicantId.slice(0, 8)}...
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-4 text-sm">
+                            <div className="flex flex-col">
+                              <span className="font-medium text-gray-900">
+                                {loadingNames ? 'Loading...' : (commission.agentName || '—')}
+                              </span>
+                              {commission.agentId && !loadingNames && (
+                                <span className="text-xs text-gray-500">
+                                  ID: {commission.agentId.slice(0, 8)}...
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="whitespace-nowrap px-3 py-4 text-sm">
                             <span
@@ -431,7 +529,7 @@ export const CommissionsPage = () => {
                       ))}
                       {!commissions?.length && !loading && (
                         <tr>
-                          <td colSpan={6} className="px-3 py-16 text-center text-gray-500">
+                          <td colSpan={7} className="px-3 py-16 text-center text-gray-500">
                             <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
                             <p className="mt-4 text-lg font-medium text-gray-900">No commissions found</p>
                             <p className="text-sm mt-2 text-gray-600">
