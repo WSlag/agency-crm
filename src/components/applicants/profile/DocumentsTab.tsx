@@ -14,23 +14,30 @@ import {
   XCircleIcon,
   ClockIcon,
   CloudArrowUpIcon,
-  EyeIcon
+  EyeIcon,
+  CheckIcon,
+  XMarkIcon as XIcon
 } from '@heroicons/react/24/outline';
 import { Applicant, ApplicantStage } from '../../../types/applicant';
 import { DocumentType } from '../../../types/document';
 import { STAGE_CONFIGURATION, STAGE_LABELS } from '../../../config/stageConfig';
 import { useDocumentStore } from '../../../stores/documentStore';
+import { useAuth } from '../../../contexts/AuthContext';
 import { DocumentUploadModal } from '../../documents/upload/DocumentUploadModal';
+import { autoVerifyApplicantDocuments } from '../../../services/documentAutoVerificationService';
 
 interface DocumentsTabProps {
   applicant: Applicant;
 }
 
 export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
-  const { documents, fetchDocuments, setFilter } = useDocumentStore();
+  const { documents, fetchDocuments, setFilter, verifyDocument } = useDocumentStore();
+  const { user } = useAuth();
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [selectedDocType, setSelectedDocType] = useState<DocumentType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState<string | null>(null);
+  const [autoVerifying, setAutoVerifying] = useState(false);
   
   // Get current stage with fallback to REGISTRATION
   const currentStage = (applicant.currentStageEnum || applicant.currentStage || ApplicantStage.REGISTRATION) as ApplicantStage;
@@ -60,6 +67,69 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
   
   const handleUploadSuccess = () => {
     loadDocuments(); // Refresh documents after upload
+  };
+  
+  const handleVerifyDocument = async (documentId: string, approve: boolean) => {
+    if (!user) return;
+    
+    try {
+      setVerifying(documentId);
+      await verifyDocument({
+        documentId,
+        verifiedBy: user.uid,
+        status: approve ? 'verified' : 'rejected',
+        notes: approve 
+          ? 'Document verified by authorized user' 
+          : 'Document rejected - please re-upload',
+      });
+      await loadDocuments(); // Refresh after verification
+    } catch (error) {
+      console.error('Failed to verify document:', error);
+      alert('Failed to verify document. Please try again.');
+    } finally {
+      setVerifying(null);
+    }
+  };
+  
+  const handleAutoVerifyAll = async () => {
+    if (!user) return;
+    
+    const confirmed = window.confirm(
+      'This will automatically verify all pending documents that are required for stages up to and including the current stage. Continue?'
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      setAutoVerifying(true);
+      const result = await autoVerifyApplicantDocuments(
+        applicant.id,
+        currentStage,
+        user.uid
+      );
+      
+      await loadDocuments(); // Refresh documents
+      
+      if (result.verified > 0) {
+        alert(`Successfully verified ${result.verified} document(s)!`);
+      } else {
+        alert('No documents were verified. All pending documents may be for future stages.');
+      }
+    } catch (error) {
+      console.error('Failed to auto-verify documents:', error);
+      alert('Failed to auto-verify documents. Please try again.');
+    } finally {
+      setAutoVerifying(false);
+    }
+  };
+  
+  const canVerifyDocuments = () => {
+    if (!user?.role) return false;
+    return ['admin', 'branch_manager', 'ho_recruitment_officer'].includes(user.role);
+  };
+  
+  const hasPendingDocuments = () => {
+    return documents.some(d => d.status === 'pending' && d.applicantId === applicant.id);
   };
   
   const getDocumentStatus = (docType: string) => {
@@ -230,10 +300,37 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
       
       {/* All Uploaded Documents */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <DocumentTextIcon className="w-5 h-5" />
-          All Documents
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <DocumentTextIcon className="w-5 h-5" />
+            All Documents
+          </h3>
+          
+          {/* Auto-verify button for authorized users */}
+          {canVerifyDocuments() && hasPendingDocuments() && (
+            <button
+              onClick={handleAutoVerifyAll}
+              disabled={autoVerifying}
+              className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shadow-sm"
+              title="Auto-verify all pending documents for current and past stages"
+            >
+              {autoVerifying ? (
+                <>
+                  <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Verifying...
+                </>
+              ) : (
+                <>
+                  <CheckCircleIcon className="w-3.5 h-3.5" />
+                  Auto-Verify All
+                </>
+              )}
+            </button>
+          )}
+        </div>
         
         {documents.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
@@ -273,10 +370,34 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
                         href={doc.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
                       >
-                        View →
+                        <EyeIcon className="w-3 h-3" />
+                        View
                       </a>
+                    )}
+                    
+                    {/* Verification buttons for authorized users */}
+                    {canVerifyDocuments() && doc.status === 'pending' && (
+                      <div className="flex gap-1 mt-1">
+                        <button
+                          onClick={() => handleVerifyDocument(doc.id, true)}
+                          disabled={verifying === doc.id}
+                          className="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          title="Approve document"
+                        >
+                          <CheckIcon className="w-3 h-3" />
+                          {verifying === doc.id ? '...' : 'Verify'}
+                        </button>
+                        <button
+                          onClick={() => handleVerifyDocument(doc.id, false)}
+                          disabled={verifying === doc.id}
+                          className="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          title="Reject document"
+                        >
+                          <XIcon className="w-3 h-3" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

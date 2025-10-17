@@ -268,6 +268,22 @@ class StageService {
     
     // If no approval required, advance immediately
     if (!transition.requiresApproval) {
+      // Auto-verify documents for the FROM stage (the stage they're leaving)
+      console.log('[StageService] Auto-verifying documents for stage:', transition.fromStage);
+      await this.autoVerifyStageDocuments(
+        transition.applicantId,
+        transition.fromStage,
+        user.uid
+      );
+      
+      // ALSO auto-verify documents for the TO stage (stage they're entering)
+      console.log('[StageService] Auto-verifying documents for entering stage:', transition.toStage);
+      await this.autoVerifyStageDocuments(
+        transition.applicantId,
+        transition.toStage,
+        user.uid
+      );
+      
       await this.advanceStage(transition.applicantId, transition.toStage, user);
     }
     
@@ -332,9 +348,19 @@ class StageService {
     
     if (approval.approved) {
       // Auto-verify documents for the FROM stage (the stage they just completed)
+      console.log('[StageService] Auto-verifying documents for completed stage:', historyData.fromStage);
       await this.autoVerifyStageDocuments(
         approval.applicantId,
         historyData.fromStage as ApplicantStage,
+        user.uid
+      );
+      
+      // ALSO auto-verify documents for the TO stage (stage they're entering)
+      // This handles cases where documents were uploaded while at a stage
+      console.log('[StageService] Auto-verifying documents for entering stage:', approval.stage);
+      await this.autoVerifyStageDocuments(
+        approval.applicantId,
+        approval.stage as ApplicantStage,
         user.uid
       );
       
@@ -530,7 +556,8 @@ class StageService {
       branchId: applicant.branchId, // Original branch gets commission
       amount: amount,
       currency: 'PHP',
-      triggerStage: triggerStage,
+      commissionType: triggerStage, // Use commissionType field (medical or deployed)
+      triggerStage: triggerStage, // Keep for reference
       triggeredAt: Timestamp.now(),
       autoCalculated: true,
       calculationDetails: {
@@ -540,10 +567,12 @@ class StageService {
         stage: triggerStage
       },
       status: 'pending',
-      requestedBy: null,
+      requestedBy: 'system_auto_trigger',
+      requestedAt: Timestamp.now(),
       verifiedBy: null,
       approvedBy: null,
-      createdAt: Timestamp.now()
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
     });
     
     console.log(`✅ Commission triggered for ${triggerStage} stage: ${amount} PHP`);

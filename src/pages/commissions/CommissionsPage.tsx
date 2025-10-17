@@ -89,6 +89,8 @@ export const CommissionsPage = () => {
         return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300';
       case 'rejected':
         return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300';
+      case 'partially_paid':
+        return 'bg-gradient-to-r from-orange-100 to-amber-200 text-orange-800 border-orange-300';
       case 'paid':
         return 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border-purple-300';
       default:
@@ -272,6 +274,7 @@ export const CommissionsPage = () => {
                   <option value="verified">Verified</option>
                   <option value="approved">Approved</option>
                   <option value="rejected">Rejected</option>
+                  <option value="partially_paid">Partially Paid</option>
                   <option value="paid">Paid</option>
                 </select>
               </div>

@@ -13,6 +13,9 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  Query,
+  CollectionReference,
+  DocumentData,
 } from 'firebase/firestore';
 import { firestore } from '../config/firebase';
 import {
@@ -109,6 +112,13 @@ interface CommissionState {
 
   // Payment Operations
   recordPayment: (payment: CommissionPayment) => Promise<void>;
+  recordPartialPayment: (
+    commissionId: string,
+    amount: number,
+    paidBy: string,
+    paymentReference?: string,
+    notes?: string
+  ) => Promise<void>;
 
   // Commission Calculation
   calculateCommission: (
@@ -165,7 +175,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       set({ loading: true, error: null });
       const { filter, sort, pagination } = get();
 
-      let q = collection(firestore, 'commissions');
+      let q: Query<DocumentData> | CollectionReference<DocumentData> = collection(firestore, 'commissions');
 
       // Apply filters
       if (filter.agentId) {
@@ -476,6 +486,10 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
         paidBy: payment.paidBy,
         paidAt: timestamp,
         updatedAt: timestamp,
+        paymentType: 'full',
+        amountPaid: payment.amount,
+        amountRemaining: 0,
+        lastPaymentDate: timestamp,
       });
 
       // Create payment record
@@ -496,6 +510,105 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to record payment',
+        loading: false,
+      });
+      throw error;
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  recordPartialPayment: async (commissionId, amount, paidBy, paymentReference, notes) => {
+    try {
+      set({ loading: true, error: null });
+      const timestamp = serverTimestamp();
+
+      // Get current commission to calculate new balances
+      const commissionRef = doc(firestore, 'commissions', commissionId);
+      const commissionSnap = await getDoc(commissionRef);
+      
+      if (!commissionSnap.exists()) {
+        throw new Error('Commission not found');
+      }
+
+      const commissionData = commissionSnap.data();
+      const originalAmount = commissionData.amount;
+      const currentPaid = commissionData.amountPaid || 0;
+      const newTotalPaid = currentPaid + amount;
+      const newRemaining = originalAmount - newTotalPaid;
+
+      // Validate payment amount
+      if (amount <= 0) {
+        throw new Error('Payment amount must be greater than zero');
+      }
+      if (newTotalPaid > originalAmount) {
+        throw new Error(`Payment amount exceeds remaining balance. Remaining: ${originalAmount - currentPaid}`);
+      }
+
+      // Get existing installments or initialize
+      const existingInstallments = commissionData.installments || [];
+      const installmentNumber = existingInstallments.length + 1;
+
+      // Create new installment record
+      const newInstallment = {
+        installmentNumber,
+        amount,
+        paidDate: timestamp,
+        paidBy,
+        paymentReference: paymentReference || `PAY-${installmentNumber}-${Date.now()}`,
+        notes: notes || '',
+      };
+
+      // Determine new status
+      const newStatus: CommissionStatus = newRemaining === 0 ? 'paid' : 'partially_paid';
+
+      // Update commission with partial payment
+      await updateDoc(commissionRef, {
+        status: newStatus,
+        paymentType: 'partial',
+        amountPaid: newTotalPaid,
+        amountRemaining: newRemaining,
+        lastPaymentDate: timestamp,
+        installments: [...existingInstallments, newInstallment],
+        updatedAt: timestamp,
+        ...(newStatus === 'paid' ? { paidAt: timestamp, paidBy } : {}),
+      });
+
+      // Create payment record
+      await setDoc(doc(collection(firestore, 'commission_payments')), {
+        commissionId,
+        amount,
+        installmentNumber,
+        paidBy,
+        paymentReference: newInstallment.paymentReference,
+        notes: notes || '',
+        paidAt: timestamp,
+        totalPaid: newTotalPaid,
+        remaining: newRemaining,
+      });
+
+      // Create audit log
+      await setDoc(doc(collection(firestore, 'audit_logs')), {
+        action: newStatus === 'paid' ? 'commission_paid_full' : 'commission_partial_payment',
+        entityId: commissionId,
+        entityType: 'commission',
+        performedBy: paidBy,
+        performedAt: timestamp,
+        details: {
+          installmentNumber,
+          amount,
+          totalPaid: newTotalPaid,
+          remaining: newRemaining,
+          paymentReference: newInstallment.paymentReference,
+          notes,
+        },
+      });
+
+      // Refresh commissions after payment
+      await get().fetchCommissions();
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to record partial payment',
         loading: false,
       });
       throw error;

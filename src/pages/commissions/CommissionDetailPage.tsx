@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useCommissionStore } from '../../stores/commissionStore';
 import { CommissionService } from '../../services/commissionService';
 import { Commission, COMMISSION_CONFIG } from '../../types/commission';
+import { PartialPaymentModal } from '../../components/commissions/PartialPaymentModal';
+import { PaymentHistory } from '../../components/commissions/PaymentHistory';
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -13,16 +16,19 @@ import {
   CalendarIcon,
   DocumentTextIcon,
   SparklesIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline';
 
 export const CommissionDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { recordPartialPayment } = useCommissionStore();
   const [commission, setCommission] = useState<Commission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -90,6 +96,31 @@ export const CommissionDetailPage = () => {
     return approverRoles.includes(user.role) && commission.status === 'pending';
   };
 
+  const canRecordPayment = () => {
+    if (!commission || !user) return false;
+    
+    const paymentRoles = ['admin', 'president', 'ho_accountant'];
+    return paymentRoles.includes(user.role) && 
+      (commission.status === 'approved' || commission.status === 'partially_paid');
+  };
+
+  const handleRecordPartialPayment = async (
+    amount: number,
+    paymentReference: string,
+    notes: string
+  ) => {
+    if (!commission || !user) return;
+    
+    try {
+      await recordPartialPayment(commission.id, amount, user.uid, paymentReference, notes);
+      await loadCommission();
+      setShowPaymentModal(false);
+    } catch (err: any) {
+      console.error('Error recording partial payment:', err);
+      throw err; // Rethrow to be handled by modal
+    }
+  };
+
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -122,6 +153,8 @@ export const CommissionDetailPage = () => {
         return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300';
       case 'rejected':
         return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300';
+      case 'partially_paid':
+        return 'bg-gradient-to-r from-orange-100 to-amber-200 text-orange-800 border-orange-300';
       case 'paid':
         return 'bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 border-purple-300';
       default:
@@ -332,6 +365,15 @@ export const CommissionDetailPage = () => {
                 </div>
               </div>
             )}
+
+            {/* Payment History Section */}
+            {(commission.installments && commission.installments.length > 0) || 
+             commission.status === 'partially_paid' || 
+             commission.status === 'paid' ? (
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
+                <PaymentHistory commission={commission} />
+              </div>
+            ) : null}
           </div>
 
           {/* Actions Sidebar */}
@@ -359,6 +401,17 @@ export const CommissionDetailPage = () => {
                       Reject Commission
                     </button>
                   </>
+                )}
+
+                {canRecordPayment() && (
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    disabled={actionLoading}
+                    className="w-full inline-flex items-center justify-center px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 shadow-lg"
+                  >
+                    <BanknotesIcon className="h-5 w-5 mr-2" />
+                    Record Payment
+                  </button>
                 )}
 
                 {commission.status === 'pending' && commission.requestedBy === user?.uid && (
@@ -429,6 +482,14 @@ export const CommissionDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Partial Payment Modal */}
+      <PartialPaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        commission={commission}
+        onPayment={handleRecordPartialPayment}
+      />
     </div>
   );
 };

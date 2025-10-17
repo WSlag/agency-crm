@@ -76,6 +76,9 @@ export const EducationExperienceForm = () => {
                       <option value="College">College</option>
                       <option value="Graduate">Graduate</option>
                     </select>
+                    {errors.education?.[index]?.level && (
+                      <p className="mt-1 text-sm text-red-600">{errors.education[index]?.level?.message}</p>
+                    )}
                   </div>
                   
                   <div>

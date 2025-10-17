@@ -40,6 +40,7 @@ export const ApplicantRegistration = () => {
 
   const methods = useForm<ApplicantRegistrationData>({
     resolver: zodResolver(applicantRegistrationSchema),
+    mode: 'onChange',
     defaultValues: {
       branchId: user?.branchId || '',
       applicationType: 'direct_hire',
@@ -63,6 +64,12 @@ export const ApplicantRegistration = () => {
         conditions: [],
         allergies: [],
         vaccinations: [],
+      },
+      emergencyContact: {
+        name: '',
+        relationship: '',
+        contactNumber: '',
+        address: '',
       },
     },
   });

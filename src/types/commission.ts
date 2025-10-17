@@ -3,9 +3,22 @@ export type CommissionStatus =
   | 'verified'
   | 'approved'
   | 'rejected'
+  | 'partially_paid'
   | 'paid';
 
 export type CommissionType = 'standard' | 'medical' | 'deployed';
+
+export type PaymentType = 'full' | 'partial';
+
+export interface CommissionInstallment {
+  installmentNumber: number;
+  amount: number;
+  dueDate?: Date;
+  paidDate?: Date;
+  paidBy?: string;
+  paymentReference?: string;
+  notes?: string;
+}
 
 export interface Commission {
   id: string;
@@ -13,7 +26,7 @@ export interface Commission {
   applicantId: string;
   branchId: string;
   commissionType: CommissionType;
-  amount: number;
+  amount: number; // Original total amount
   currency: string;
   status: CommissionStatus;
   requestedBy: string;
@@ -27,6 +40,13 @@ export interface Commission {
   metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Partial Payment Fields
+  paymentType?: PaymentType;
+  amountPaid?: number; // Total amount paid so far
+  amountRemaining?: number; // Balance remaining
+  installments?: CommissionInstallment[]; // Payment installment schedule/history
+  lastPaymentDate?: Date;
 }
 
 export interface CommissionRule {
