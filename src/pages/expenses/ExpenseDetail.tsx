@@ -2,6 +2,8 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useApplicantStore } from '../../stores/applicantStore';
+import { useBranchStore } from '../../stores/branchStore';
 import { EXPENSE_CONFIG } from '../../types/expense';
 import { ExpenseVerification } from '../../components/expenses/ExpenseVerification';
 import { ExpenseApproval } from '../../components/expenses/ExpenseApproval';
@@ -26,6 +28,8 @@ export const ExpenseDetail: React.FC = () => {
     fetchExpenseById,
     deleteExpense,
   } = useExpenseStore();
+  const { applicants, fetchApplicants } = useApplicantStore();
+  const { branches, fetchBranches } = useBranchStore();
 
   const [showVerification, setShowVerification] = React.useState(false);
   const [showApproval, setShowApproval] = React.useState(false);
@@ -35,6 +39,19 @@ export const ExpenseDetail: React.FC = () => {
       fetchExpenseById(id);
     }
   }, [id, fetchExpenseById]);
+
+  React.useEffect(() => {
+    fetchApplicants();
+    fetchBranches();
+  }, [fetchApplicants, fetchBranches]);
+
+  // Look up applicant name
+  const applicant = applicants?.find(a => a.id === selectedExpense?.applicantId);
+  const applicantName = applicant?.fullName || selectedExpense?.applicantId || 'N/A';
+
+  // Look up branch name
+  const branch = branches?.find(b => b.id === selectedExpense?.branchId);
+  const branchName = branch?.name || selectedExpense?.branchId || 'N/A';
 
   const canVerify =
     customClaims?.role === 'ho_accountant' &&
@@ -211,14 +228,14 @@ export const ExpenseDetail: React.FC = () => {
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-gray-500 mb-1">Applicant</dt>
                   <dd className="text-sm font-medium text-gray-900">
-                    {selectedExpense.applicantId}
+                    {applicantName}
                   </dd>
                 </div>
               )}
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500 mb-1">Branch</dt>
                 <dd className="text-sm font-medium text-gray-900">
-                  {selectedExpense.branchId}
+                  {branchName}
                 </dd>
               </div>
               <div className="sm:col-span-1">

@@ -35,6 +35,26 @@ export const DocumentsDashboard = () => {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
+      
+      // Step 1: If Branch Manager, get applicant IDs from their branch first
+      let allowedApplicantIds: string[] | null = null;
+      if (customClaims?.role === 'branch_manager' && customClaims?.branchId) {
+        const applicantsQuery = query(
+          collection(firestore, 'applicants'),
+          where('branchId', '==', customClaims.branchId)
+        );
+        const applicantsSnapshot = await getDocs(applicantsQuery);
+        allowedApplicantIds = applicantsSnapshot.docs.map(doc => doc.id);
+        
+        // If no applicants in branch, return empty
+        if (allowedApplicantIds.length === 0) {
+          setDocuments([]);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Step 2: Fetch documents
       let q = query(
         collection(firestore, 'documents'),
         orderBy('uploadedAt', 'desc'),
@@ -74,7 +94,7 @@ export const DocumentsDashboard = () => {
       }
 
       const snapshot = await getDocs(q);
-      const documentsData = snapshot.docs.map(doc => {
+      let documentsData = snapshot.docs.map(doc => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -93,6 +113,13 @@ export const DocumentsDashboard = () => {
           metadata: data.metadata
         };
       }) as Document[];
+
+      // Step 3: Filter documents by allowed applicant IDs (for Branch Managers)
+      if (allowedApplicantIds !== null) {
+        documentsData = documentsData.filter(doc => 
+          allowedApplicantIds!.includes(doc.applicantId)
+        );
+      }
 
       setDocuments(documentsData);
     } catch (error) {

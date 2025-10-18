@@ -232,7 +232,7 @@ const GoalProgressWidget: React.FC<{ role: string }> = ({ role }) => {
 };
 
 // Stage Distribution Widget - Shows pipeline distribution
-const StageDistributionWidget: React.FC = () => {
+const StageDistributionWidget: React.FC<{ branchId?: string | null }> = ({ branchId }) => {
   const [stageData, setStageData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -240,7 +240,11 @@ const StageDistributionWidget: React.FC = () => {
     const fetchStageData = async () => {
       try {
         const applicantsRef = collection(firestore, 'applicants');
-        const snapshot = await getDocs(applicantsRef);
+        // Filter by branch if branchId is provided (for Branch Managers)
+        const applicantsQuery = branchId
+          ? query(applicantsRef, where('branchId', '==', branchId))
+          : applicantsRef;
+        const snapshot = await getDocs(applicantsQuery);
         
         const stageCounts = snapshot.docs.reduce((acc, doc) => {
           const stage = doc.data().currentStage || 'registration';
@@ -265,7 +269,7 @@ const StageDistributionWidget: React.FC = () => {
       }
     };
     fetchStageData();
-  }, []);
+  }, [branchId]);
 
   if (loading) {
     return (
@@ -396,7 +400,7 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
 };
 
 // Pending Tasks Widget Component
-const PendingTasksWidget: React.FC<{ role: string; userId: string }> = ({ role, userId }) => {
+const PendingTasksWidget: React.FC<{ role: string; userId: string; branchId?: string | null }> = ({ role, userId, branchId }) => {
   const [tasks, setTasks] = useState({
     pendingExpenses: 0,
     pendingCommissions: 0,
@@ -412,13 +416,13 @@ const PendingTasksWidget: React.FC<{ role: string; userId: string }> = ({ role, 
     
     // Calculate expected loads
     let expectedLoads = 0;
-    if (role === 'ho_accountant' || role === 'admin' || role === 'president') {
+    if (role === 'ho_accountant' || role === 'admin' || role === 'president' || role === 'branch_manager') {
       expectedLoads += 2; // expenses and commissions
     }
     if (role === 'admin' || role === 'president') {
       expectedLoads += 1; // transfers
     }
-    if (role === 'admin' || role === 'president' || role === 'ho_recruitment_officer') {
+    if (role === 'admin' || role === 'president' || role === 'ho_recruitment_officer' || role === 'branch_manager') {
       expectedLoads += 2; // documents and stage advancements
     }
     
@@ -433,12 +437,20 @@ const PendingTasksWidget: React.FC<{ role: string; userId: string }> = ({ role, 
 
     try {
       // Listen to pending expenses
-      if (role === 'ho_accountant' || role === 'admin' || role === 'president') {
-        const expensesQuery = query(
-          collection(firestore, 'expenses'),
-          where('status', '==', 'pending'),
-          limit(100)
-        );
+      if (role === 'ho_accountant' || role === 'admin' || role === 'president' || role === 'branch_manager') {
+        // Branch Managers only see expenses from their branch
+        const expensesQuery = role === 'branch_manager' && branchId
+          ? query(
+              collection(firestore, 'expenses'),
+              where('status', '==', 'pending'),
+              where('branchId', '==', branchId),
+              limit(100)
+            )
+          : query(
+              collection(firestore, 'expenses'),
+              where('status', '==', 'pending'),
+              limit(100)
+            );
         const unsubExpenses = onSnapshot(
           expensesQuery,
           (snapshot) => {
@@ -454,12 +466,20 @@ const PendingTasksWidget: React.FC<{ role: string; userId: string }> = ({ role, 
       }
 
       // Listen to pending commissions
-      if (role === 'ho_accountant' || role === 'admin' || role === 'president') {
-        const commissionsQuery = query(
-          collection(firestore, 'commissions'),
-          where('status', '==', 'pending'),
-          limit(100)
-        );
+      if (role === 'ho_accountant' || role === 'admin' || role === 'president' || role === 'branch_manager') {
+        // Branch Managers only see commissions from their branch
+        const commissionsQuery = role === 'branch_manager' && branchId
+          ? query(
+              collection(firestore, 'commissions'),
+              where('status', '==', 'pending'),
+              where('branchId', '==', branchId),
+              limit(100)
+            )
+          : query(
+              collection(firestore, 'commissions'),
+              where('status', '==', 'pending'),
+              limit(100)
+            );
         const unsubCommissions = onSnapshot(
           commissionsQuery,
           (snapshot) => {
@@ -546,11 +566,11 @@ const PendingTasksWidget: React.FC<{ role: string; userId: string }> = ({ role, 
       setLoading(false);
     }
 
-    // Cleanup function to unsubscribe from all listeners
+      // Cleanup function to unsubscribe from all listeners
     return () => {
       unsubscribers.forEach(unsub => unsub());
     };
-  }, [role, userId]);
+  }, [role, userId, branchId]);
 
   const hasPendingTasks = tasks.pendingExpenses > 0 || 
                           tasks.pendingCommissions > 0 || 
@@ -866,13 +886,14 @@ export const Dashboard = () => {
               <PendingTasksWidget 
                 role={customClaims?.role || ''} 
                 userId={user?.uid || ''} 
+                branchId={customClaims?.role === 'branch_manager' ? customClaims.branchId : null}
               />
             </div>
           </div>
 
           {/* Tertiary Widgets Row - Information & Updates */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <StageDistributionWidget />
+            <StageDistributionWidget branchId={customClaims?.role === 'branch_manager' ? customClaims.branchId : null} />
             <QuickTipsWidget />
             <TodaysAgenda />
           </div>

@@ -107,10 +107,20 @@ export const ApplicantList = () => {
   })) || [];
 
   // Transform agents data for filters
-  const agentOptions = agents?.map(agent => ({
-    id: agent.id,
-    agentName: agent.agentName
-  })) || [];
+  // Branch Managers can only see agents from their own branch
+  const agentOptions = agents
+    ?.filter(agent => {
+      // If user is a Branch Manager, only show agents from their branch
+      if (customClaims?.role === 'branch_manager' && customClaims?.branchId) {
+        return agent.branchId === customClaims.branchId;
+      }
+      // Other roles see all agents
+      return true;
+    })
+    .map(agent => ({
+      id: agent.id,
+      agentName: agent.agentName
+    })) || [];
 
   const isLoading = loading || branchesLoading || agentsLoading || officersLoading;
   const combinedError = error || branchesError || agentsError || officersError;

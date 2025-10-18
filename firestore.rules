@@ -381,6 +381,63 @@ service cloud.firestore {
     }
     
     // ==========================================
+    // EXPENSES COLLECTION (Top-Level)
+    // ==========================================
+    
+    match /expenses/{expenseId} {
+      // Read: Admins, President, HO Accountant, and Branch Managers (own branch only)
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        isHOAccountant() ||
+        (isBranchManager() && belongsToBranch(resource.data.branchId))
+      );
+      
+      // Create: Admins, HO Accountant, and Branch Managers (own branch only)
+      allow create: if isAuthenticated() && (
+        isAdmin() ||
+        isHOAccountant() ||
+        (isBranchManager() && belongsToBranch(request.resource.data.branchId))
+      );
+      
+      // Update: Admins, President, and HO Accountant
+      allow update: if isAdmin() || isPresident() || isHOAccountant();
+      
+      // Delete: Admin only
+      allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // EXPENSE VERIFICATIONS COLLECTION
+    // ==========================================
+    
+    match /expense_verifications/{verificationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHOAccountant() || isPresident();
+      allow update, delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // EXPENSE APPROVALS COLLECTION
+    // ==========================================
+    
+    match /expense_approvals/{approvalId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHOAccountant() || isPresident();
+      allow update, delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // EXPENSE PAYMENTS COLLECTION
+    // ==========================================
+    
+    match /expense_payments/{paymentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHOAccountant();
+      allow update, delete: if isAdmin();
+    }
+    
+    // ==========================================
     // STAGE HISTORY COLLECTION
     // ==========================================
     

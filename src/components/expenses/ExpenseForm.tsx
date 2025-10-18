@@ -201,7 +201,15 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
                 >
                   <option value="">Select Applicant</option>
                   {applicants
-                    ?.filter(a => a.status === 'active') // Only show active applicants
+                    ?.filter(a => {
+                      // Only active applicants
+                      if (a.status !== 'active') return false;
+                      // Branch Managers can only see applicants from their own branch
+                      if (customClaims?.role === 'branch_manager' && a.branchId !== customClaims.branchId) {
+                        return false;
+                      }
+                      return true;
+                    })
                     .map((applicant) => (
                       <option key={applicant.id} value={applicant.id}>
                         {applicant.fullName} - {applicant.currentStage}
