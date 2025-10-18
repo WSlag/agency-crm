@@ -1,6 +1,8 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { doc, getDoc } from 'firebase/firestore';
+import { firestore } from '../../config/firebase';
 import { expenseApprovalSchema } from '../../schemas/financial';
 import { EXPENSE_CONFIG, type Expense } from '../../types/expense';
 import { useExpenseStore } from '../../stores/expenseStore';
@@ -16,8 +18,31 @@ export const ExpenseApproval: React.FC<ExpenseApprovalProps> = ({
   onClose,
 }) => {
   const { user } = useAuthStore();
-  const { approveExpense } = useExpenseStore();
+  const { approveExpense, filter, setFilter, fetchExpenses } = useExpenseStore();
   const config = EXPENSE_CONFIG[expense.expenseType];
+  const [verifierName, setVerifierName] = React.useState<string>('');
+
+  // Fetch verifier name
+  React.useEffect(() => {
+    const fetchVerifierName = async () => {
+      if (expense.verifiedBy) {
+        try {
+          const userDoc = await getDoc(doc(firestore, 'users', expense.verifiedBy));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setVerifierName(userData.displayName || userData.email || expense.verifiedBy);
+          } else {
+            setVerifierName(expense.verifiedBy);
+          }
+        } catch (error) {
+          console.error('Error fetching verifier name:', error);
+          setVerifierName(expense.verifiedBy);
+        }
+      }
+    };
+
+    fetchVerifierName();
+  }, [expense.verifiedBy]);
 
   const {
     control,
@@ -42,9 +67,18 @@ export const ExpenseApproval: React.FC<ExpenseApprovalProps> = ({
         ...data,
         approvedBy: user?.uid || '',
       });
+      
+      // Clear ONLY the status filter to show the updated expense
+      // Keep other filters like branchId, expenseType, etc.
+      const { status: _, ...restFilters } = filter;
+      setFilter(restFilters);
+      
+      // Refresh the expenses list
+      await fetchExpenses();
       onClose();
     } catch (error) {
       console.error('Failed to approve expense:', error);
+      throw error;
     }
   };
 
@@ -72,7 +106,7 @@ export const ExpenseApproval: React.FC<ExpenseApprovalProps> = ({
           <div>
             <dt className="text-sm font-medium text-gray-500">Verified By</dt>
             <dd className="mt-1 text-sm text-gray-900">
-              {expense.verifiedBy || 'Not verified'}
+              {verifierName || expense.verifiedBy || 'Not verified'}
             </dd>
           </div>
           <div>

@@ -1,10 +1,12 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
+import { firestore } from '../../config/firebase';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useAuthStore } from '../../stores/authStore';
 import { useApplicantStore } from '../../stores/applicantStore';
 import { useBranchStore } from '../../stores/branchStore';
-import { EXPENSE_CONFIG } from '../../types/expense';
+import { EXPENSE_CONFIG, type ExpenseVerification as ExpenseVerificationType, type ExpenseApproval as ExpenseApprovalType } from '../../types/expense';
 import { ExpenseVerification } from '../../components/expenses/ExpenseVerification';
 import { ExpenseApproval } from '../../components/expenses/ExpenseApproval';
 import {
@@ -33,6 +35,10 @@ export const ExpenseDetail: React.FC = () => {
 
   const [showVerification, setShowVerification] = React.useState(false);
   const [showApproval, setShowApproval] = React.useState(false);
+  const [verifierName, setVerifierName] = React.useState<string>('');
+  const [approverName, setApproverName] = React.useState<string>('');
+  const [verificationDetails, setVerificationDetails] = React.useState<ExpenseVerificationType | null>(null);
+  const [approvalDetails, setApprovalDetails] = React.useState<ExpenseApprovalType | null>(null);
 
   React.useEffect(() => {
     if (id) {
@@ -44,6 +50,82 @@ export const ExpenseDetail: React.FC = () => {
     fetchApplicants();
     fetchBranches();
   }, [fetchApplicants, fetchBranches]);
+
+  // Fetch verifier name and verification details
+  React.useEffect(() => {
+    const fetchVerifierData = async () => {
+      if (selectedExpense?.verifiedBy && id) {
+        try {
+          // Fetch verifier user info
+          const userDoc = await getDoc(doc(firestore, 'users', selectedExpense.verifiedBy));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setVerifierName(userData.displayName || userData.email || selectedExpense.verifiedBy);
+          } else {
+            setVerifierName(selectedExpense.verifiedBy);
+          }
+
+          // Fetch verification record
+          const verificationsQuery = query(
+            collection(firestore, 'expense_verifications'),
+            where('expenseId', '==', id)
+          );
+          const verificationSnapshot = await getDocs(verificationsQuery);
+          if (!verificationSnapshot.empty) {
+            const verificationData = verificationSnapshot.docs[0].data();
+            setVerificationDetails({
+              ...verificationData,
+              id: verificationSnapshot.docs[0].id,
+              verifiedAt: verificationData.verifiedAt?.toDate ? verificationData.verifiedAt.toDate() : verificationData.verifiedAt ? new Date(verificationData.verifiedAt) : new Date(),
+            } as ExpenseVerificationType);
+          }
+        } catch (error) {
+          console.error('Error fetching verifier data:', error);
+          setVerifierName(selectedExpense.verifiedBy);
+        }
+      }
+    };
+
+    fetchVerifierData();
+  }, [selectedExpense?.verifiedBy, id]);
+
+  // Fetch approver name and approval details
+  React.useEffect(() => {
+    const fetchApproverData = async () => {
+      if (selectedExpense?.approvedBy && id) {
+        try {
+          // Fetch approver user info
+          const userDoc = await getDoc(doc(firestore, 'users', selectedExpense.approvedBy));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setApproverName(userData.displayName || userData.email || selectedExpense.approvedBy);
+          } else {
+            setApproverName(selectedExpense.approvedBy);
+          }
+
+          // Fetch approval record
+          const approvalsQuery = query(
+            collection(firestore, 'expense_approvals'),
+            where('expenseId', '==', id)
+          );
+          const approvalSnapshot = await getDocs(approvalsQuery);
+          if (!approvalSnapshot.empty) {
+            const approvalData = approvalSnapshot.docs[0].data();
+            setApprovalDetails({
+              ...approvalData,
+              id: approvalSnapshot.docs[0].id,
+              approvedAt: approvalData.approvedAt?.toDate ? approvalData.approvedAt.toDate() : approvalData.approvedAt ? new Date(approvalData.approvedAt) : new Date(),
+            } as ExpenseApprovalType);
+          }
+        } catch (error) {
+          console.error('Error fetching approver data:', error);
+          setApproverName(selectedExpense.approvedBy);
+        }
+      }
+    };
+
+    fetchApproverData();
+  }, [selectedExpense?.approvedBy, id]);
 
   // Look up applicant name
   const applicant = applicants?.find(a => a.id === selectedExpense?.applicantId);
@@ -311,7 +393,7 @@ export const ExpenseDetail: React.FC = () => {
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-gray-500 mb-1">Verified By</dt>
                   <dd className="text-sm font-medium text-gray-900">
-                    {selectedExpense.verifiedBy}
+                    {verifierName || selectedExpense.verifiedBy}
                   </dd>
                 </div>
                 <div className="sm:col-span-1">
@@ -321,6 +403,38 @@ export const ExpenseDetail: React.FC = () => {
                       new Date(selectedExpense.verifiedAt).toLocaleString()}
                   </dd>
                 </div>
+                {verificationDetails?.notes && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-gray-500 mb-1">Verification Notes</dt>
+                    <dd className="text-sm text-gray-900 bg-blue-50 rounded-lg p-4 border border-blue-200">
+                      {verificationDetails.notes}
+                    </dd>
+                  </div>
+                )}
+                {verificationDetails?.checklistItems && verificationDetails.checklistItems.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-gray-500 mb-2">Verification Checklist</dt>
+                    <dd>
+                      <div className="space-y-3">
+                        {verificationDetails.checklistItems.map((item, index) => (
+                          <div key={item.id || index} className="flex items-start space-x-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
+                            <CheckCircleIcon className={`h-5 w-5 flex-shrink-0 mt-0.5 ${item.checked ? 'text-green-600' : 'text-gray-400'}`} />
+                            <div className="flex-1">
+                              <p className={`text-sm font-medium ${item.checked ? 'text-gray-900' : 'text-gray-500'}`}>
+                                {item.name}
+                              </p>
+                              {item.notes && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  {item.notes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </dd>
+                  </div>
+                )}
               </dl>
             </div>
           </div>
@@ -342,7 +456,7 @@ export const ExpenseDetail: React.FC = () => {
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-gray-500 mb-1">Approved By</dt>
                   <dd className="text-sm font-medium text-gray-900">
-                    {selectedExpense.approvedBy}
+                    {approverName || selectedExpense.approvedBy}
                   </dd>
                 </div>
                 <div className="sm:col-span-1">
@@ -352,6 +466,33 @@ export const ExpenseDetail: React.FC = () => {
                       new Date(selectedExpense.approvedAt).toLocaleString()}
                   </dd>
                 </div>
+                {approvalDetails?.notes && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-gray-500 mb-1">Approval Notes</dt>
+                    <dd className="text-sm text-gray-900 bg-green-50 rounded-lg p-4 border border-green-200">
+                      {approvalDetails.notes}
+                    </dd>
+                  </div>
+                )}
+                {approvalDetails?.conditions && approvalDetails.conditions.length > 0 && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-sm font-medium text-gray-500 mb-2">Approval Conditions</dt>
+                    <dd>
+                      <div className="space-y-2">
+                        {approvalDetails.conditions.map((condition, index) => (
+                          <div key={index} className="flex items-center space-x-3 bg-green-50 rounded-lg p-3 border border-green-200">
+                            <CheckCircleIcon className="h-5 w-5 text-green-600 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">
+                                {condition.name}: <span className="text-gray-700">{condition.value}</span>
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </dd>
+                  </div>
+                )}
               </dl>
             </div>
           </div>
@@ -395,7 +536,11 @@ export const ExpenseDetail: React.FC = () => {
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full border-2 border-gray-200">
             <ExpenseVerification
               expense={selectedExpense}
-              onClose={() => setShowVerification(false)}
+              onClose={() => {
+                setShowVerification(false);
+                // Refresh expense data to show updated status
+                if (id) fetchExpenseById(id);
+              }}
             />
           </div>
         </div>
@@ -407,7 +552,11 @@ export const ExpenseDetail: React.FC = () => {
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full border-2 border-gray-200">
             <ExpenseApproval
               expense={selectedExpense}
-              onClose={() => setShowApproval(false)}
+              onClose={() => {
+                setShowApproval(false);
+                // Refresh expense data to show updated status
+                if (id) fetchExpenseById(id);
+              }}
             />
           </div>
         </div>

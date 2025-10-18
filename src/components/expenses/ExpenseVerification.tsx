@@ -16,7 +16,7 @@ export const ExpenseVerification: React.FC<ExpenseVerificationProps> = ({
   onClose,
 }) => {
   const { user } = useAuthStore();
-  const { verifyExpense, rejectExpense } = useExpenseStore();
+  const { verifyExpense, rejectExpense, filter, setFilter, fetchExpenses } = useExpenseStore();
   const config = EXPENSE_CONFIG[expense.expenseType];
 
   const {
@@ -53,9 +53,18 @@ export const ExpenseVerification: React.FC<ExpenseVerificationProps> = ({
       } else {
         await rejectExpense(expense.id, data.notes);
       }
+      
+      // Clear ONLY the status filter to show the updated expense
+      // Keep other filters like branchId, expenseType, etc.
+      const { status: _, ...restFilters } = filter;
+      setFilter(restFilters);
+      
+      // Refresh the expenses list
+      await fetchExpenses();
       onClose();
     } catch (error) {
       console.error('Failed to verify expense:', error);
+      throw error;
     }
   };
 
