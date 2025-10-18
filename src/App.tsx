@@ -73,6 +73,8 @@ import { TransferAnalytics } from './pages/reports/TransferAnalytics';
 import { OfficerPerformance } from './pages/reports/OfficerPerformance';
 import { DeploymentReports } from './pages/reports/DeploymentReports';
 import { ReportBuilder } from './pages/reports/ReportBuilder';
+import { ReportList } from './pages/reports/ReportList';
+import { ReportDetail } from './pages/reports/ReportDetail';
 import { SharedReports } from './pages/reports/SharedReports';
 
 // Settings
@@ -325,6 +327,9 @@ const App: React.FC = () => {
           {/* Reports Routes */}
           <Route path="/reports">
             <Route index element={<ReportBuilder />} />
+            <Route path="builder" element={<ReportBuilder />} />
+            <Route path="list" element={<ReportList />} />
+            <Route path=":id" element={<ReportDetail />} />
             <Route path="financial" element={<FinancialReports />} />
             <Route path="branch-performance" element={<BranchPerformance />} />
             <Route path="agent-performance" element={<AgentPerformance />} />

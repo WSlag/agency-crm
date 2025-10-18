@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ReportDefinition, ReportType, ReportFilter, ReportMetric } from '../../services/reports/reportService';
+import { ReportDefinition, ReportType, ReportFilter, ReportMetric, reportService } from '../../services/reports/reportService';
+import { useReportStore } from '../../stores/reportStore';
+import { useAuthStore } from '../../stores/authStore';
 import { 
   SparklesIcon, 
   DocumentTextIcon, 
@@ -54,13 +56,25 @@ type ReportFormData = z.infer<typeof reportSchema>;
 
 export const ReportBuilder: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const { generateReport: saveReport } = useReportStore();
   const [filters, setFilters] = useState<ReportFilter[]>([]);
   const [metrics, setMetrics] = useState<ReportMetric[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<ReportFormData>({
-    resolver: zodResolver(reportSchema)
+    resolver: zodResolver(reportSchema),
+    defaultValues: {
+      name: '',
+      type: 'applicant_status',
+      description: '',
+      filters: [],
+      metrics: [],
+      groupBy: [],
+      sortBy: []
+    }
   });
 
   const reportType = watch('type');
@@ -85,14 +99,53 @@ export const ReportBuilder: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setSuccess(null);
       
-      // TODO: Implement report creation logic
-      console.log('Creating report:', data);
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Build report definition
+      const definition: ReportDefinition = {
+        id: '', // Will be set by Firestore
+        name: data.name,
+        type: data.type,
+        description: data.description || '',
+        filters: filters,
+        metrics: metrics,
+        groupBy: data.groupBy,
+        sortBy: data.sortBy,
+        schedule: data.schedule,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      console.log('Generating report with definition:', definition);
+
+      // Generate the report using ReportService
+      const result = await reportService.generateReport(definition);
       
-      // Navigate to reports list
-      navigate('/reports');
+      console.log('Report generated successfully:', result);
+
+      // Save report metadata to Firestore via store
+      const reportId = await saveReport(
+        data.name,
+        data.type,
+        data.schedule?.format || 'pdf',
+        {
+          startDate: filters.find(f => f.field === 'startDate')?.value,
+          endDate: filters.find(f => f.field === 'endDate')?.value,
+        }
+      );
+
+      setSuccess('Report generated successfully!');
+      
+      // Navigate to reports list after a short delay
+      setTimeout(() => {
+        navigate('/reports/list');
+      }, 1500);
     } catch (err) {
-      setError('Failed to create report');
+      setError(err instanceof Error ? err.message : 'Failed to create report');
       console.error('Error creating report:', err);
     } finally {
       setLoading(false);
@@ -229,6 +282,21 @@ export const ReportBuilder: React.FC = () => {
                 </div>
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-red-800">{error}</h3>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 rounded-xl bg-green-50 border-2 border-green-200 p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-green-800">{success}</h3>
                 </div>
               </div>
             </div>

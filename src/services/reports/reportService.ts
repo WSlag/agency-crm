@@ -206,3 +206,6 @@ export class ReportService {
     });
   }
 }
+
+// Export singleton instance
+export const reportService = new ReportService();
