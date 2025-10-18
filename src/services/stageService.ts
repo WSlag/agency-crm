@@ -55,24 +55,29 @@ class StageService {
       return false;
     }
     
-    // Branch Manager can only approve branch stages for their branch
+    // Branch Manager can only approve Registration for their branch
     if (user.role === 'branch_manager') {
       return (
-        BRANCH_STAGES.includes(stage) &&
+        stage === ApplicantStage.REGISTRATION &&
         user.branchId === applicant.branchId
       );
     }
     
-    // President can approve transfers
+    // President can approve Transfer and all HO stages
     if (user.role === 'president') {
-      return stage === ApplicantStage.TRANSFER;
+      return (
+        stage === ApplicantStage.TRANSFER ||
+        stage === ApplicantStage.PROCESSING ||
+        stage === ApplicantStage.DEPLOYMENT ||
+        stage === ApplicantStage.DEPLOYED
+      );
     }
     
-    // HO Recruitment Officer can approve HO stages for assigned applicants
+    // HO Recruitment Officer can approve Interview and Medical only
     if (user.role === 'ho_recruitment_officer') {
       return (
-        HEAD_OFFICE_STAGES.includes(stage) &&
-        applicant.assignedRecruitmentOfficerId === user.uid
+        stage === ApplicantStage.INTERVIEW ||
+        stage === ApplicantStage.MEDICAL
       );
     }
     

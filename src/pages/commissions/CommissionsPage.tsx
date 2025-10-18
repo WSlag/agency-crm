@@ -8,7 +8,7 @@ import { firestore } from '../../config/firebase';
 import { 
   PlusIcon, 
   SparklesIcon, 
-  CurrencyDollarIcon, 
+  BanknotesIcon, 
   CheckCircleIcon, 
   ClockIcon, 
   XCircleIcon,
@@ -37,9 +37,17 @@ export const CommissionsPage = () => {
   const [commissionsWithNames, setCommissionsWithNames] = useState<any[]>([]);
   const [loadingNames, setLoadingNames] = useState(false);
 
+  // Auto-filter by branch for Branch Managers on mount
+  useEffect(() => {
+    if (customClaims?.role === 'branch_manager' && customClaims?.branchId) {
+      setFilter({ ...filter, branchId: customClaims.branchId });
+    }
+  }, [customClaims]);
+
+  // Fetch commissions on mount and when filters or sort changes
   useEffect(() => {
     fetchCommissions();
-  }, [fetchCommissions]);
+  }, [filter, sort, fetchCommissions]);
 
   // Fetch agent and applicant names when commissions change
   useEffect(() => {
@@ -184,7 +192,7 @@ export const CommissionsPage = () => {
       name: 'Total Commissions',
       value: commissions?.length || 0,
       color: 'from-blue-500 to-blue-600',
-      icon: CurrencyDollarIcon,
+      icon: BanknotesIcon,
     },
     {
       name: 'Pending',
@@ -297,7 +305,7 @@ export const CommissionsPage = () => {
                     ₱{totalAmount.toLocaleString()}
                   </p>
                 </div>
-                <CurrencyDollarIcon className="h-12 w-12 text-white/40" />
+                <BanknotesIcon className="h-12 w-12 text-white/40" />
               </div>
             </div>
           </div>
@@ -530,7 +538,7 @@ export const CommissionsPage = () => {
                       {!commissions?.length && !loading && (
                         <tr>
                           <td colSpan={7} className="px-3 py-16 text-center text-gray-500">
-                            <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
+                            <BanknotesIcon className="mx-auto h-12 w-12 text-gray-400" />
                             <p className="mt-4 text-lg font-medium text-gray-900">No commissions found</p>
                             <p className="text-sm mt-2 text-gray-600">
                               Try adjusting your filters or add a new commission

@@ -9,7 +9,7 @@ import { SparklesIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 export const ExpenseEntry: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuthStore();
+  const { user, customClaims } = useAuthStore();
   const {
     selectedExpense,
     loading,
@@ -33,7 +33,8 @@ export const ExpenseEntry: React.FC = () => {
         const newExpenseData = {
           ...data,
           enteredBy: user?.uid || '',
-          branchId: user?.branchId || '',
+          // branchId is already set in the form from customClaims
+          branchId: data.branchId || customClaims?.branchId || '',
         };
         await createExpense(newExpenseData as Omit<Expense, 'id' | 'status' | 'createdAt' | 'updatedAt'>);
       }

@@ -68,12 +68,12 @@ export interface CommissionConfig {
 export const COMMISSION_RULES: Record<string, CommissionRule> = {
   medical: {
     stage: 'medical',
-    percentage: 20,
+    percentage: 50,
     currency: 'PHP'
   },
   deployed: {
     stage: 'deployed',
-    percentage: 80,
+    percentage: 50,
     currency: 'PHP'
   }
 };
@@ -104,12 +104,12 @@ export const COMMISSION_CONFIG: Record<CommissionType, CommissionConfig> = {
     rules: [
       {
         stage: 'medical',
-        percentage: 20,
+        percentage: 50,
         currency: 'PHP'
       },
       {
         stage: 'deployed',
-        percentage: 80,
+        percentage: 50,
         currency: 'PHP'
       }
     ]

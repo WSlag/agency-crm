@@ -50,37 +50,65 @@ export const UserForm = () => {
   });
 
   useEffect(() => {
-    const fetchBranches = async () => {
+    const fetchData = async () => {
       try {
+        // First, fetch all branches (including both active and inactive)
+        console.log('UserForm: Fetching branches...');
         const branchesSnapshot = await getDocs(collection(firestore, 'branches'));
-        const branchesData = branchesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          branchName: doc.data().branchName,
-        }));
+        console.log('UserForm: Fetched', branchesSnapshot.docs.length, 'branch documents');
+        
+        if (branchesSnapshot.empty) {
+          console.warn('UserForm: No branches found in Firestore!');
+          setError('No branches available. Please create branches first.');
+        }
+        
+        const branchesData = branchesSnapshot.docs
+          .map(doc => {
+            const data = doc.data();
+            console.log('UserForm: Branch data:', { id: doc.id, data });
+            return {
+              id: doc.id,
+              // Handle both 'name' and 'branchName' fields for compatibility
+              branchName: data.name || data.branchName || 'Unknown Branch',
+              status: data.status,
+              active: data.active,
+            };
+          })
+          // Filter to only show active branches (check both status and active fields)
+          .filter(branch => {
+            const isActive = branch.status === 'active' || branch.active === true;
+            console.log('UserForm: Branch', branch.branchName, 'isActive:', isActive);
+            return isActive;
+          })
+          .map(({ id, branchName }) => ({ id, branchName })); // Keep only needed fields
+        
+        console.log('UserForm: Mapped active branches:', branchesData);
         setBranches(branchesData);
-      } catch (err) {
-        setError('Failed to fetch branches');
-      }
-    };
 
-    fetchBranches();
-
-    if (id) {
-      const fetchUser = async () => {
-        try {
+        // Then, fetch user data if editing
+        if (id) {
+          console.log('UserForm: Fetching user data for ID:', id);
           const userDoc = await getDoc(doc(firestore, 'users', id));
           if (userDoc.exists()) {
-            reset(userDoc.data() as UserFormData);
+            const userData = userDoc.data() as UserFormData;
+            console.log('UserForm: User data:', userData);
+            // Ensure branchId is properly set (convert null to empty string for form compatibility)
+            reset({
+              ...userData,
+              branchId: userData.branchId || null,
+            });
           } else {
             setError('User not found');
           }
-        } catch (err) {
-          setError('Failed to fetch user');
         }
-      };
+      } catch (err) {
+        const errorMessage = 'Failed to fetch data';
+        setError(errorMessage);
+        console.error('UserForm: Error fetching data:', err);
+      }
+    };
 
-      fetchUser();
-    }
+    fetchData();
   }, [id, reset]);
 
   const onSubmit = async (data: UserFormData) => {

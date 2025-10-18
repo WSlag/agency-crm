@@ -62,28 +62,28 @@ export const STAGE_CONFIGURATION: Record<ApplicantStage, StageRequirement> = {
   [ApplicantStage.REGISTRATION]: {
     stage: ApplicantStage.REGISTRATION,
     documents: [],
-    approvers: ['admin', 'branch_manager'],
-    autoAdvance: true // Automatically moves to Interview after registration
+    approvers: ['admin', 'branch_manager'], // Branch Manager can approve
+    autoAdvance: false // Requires approval (Branch Manager can self-approve)
   },
   
   [ApplicantStage.INTERVIEW]: {
     stage: ApplicantStage.INTERVIEW,
     documents: INTERVIEW_DOCUMENTS,
-    approvers: ['admin', 'branch_manager'],
+    approvers: ['admin', 'ho_recruitment_officer'], // HO Officer can approve
     autoAdvance: false // Requires manual approval
   },
   
   [ApplicantStage.MEDICAL]: {
     stage: ApplicantStage.MEDICAL,
     documents: MEDICAL_DOCUMENTS,
-    approvers: ['admin', 'branch_manager'],
+    approvers: ['admin', 'ho_recruitment_officer'], // HO Officer can approve
     autoAdvance: false
   },
   
   [ApplicantStage.TRANSFER]: {
     stage: ApplicantStage.TRANSFER,
     documents: [],
-    approvers: ['admin', 'president'],
+    approvers: ['admin', 'president'], // Admin/President approve
     commissionTrigger: 'medical', // 1st commission trigger - when transferred to HO
     autoAdvance: false // Requires Admin/President approval and officer assignment
   },
@@ -91,21 +91,21 @@ export const STAGE_CONFIGURATION: Record<ApplicantStage, StageRequirement> = {
   [ApplicantStage.PROCESSING]: {
     stage: ApplicantStage.PROCESSING,
     documents: PROCESSING_DOCUMENTS,
-    approvers: ['admin', 'ho_recruitment_officer'],
+    approvers: ['admin', 'president'], // Admin/President approve (HO Officer removed)
     autoAdvance: false
   },
   
   [ApplicantStage.DEPLOYMENT]: {
     stage: ApplicantStage.DEPLOYMENT,
     documents: DEPLOYMENT_DOCUMENTS,
-    approvers: ['admin', 'ho_recruitment_officer'],
+    approvers: ['admin', 'president'], // Admin/President approve (HO Officer removed)
     autoAdvance: false
   },
   
   [ApplicantStage.DEPLOYED]: {
     stage: ApplicantStage.DEPLOYED,
     documents: [],
-    approvers: ['admin', 'ho_recruitment_officer'],
+    approvers: ['admin', 'president'], // Admin/President approve (HO Officer removed)
     commissionTrigger: 'deployed',
     autoAdvance: true // Terminal stage
   }

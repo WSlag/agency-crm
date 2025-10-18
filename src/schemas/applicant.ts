@@ -85,16 +85,16 @@ export const applicantRegistrationSchema = z.object({
   address: addressSchema,
   
   // Job Preferences
-  preferredCountries: z.array(z.string()).min(1, 'At least one preferred country is required'),
-  preferredPositions: z.array(z.string()).min(1, 'At least one preferred position is required'),
-  expectedSalary: salarySchema,
+  preferredCountries: z.array(z.string().min(1)).min(1, 'At least one preferred country is required'),
+  preferredPositions: z.array(z.string().min(1)).min(1, 'At least one preferred position is required'),
+  expectedSalary: salarySchema.optional(),
   
   // Skills and Qualifications
-  education: z.array(educationSchema),
-  workExperience: z.array(workExperienceSchema),
-  skills: z.array(z.string()),
-  certifications: z.array(z.string()),
-  languages: z.array(languageSchema),
+  education: z.array(educationSchema).optional(),
+  workExperience: z.array(workExperienceSchema).optional(),
+  skills: z.array(z.string()).optional(),
+  certifications: z.array(z.string()).optional(),
+  languages: z.array(languageSchema).optional(),
   
   // Medical Information
   medicalStatus: medicalStatusSchema,

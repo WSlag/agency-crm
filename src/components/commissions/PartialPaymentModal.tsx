@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import {
   XMarkIcon,
-  CurrencyDollarIcon,
+  BanknotesIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { Commission } from '../../types/commission';
@@ -106,7 +106,7 @@ export const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
 
                 <div className="sm:flex sm:items-start">
                   <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-green-100 to-emerald-100 sm:mx-0 sm:h-10 sm:w-10">
-                    <CurrencyDollarIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
+                    <BanknotesIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
                   </div>
                   <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
                     <Dialog.Title as="h3" className="text-xl font-bold leading-6 text-gray-900">

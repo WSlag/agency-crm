@@ -30,7 +30,7 @@ const steps = [
 export const ApplicantRegistration = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, customClaims } = useAuth();
   const { createApplicant, updateApplicant, selectedApplicant, fetchApplicantById } = useApplicantStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,14 +42,14 @@ export const ApplicantRegistration = () => {
     resolver: zodResolver(applicantRegistrationSchema),
     mode: 'onChange',
     defaultValues: {
-      branchId: user?.branchId || '',
+      branchId: customClaims?.branchId || '',
       applicationType: 'direct_hire',
       status: 'active',
       currentStage: 'registration',
       transferredToHO: false,
       transferredDate: null,
-      preferredCountries: [''],
-      preferredPositions: [''],
+      preferredCountries: [],
+      preferredPositions: [],
       education: [],
       workExperience: [],
       skills: [],
@@ -141,7 +141,7 @@ export const ApplicantRegistration = () => {
     }
   }, [isEditMode, selectedApplicant, id, methods]);
 
-  const { handleSubmit, trigger } = methods;
+  const { handleSubmit, trigger, formState: { errors } } = methods;
 
   const handleNext = async () => {
     const fields = getFieldsForStep(currentStep);
@@ -149,6 +149,36 @@ export const ApplicantRegistration = () => {
     
     if (isValid) {
       setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+      // Scroll to top for next step
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // Show validation error message
+      const stepName = steps[currentStep].name;
+      
+      // Count errors in current step
+      const errorCount = fields.filter(field => {
+        // Handle nested fields (e.g., 'address.present')
+        const fieldParts = field.split('.');
+        let error = errors;
+        for (const part of fieldParts) {
+          if (error && typeof error === 'object') {
+            error = (error as any)[part];
+          } else {
+            error = undefined;
+            break;
+          }
+        }
+        return error !== undefined;
+      }).length;
+      
+      if (errorCount > 0) {
+        alert(`⚠️ Validation Error\n\nPlease fill in all required fields in the "${stepName}" section.\n\n${errorCount} field(s) need your attention.`);
+      } else {
+        alert(`⚠️ Validation Error\n\nPlease complete all required information in the "${stepName}" section before proceeding.`);
+      }
+      
+      // Scroll to top to show errors
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -156,18 +186,40 @@ export const ApplicantRegistration = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const getFieldsForStep = (step: number): Array<keyof ApplicantRegistrationData> => {
+  const getFieldsForStep = (step: number): Array<any> => {
     switch (step) {
       case 0:
-        return ['fullName', 'email', 'contactInfo', 'dateOfBirth', 'placeOfBirth', 'nationality', 'civilStatus', 'gender', 'address'];
+        // Personal Information - include nested address fields
+        return [
+          'fullName', 
+          'email', 
+          'contactInfo', 
+          'dateOfBirth', 
+          'placeOfBirth', 
+          'nationality', 
+          'civilStatus', 
+          'gender',
+          'address.present',
+          'address.permanent',
+          'applicationType'
+        ];
       case 1:
-        return ['preferredCountries', 'preferredPositions', 'expectedSalary'];
+        // Job Preferences - expectedSalary is optional
+        return ['preferredCountries', 'preferredPositions'];
       case 2:
-        return ['education', 'workExperience', 'skills', 'certifications', 'languages'];
+        // Education & Experience - arrays are optional
+        return [];
       case 3:
+        // Medical Information
         return ['medicalStatus'];
       case 4:
-        return ['emergencyContact'];
+        // Emergency Contact - include nested fields
+        return [
+          'emergencyContact.name',
+          'emergencyContact.relationship',
+          'emergencyContact.contactNumber',
+          'emergencyContact.address'
+        ];
       default:
         return [];
     }

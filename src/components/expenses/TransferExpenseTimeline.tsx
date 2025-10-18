@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
 import {
-  CurrencyDollarIcon,
+  BanknotesIcon,
   ArrowRightIcon,
   BuildingOfficeIcon,
   CalendarIcon,
@@ -153,7 +153,7 @@ export const TransferExpenseTimeline: React.FC<TransferExpenseTimelineProps> = (
         </div>
       ) : timeline.length === 0 ? (
         <div className="p-8 text-center bg-white rounded-lg border border-gray-200">
-          <CurrencyDollarIcon className="h-12 w-12 text-gray-400 mx-auto" />
+          <BanknotesIcon className="h-12 w-12 text-gray-400 mx-auto" />
           <p className="mt-2 text-sm text-gray-500">No expenses recorded</p>
         </div>
       ) : (

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { EXPENSE_CONFIG, type Expense, type ExpenseType, type ExpenseStatus } from '../../types/expense';
 import { useAuthStore } from '../../stores/authStore';
-import { SparklesIcon, CurrencyDollarIcon, EyeIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon, BanknotesIcon, EyeIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/20/solid';
 
 export const ExpenseList = () => {
@@ -287,7 +287,7 @@ export const ExpenseList = () => {
                   {!expenses?.length && !loading && (
                     <tr>
                       <td colSpan={5} className="px-3 py-16 text-center text-gray-500">
-                        <CurrencyDollarIcon className="mx-auto h-12 w-12 text-gray-400" />
+                        <BanknotesIcon className="mx-auto h-12 w-12 text-gray-400" />
                         <p className="mt-4 text-lg font-medium text-gray-900">No expenses found</p>
                         <p className="text-sm mt-2 text-gray-600">
                           Try adjusting your filters or add a new expense

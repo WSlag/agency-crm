@@ -3,20 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { ExpenseList } from '../../components/expenses/ExpenseList';
 import { useAuthStore } from '../../stores/authStore';
 import { useExpenseStore } from '../../stores/expenseStore';
-import { PlusIcon, SparklesIcon, CurrencyDollarIcon, CheckCircleIcon, ClockIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, SparklesIcon, BanknotesIcon, CheckCircleIcon, ClockIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 export const ExpensesPage = () => {
   const navigate = useNavigate();
   const { user, customClaims } = useAuthStore();
-  const { expenses, loading, fetchExpenses } = useExpenseStore();
+  const { expenses, loading, setFilter, filter, fetchExpenses } = useExpenseStore();
 
   const canCreateExpense = ['admin', 'branch_manager', 'ho_accountant'].includes(
     customClaims?.role || ''
   );
 
+  // Auto-filter by branch for Branch Managers on mount
+  useEffect(() => {
+    if (customClaims?.role === 'branch_manager' && customClaims?.branchId) {
+      setFilter({ ...filter, branchId: customClaims.branchId });
+    }
+  }, [customClaims]);
+
   useEffect(() => {
     fetchExpenses();
-  }, [fetchExpenses]);
+  }, [filter, fetchExpenses]);
 
   // Calculate stats
   const stats = [
@@ -24,7 +31,7 @@ export const ExpensesPage = () => {
       name: 'Total Expenses',
       value: expenses?.length || 0,
       color: 'from-blue-500 to-blue-600',
-      icon: CurrencyDollarIcon,
+      icon: BanknotesIcon,
     },
     {
       name: 'Pending',
@@ -116,7 +123,7 @@ export const ExpensesPage = () => {
                     ₱{totalAmount.toLocaleString()}
                   </p>
                 </div>
-                <CurrencyDollarIcon className="h-12 w-12 text-white/40" />
+                <BanknotesIcon className="h-12 w-12 text-white/40" />
               </div>
             </div>
           </div>

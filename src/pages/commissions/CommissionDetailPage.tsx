@@ -13,11 +13,10 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ClockIcon,
-  CurrencyDollarIcon,
+  BanknotesIcon,
   CalendarIcon,
   DocumentTextIcon,
   SparklesIcon,
-  BanknotesIcon,
   UsersIcon,
 } from '@heroicons/react/24/outline';
 
@@ -283,7 +282,7 @@ export const CommissionDetailPage = () => {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3">
-                <CurrencyDollarIcon className="h-10 w-10 text-white" />
+                <BanknotesIcon className="h-10 w-10 text-white" />
                 <h1 className="text-3xl font-bold text-white">Commission Details</h1>
               </div>
               <p className="mt-2 text-indigo-100">
@@ -307,7 +306,7 @@ export const CommissionDetailPage = () => {
             {/* Amount Card */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <CurrencyDollarIcon className="h-5 w-5 mr-2 text-indigo-600" />
+                <BanknotesIcon className="h-5 w-5 mr-2 text-indigo-600" />
                 Commission Amount
               </h2>
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
@@ -428,7 +427,9 @@ export const CommissionDetailPage = () => {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <dt className="text-sm font-medium text-gray-500">Requested By</dt>
                     <dd className="mt-1 text-sm font-semibold text-gray-900">
-                      {commission.requestedBy}
+                      {commission.requestedBy === 'system_auto_trigger' 
+                        ? '🤖 System (Auto-Triggered)' 
+                        : commission.requestedBy}
                     </dd>
                   </div>
                 )}
@@ -534,17 +535,22 @@ export const CommissionDetailPage = () => {
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <h3 className="text-sm font-semibold text-gray-900 mb-3">Timeline</h3>
                 <div className="space-y-3">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <ClockIcon className="h-4 w-4 text-indigo-600" />
+                  {commission.createdAt && (
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <ClockIcon className="h-4 w-4 text-indigo-600" />
+                        </div>
+                      </div>
+                      <div className="ml-3">
+                        <p className="text-xs font-medium text-gray-900">Created</p>
+                        <p className="text-xs text-gray-500">{formatDate(commission.createdAt)}</p>
+                        {commission.requestedBy === 'system_auto_trigger' && (
+                          <p className="text-xs text-indigo-600 mt-1">🤖 Auto-Triggered by System</p>
+                        )}
                       </div>
                     </div>
-                    <div className="ml-3">
-                      <p className="text-xs font-medium text-gray-900">Created</p>
-                      <p className="text-xs text-gray-500">{formatDate(commission.createdAt)}</p>
-                    </div>
-                  </div>
+                  )}
 
                   {commission.approvedAt && (
                     <div className="flex items-start">

@@ -106,17 +106,29 @@ export const DashboardLayout = () => {
                       </div>
                     </div>
                     
-                    {/* Notifications in sidebar */}
-                    <button
-                      onClick={() => setNotificationsOpen(!notificationsOpen)}
-                      className="mt-3 w-full flex items-center justify-between px-3 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <BellIcon className="h-5 w-5 text-white" />
-                        <span className="text-sm text-white">Notifications</span>
-                      </div>
-                      <NotificationBadge count={unreadCount} />
-                    </button>
+                    {/* Profile & Notifications in sidebar */}
+                    <div className="mt-3 space-y-2">
+                      <Link
+                        to="/profile"
+                        className="w-full flex items-center justify-between px-3 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <UserCircleIcon className="h-5 w-5 text-white" />
+                          <span className="text-sm text-white">My Profile</span>
+                        </div>
+                      </Link>
+                      
+                      <button
+                        onClick={() => setNotificationsOpen(!notificationsOpen)}
+                        className="w-full flex items-center justify-between px-3 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <BellIcon className="h-5 w-5 text-white" />
+                          <span className="text-sm text-white">Notifications</span>
+                        </div>
+                        <NotificationBadge count={unreadCount} />
+                      </button>
+                    </div>
                   </div>
                   
                   <nav className="flex flex-1 flex-col">

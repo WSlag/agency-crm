@@ -7,7 +7,7 @@ import { useCommissionStore } from '../../stores/commissionStore';
 import { useAuthStore } from '../../stores/authStore';
 import { CommissionCalculator } from './CommissionCalculator';
 import { 
-  CurrencyDollarIcon, 
+  BanknotesIcon, 
   UserIcon, 
   DocumentTextIcon,
   CalculatorIcon,
@@ -237,7 +237,7 @@ export const CommissionRequestForm: React.FC<CommissionRequestFormProps> = ({
         {calculatedResult && (
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-200">
             <div className="flex items-center space-x-2 mb-4">
-              <CurrencyDollarIcon className="h-6 w-6 text-indigo-600" />
+              <BanknotesIcon className="h-6 w-6 text-indigo-600" />
               <h4 className="text-lg font-bold text-gray-900">Commission Summary</h4>
             </div>
             <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">

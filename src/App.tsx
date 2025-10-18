@@ -6,6 +6,7 @@ import { useAuthStore } from './stores/authStore';
 
 // Auth Components
 import Login from './components/auth/Login';
+import { ForgotPassword } from './pages/auth/ForgotPassword';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { RoleGuard } from './components/auth/RoleGuard';
 
@@ -79,6 +80,7 @@ import { SystemSettings } from './pages/settings/SystemSettings';
 import { NotificationSettings } from './pages/settings/NotificationSettings';
 import { RolePermissions } from './pages/settings/RolePermissions';
 import { BranchConfiguration } from './pages/settings/BranchConfiguration';
+import { ProfilePage } from './pages/settings/ProfilePage';
 
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -109,6 +111,7 @@ const App: React.FC = () => {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected Routes */}
         <Route
@@ -245,6 +248,9 @@ const App: React.FC = () => {
             <Route path="shared" element={<SharedReports />} />
           </Route>
 
+          {/* Profile (accessible to all authenticated users) */}
+          <Route path="/profile" element={<ProfilePage />} />
+
           {/* Settings */}
           <Route
             path="/settings"
@@ -254,6 +260,7 @@ const App: React.FC = () => {
               </RoleGuard>
             }
           >
+            <Route index element={<Navigate to="/settings/system" replace />} />
             <Route path="system" element={<SystemSettings />} />
             <Route path="notifications" element={<NotificationSettings />} />
             <Route path="roles" element={<RolePermissions />} />

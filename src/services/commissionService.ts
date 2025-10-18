@@ -79,9 +79,18 @@ export class CommissionService {
         return null;
       }
 
+      const data = docSnap.data();
+      
       return {
         id: docSnap.id,
-        ...docSnap.data()
+        ...data,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : null,
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : null,
+        requestedAt: data.requestedAt?.toDate ? data.requestedAt.toDate() : data.requestedAt ? new Date(data.requestedAt) : null,
+        verifiedAt: data.verifiedAt?.toDate ? data.verifiedAt.toDate() : data.verifiedAt ? new Date(data.verifiedAt) : null,
+        approvedAt: data.approvedAt?.toDate ? data.approvedAt.toDate() : data.approvedAt ? new Date(data.approvedAt) : null,
+        paidAt: data.paidAt?.toDate ? data.paidAt.toDate() : data.paidAt ? new Date(data.paidAt) : null,
+        lastPaymentDate: data.lastPaymentDate?.toDate ? data.lastPaymentDate.toDate() : data.lastPaymentDate ? new Date(data.lastPaymentDate) : null,
       } as Commission;
     } catch (error) {
       console.error('Error getting commission:', error);

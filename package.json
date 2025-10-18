@@ -16,6 +16,7 @@
     "check:document-expiry": "tsx src/scripts/checkDocumentExpiry.ts",
     "init-db": "tsx src/scripts/runInitialization.ts",
     "sync:claims": "tsx src/scripts/syncCustomClaims.ts",
+    "deploy:functions": "cd functions && npm run build && cd .. && firebase deploy --only functions",
     "dev": "vite --mode development",
     "build:staging": "tsc && vite build --mode staging",
     "build:prod": "tsc && vite build --mode production",

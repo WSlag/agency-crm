@@ -5,7 +5,6 @@ import { useCommissionStore } from '../../stores/commissionStore';
 import { EXPENSE_CONFIG } from '../../types/expense';
 import {
   SparklesIcon,
-  CurrencyDollarIcon,
   ClockIcon,
   BanknotesIcon,
   ChartBarIcon,
@@ -146,7 +145,7 @@ export const FinancialDashboard: React.FC = () => {
             <div className="relative">
               <div className="flex items-center justify-between mb-4">
                 <div className="p-3 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
-                  <CurrencyDollarIcon className="h-6 w-6 text-white" />
+                  <BanknotesIcon className="h-6 w-6 text-white" />
                 </div>
               </div>
               <p className="text-sm font-medium text-gray-600 mb-1">
@@ -237,7 +236,7 @@ export const FinancialDashboard: React.FC = () => {
             <div className="p-6">
               {summary.recentExpenses.length === 0 ? (
                 <div className="text-center py-12">
-                  <CurrencyDollarIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                  <BanknotesIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                   <p className="text-gray-500">No recent expenses</p>
                 </div>
               ) : (

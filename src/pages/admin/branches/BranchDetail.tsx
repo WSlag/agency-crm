@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { firestore } from '../../../config/firebase';
 import { Branch } from '../../../types/entities/branch';
 import {
@@ -21,31 +21,58 @@ export const BranchDetail = () => {
   const [branch, setBranch] = useState<Branch | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [managerCount, setManagerCount] = useState(0);
 
   useEffect(() => {
-    const fetchBranch = async () => {
+    const fetchBranchData = async () => {
       if (!id) return;
 
       try {
+        setLoading(true);
+        
+        // Fetch branch details
         const branchRef = doc(firestore, 'branches', id);
         const branchSnap = await getDoc(branchRef);
 
-        if (branchSnap.exists()) {
-          setBranch({
-            id: branchSnap.id,
-            ...branchSnap.data(),
-          } as Branch);
-        } else {
+        if (!branchSnap.exists()) {
           setError('Branch not found');
+          setLoading(false);
+          return;
         }
+
+        setBranch({
+          id: branchSnap.id,
+          ...branchSnap.data(),
+        } as Branch);
+
+        // Fetch managers assigned to this branch
+        console.log('BranchDetail: Fetching managers for branch:', id);
+        const usersRef = collection(firestore, 'users');
+        const managersQuery = query(
+          usersRef,
+          where('branchId', '==', id),
+          where('role', '==', 'branch_manager')
+        );
+        
+        const managersSnapshot = await getDocs(managersQuery);
+        const count = managersSnapshot.docs.length;
+        console.log('BranchDetail: Found', count, 'managers');
+        console.log('BranchDetail: Managers:', managersSnapshot.docs.map(d => ({ 
+          id: d.id, 
+          name: d.data().displayName,
+          email: d.data().email 
+        })));
+        
+        setManagerCount(count);
       } catch (err) {
+        console.error('BranchDetail: Error fetching data:', err);
         setError('Failed to fetch branch details');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBranch();
+    fetchBranchData();
   }, [id]);
 
   const handleStatusChange = async (active: boolean) => {
@@ -239,7 +266,7 @@ export const BranchDetail = () => {
                   </dt>
                   <dd className="mt-2">
                     <span className="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-50 text-indigo-800 font-semibold text-lg">
-                      {branch.managers?.length || 0} Managers
+                      {managerCount} {managerCount === 1 ? 'Manager' : 'Managers'}
                     </span>
                   </dd>
                 </div>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useBudgetStore } from '../../stores/budgetStore';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  CurrencyDollarIcon,
+  BanknotesIcon,
   PlusIcon,
   SparklesIcon,
   ChartBarIcon,
@@ -62,7 +62,7 @@ export const BudgetManagement = () => {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3">
-                <CurrencyDollarIcon className="h-8 w-8 text-white" />
+                <BanknotesIcon className="h-8 w-8 text-white" />
                 <h1 className="text-3xl font-bold text-white">Budget Management</h1>
               </div>
               <p className="mt-2 text-green-100">
@@ -104,7 +104,7 @@ export const BudgetManagement = () => {
                       ₱{stats.totalAllocated.toLocaleString()}
                     </p>
                   </div>
-                  <CurrencyDollarIcon className="h-12 w-12 text-green-600" />
+                  <BanknotesIcon className="h-12 w-12 text-green-600" />
                 </div>
               </div>
 
@@ -116,7 +116,7 @@ export const BudgetManagement = () => {
                       ₱{stats.totalSpent.toLocaleString()}
                     </p>
                   </div>
-                  <CurrencyDollarIcon className="h-12 w-12 text-orange-600" />
+                  <BanknotesIcon className="h-12 w-12 text-orange-600" />
                 </div>
               </div>
 
@@ -128,7 +128,7 @@ export const BudgetManagement = () => {
                       ₱{stats.totalRemaining.toLocaleString()}
                     </p>
                   </div>
-                  <CurrencyDollarIcon className="h-12 w-12 text-blue-600" />
+                  <BanknotesIcon className="h-12 w-12 text-blue-600" />
                 </div>
               </div>
             </div>
@@ -152,7 +152,7 @@ export const BudgetManagement = () => {
               </div>
             ) : budgets.length === 0 ? (
               <div className="p-12 text-center">
-                <CurrencyDollarIcon className="h-12 w-12 text-gray-400 mx-auto" />
+                <BanknotesIcon className="h-12 w-12 text-gray-400 mx-auto" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No budgets</h3>
                 <p className="mt-1 text-sm text-gray-500">
                   Get started by creating a new budget.

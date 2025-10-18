@@ -26,9 +26,9 @@ const systemSettingsSchema = z.object({
   }),
   financial: z.object({
     currency: z.string().min(1),
-    commissionRateRange: z.object({
+    commissionAmountRange: z.object({
       min: z.number().min(0),
-      max: z.number().max(100),
+      max: z.number().min(0),
     }),
     requireReceiptUpload: z.boolean(),
   }),
@@ -45,6 +45,7 @@ export const SystemSettings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SystemSettingsData>({
     resolver: zodResolver(systemSettingsSchema),
@@ -77,9 +78,9 @@ export const SystemSettings: React.FC = () => {
           },
           financial: {
             currency: 'PHP',
-            commissionRateRange: {
-              min: 0,
-              max: 20,
+            commissionAmountRange: {
+              min: 5000,
+              max: 25000,
             },
             requireReceiptUpload: true,
           },
@@ -102,12 +103,21 @@ export const SystemSettings: React.FC = () => {
     try {
       setIsSaving(true);
       setError(null);
+      setSuccess(false);
 
       const settingsRef = doc(firestore, 'system_settings', 'general');
       await setDoc(settingsRef, {
         ...data,
         updatedAt: new Date(),
       });
+
+      // Show success message
+      setSuccess(true);
+      
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(false);
+      }, 3000);
     } catch (error) {
       setError('Failed to save settings');
       console.error('Error saving settings:', error);
@@ -148,6 +158,23 @@ export const SystemSettings: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Success Message */}
+        {success && (
+          <div className="mb-6 bg-green-50 border-l-4 border-green-400 p-4 rounded-lg shadow-lg animate-bounce-in">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-semibold text-green-700">✅ Settings saved successfully!</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
             <div className="flex">
@@ -274,23 +301,27 @@ export const SystemSettings: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Minimum Commission Rate (%)
+                    Minimum Commission Amount (PHP)
                   </label>
                   <input
                     type="number"
-                    {...register('financial.commissionRateRange.min', { valueAsNumber: true })}
+                    {...register('financial.commissionAmountRange.min', { valueAsNumber: true })}
                     className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm transition-all hover:border-yellow-400 bg-white p-2.5"
+                    placeholder="5000"
                   />
+                  <p className="mt-1 text-xs text-gray-500">Minimum fixed amount per agent placement</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Maximum Commission Rate (%)
+                    Maximum Commission Amount (PHP)
                   </label>
                   <input
                     type="number"
-                    {...register('financial.commissionRateRange.max', { valueAsNumber: true })}
+                    {...register('financial.commissionAmountRange.max', { valueAsNumber: true })}
                     className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-yellow-500 focus:ring-yellow-500 sm:text-sm transition-all hover:border-yellow-400 bg-white p-2.5"
+                    placeholder="25000"
                   />
+                  <p className="mt-1 text-xs text-gray-500">Maximum fixed amount per agent placement</p>
                 </div>
               </div>
               <div className="flex items-center p-4 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors">

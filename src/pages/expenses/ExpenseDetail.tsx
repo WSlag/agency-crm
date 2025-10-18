@@ -12,7 +12,7 @@ import {
   XCircleIcon,
   TrashIcon,
   DocumentTextIcon,
-  CurrencyDollarIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline';
 
 export const ExpenseDetail: React.FC = () => {
@@ -161,7 +161,7 @@ export const ExpenseDetail: React.FC = () => {
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-5 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
-                <CurrencyDollarIcon className="h-6 w-6 text-white" />
+                <BanknotesIcon className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{config.name}</h3>
@@ -346,7 +346,7 @@ export const ExpenseDetail: React.FC = () => {
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-4 border-b border-gray-200">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
-                  <CurrencyDollarIcon className="h-5 w-5 text-white" />
+                  <BanknotesIcon className="h-5 w-5 text-white" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900">Payment Details</h3>
               </div>

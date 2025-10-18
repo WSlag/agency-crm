@@ -5,11 +5,13 @@ import { useApplicantStore } from '../../stores/applicantStore';
 import { useBranchStore } from '../../stores/branchStore';
 import { useAgentStore } from '../../stores/agentStore';
 import { useOfficerStore } from '../../stores/officerStore';
+import { useAuth } from '../../contexts/AuthContext';
 import { ApplicantFilter, ApplicantSort } from '../../types/applicant';
 import { PlusIcon, SparklesIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export const ApplicantList = () => {
   const navigate = useNavigate();
+  const { customClaims } = useAuth();
   const {
     applicants,
     loading,
@@ -50,6 +52,12 @@ export const ApplicantList = () => {
           officers: officersResult?.length
         });
 
+        // Auto-filter by branch for Branch Managers
+        if (customClaims?.role === 'branch_manager' && customClaims?.branchId) {
+          console.log('Branch Manager detected, auto-filtering by branch:', customClaims.branchId);
+          setFilter({ branchId: customClaims.branchId });
+        }
+
         // Fetch applicants after reference data is loaded
         await fetchApplicants();
         console.log('Initial data loaded successfully');
@@ -62,19 +70,21 @@ export const ApplicantList = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
-  // Fetch applicants when filters, sort, or pagination change
+  // Fetch applicants when filters or sort change
   useEffect(() => {
-    const isInitialLoad = filter && Object.keys(filter).length === 0;
-    if (!isInitialLoad) {
-      console.log('Fetching applicants due to filter/sort/pagination change');
-      fetchApplicants();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, sort, pagination.page]); // Don't include fetchApplicants to avoid infinite loop
+    fetchApplicants();
+  }, [filter, sort, fetchApplicants]);
 
   const handleFilterChange = (key: keyof ApplicantFilter, value: any) => {
     console.log('Filter change:', { key, value });
     const newFilters = { ...filter };
+    
+    // SECURITY: Branch Managers cannot remove branchId filter
+    if (key === 'branchId' && customClaims?.role === 'branch_manager') {
+      console.warn('Branch Manager cannot change branch filter');
+      return; // Ignore branch filter changes for Branch Managers
+    }
+    
     if (value === '' || value === undefined) {
       delete newFilters[key];
     } else {
@@ -250,25 +260,27 @@ export const ApplicantList = () => {
               </select>
             </div>
 
-            {/* Branch Dropdown */}
-            <div>
-              <label htmlFor="branch" className="block text-sm font-medium text-gray-700 mb-2">
-                Branch
-              </label>
-              <select
-                id="branch"
-                value={filter.branchId || ''}
-                onChange={(e) => handleFilterChange('branchId', e.target.value)}
-                className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
-              >
-                <option value="">All Branches</option>
-                {branchOptions?.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.branchName}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Branch Dropdown - Hidden for Branch Managers (they can only see their branch) */}
+            {customClaims?.role !== 'branch_manager' && (
+              <div>
+                <label htmlFor="branch" className="block text-sm font-medium text-gray-700 mb-2">
+                  Branch
+                </label>
+                <select
+                  id="branch"
+                  value={filter.branchId || ''}
+                  onChange={(e) => handleFilterChange('branchId', e.target.value)}
+                  className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
+                >
+                  <option value="">All Branches</option>
+                  {branchOptions?.map((branch) => (
+                    <option key={branch.id} value={branch.id}>
+                      {branch.branchName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Agent Dropdown */}
             <div>

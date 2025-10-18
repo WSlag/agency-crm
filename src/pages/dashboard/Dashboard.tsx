@@ -5,6 +5,7 @@ import { DashboardError } from '../../components/dashboard/DashboardError';
 import { PendingApprovals } from '../../components/applicants/PendingApprovals';
 import { BarChart } from '../../components/dashboard/BarChart';
 import { PieChart } from '../../components/dashboard/PieChart';
+import { QuickStats } from '../../components/dashboard/EnhancedDashboard';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, orderBy, limit, getDocs, onSnapshot } from 'firebase/firestore';
@@ -16,7 +17,7 @@ import {
   PlusIcon,
   DocumentPlusIcon,
   UserPlusIcon,
-  CurrencyDollarIcon,
+  BanknotesIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
   ChartBarIcon,
@@ -327,7 +328,7 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
         { label: 'Job Postings', icon: BriefcaseIcon, href: '/jobs', color: 'from-cyan-500 to-cyan-600' },
         { label: 'View Transfers', icon: ArrowsRightLeftIcon, href: '/applicants/transfers', color: 'from-purple-500 to-purple-600' },
         { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-indigo-500 to-indigo-600' },
-        { label: 'Financial', icon: CurrencyDollarIcon, href: '/financial-dashboard', color: 'from-orange-500 to-orange-600' },
+        { label: 'Financial', icon: BanknotesIcon, href: '/financial-dashboard', color: 'from-orange-500 to-orange-600' },
       ],
       president: [
         { label: 'View Agents', icon: UsersIcon, href: '/agents', color: 'from-teal-500 to-teal-600' },
@@ -335,7 +336,7 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
         { label: 'Job Postings', icon: BriefcaseIcon, href: '/jobs', color: 'from-cyan-500 to-cyan-600' },
         { label: 'View Transfers', icon: ArrowsRightLeftIcon, href: '/applicants/transfers', color: 'from-purple-500 to-purple-600' },
         { label: 'View Reports', icon: DocumentPlusIcon, href: '/reports', color: 'from-indigo-500 to-indigo-600' },
-        { label: 'Financial', icon: CurrencyDollarIcon, href: '/financial-dashboard', color: 'from-orange-500 to-orange-600' },
+        { label: 'Financial', icon: BanknotesIcon, href: '/financial-dashboard', color: 'from-orange-500 to-orange-600' },
         { label: 'Officers', icon: UserPlusIcon, href: '/officers', color: 'from-blue-500 to-blue-600' },
         { label: 'Branches', icon: ChartBarIcon, href: '/branches', color: 'from-green-500 to-green-600' },
       ],
@@ -344,9 +345,9 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
         { label: 'My Agents', icon: UsersIcon, href: '/agents', color: 'from-teal-500 to-teal-600' },
         { label: 'Documents', icon: DocumentDuplicateIcon, href: '/applicants/documents', color: 'from-emerald-500 to-emerald-600' },
         { label: 'Available Jobs', icon: BriefcaseIcon, href: '/jobs', color: 'from-cyan-500 to-cyan-600' },
-        { label: 'Submit Expense', icon: CurrencyDollarIcon, href: '/expenses/new', color: 'from-green-500 to-green-600' },
+        { label: 'Submit Expense', icon: BanknotesIcon, href: '/expenses/new', color: 'from-green-500 to-green-600' },
         { label: 'View Pipeline', icon: ArrowPathIcon, href: '/applicants', color: 'from-purple-500 to-purple-600' },
-        { label: 'Commissions', icon: CurrencyDollarIcon, href: '/commissions', color: 'from-blue-500 to-blue-600' },
+        { label: 'Commissions', icon: BanknotesIcon, href: '/commissions', color: 'from-blue-500 to-blue-600' },
       ],
       ho_accountant: [
         { label: 'Pending Expenses', icon: ClockIcon, href: '/expenses?status=pending', color: 'from-red-500 to-red-600' },
@@ -834,7 +835,7 @@ export const Dashboard = () => {
 
       {/* Content - Enhanced Dashboard Layout */}
       <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Pending Approvals Section - Full Width */}
+        {/* Pending Approvals Section - Full Width - For all approvers */}
         {(customClaims?.role === 'admin' || 
           customClaims?.role === 'president' || 
           customClaims?.role === 'branch_manager' || 

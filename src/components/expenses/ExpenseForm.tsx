@@ -5,6 +5,7 @@ import { expenseSchema } from '../../schemas/financial';
 import { EXPENSE_CONFIG, type Expense, type Currency } from '../../types/expense';
 import { useExpenseStore } from '../../stores/expenseStore';
 import { useAuthStore } from '../../stores/authStore';
+import { useApplicantStore } from '../../stores/applicantStore';
 
 interface ExpenseFormProps {
   initialData?: Partial<Expense>;
@@ -17,11 +18,17 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
-  const { user } = useAuthStore();
+  const { user, customClaims } = useAuthStore();
+  const { applicants, fetchApplicants } = useApplicantStore();
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(
     initialData?.receiptUrl || null
   );
+
+  // Fetch applicants on mount
+  React.useEffect(() => {
+    fetchApplicants();
+  }, [fetchApplicants]);
 
   const {
     control,
@@ -37,7 +44,11 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         ? new Date(initialData.expenseDate)
         : new Date(),
       currency: initialData?.currency || 'PHP',
-      branchId: initialData?.branchId || user?.branchId || '',
+      branchId: initialData?.branchId || customClaims?.branchId || '',
+      receiptNumber: initialData?.receiptNumber || '',
+      notes: initialData?.notes || '',
+      tags: initialData?.tags || [],
+      applicantId: initialData?.applicantId || '',
     },
   });
 
@@ -189,7 +200,13 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 >
                   <option value="">Select Applicant</option>
-                  {/* TODO: Add applicant options from context/store */}
+                  {applicants
+                    ?.filter(a => a.status === 'active') // Only show active applicants
+                    .map((applicant) => (
+                      <option key={applicant.id} value={applicant.id}>
+                        {applicant.fullName} - {applicant.currentStage}
+                      </option>
+                    ))}
                 </select>
               )}
             />

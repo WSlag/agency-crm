@@ -1,7 +1,7 @@
 import {
   ClockIcon,
   CheckCircleIcon,
-  CurrencyDollarIcon,
+  BanknotesIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import { Commission, CommissionInstallment } from '../../types/commission';
@@ -58,7 +58,7 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({ commission }) =>
                 {formatCurrency(commission.amount)}
               </p>
             </div>
-            <CurrencyDollarIcon className="h-10 w-10 text-blue-400" />
+            <BanknotesIcon className="h-10 w-10 text-blue-400" />
           </div>
         </div>
 

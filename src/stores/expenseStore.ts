@@ -187,8 +187,17 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       const docRef = doc(collection(firestore, 'expenses'));
       const timestamp = serverTimestamp();
 
+      // Clean undefined values - Firestore doesn't accept undefined
+      const cleanData: any = {};
+      Object.keys(data).forEach(key => {
+        const value = (data as any)[key];
+        if (value !== undefined) {
+          cleanData[key] = value;
+        }
+      });
+
       const expenseData = {
-        ...data,
+        ...cleanData,
         status: 'pending',
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -203,7 +212,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         entityType: 'expense',
         performedBy: data.enteredBy,
         performedAt: timestamp,
-        details: expenseData,
+        details: cleanData,
       });
 
       return docRef.id;
