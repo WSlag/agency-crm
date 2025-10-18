@@ -78,6 +78,7 @@ class StageService {
       return (
         stage === ApplicantStage.INTERVIEW ||
         stage === ApplicantStage.MEDICAL
+        // Note: HO Officer CANNOT approve Transfer stage (only Admin/President can assign officers)
       );
     }
     

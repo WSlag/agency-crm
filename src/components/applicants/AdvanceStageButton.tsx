@@ -17,7 +17,10 @@ import { ApplicantStage, ApplicantStatus } from '../../types/applicant';
 import { 
   STAGE_CONFIGURATION, 
   VALID_STAGE_TRANSITIONS, 
-  STAGE_LABELS 
+  STAGE_LABELS,
+  BRANCH_STAGES,
+  HEAD_OFFICE_STAGES,
+  TRANSITION_STAGE
 } from '../../config/stageConfig';
 
 interface AdvanceStageButtonProps {
@@ -67,6 +70,9 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
     status: applicant.status,
     requiresApproval: applicant.requiresApproval,
     rejectionReason: applicant.rejectionReason,
+    userRole: customClaims?.role,
+    transferredToHO: applicant.transferredToHO,
+    assignedOfficerId: applicant.assignedRecruitmentOfficerId,
     willShowButton: !(!nextStage || 
       applicant.currentStatus === ApplicantStatus.PENDING_APPROVAL || 
       applicant.currentStatus === 'pending_approval' ||
@@ -81,6 +87,70 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
     console.log('[AdvanceStageButton] Button hidden - conditions not met');
     return null;
   }
+  
+  // ==================== PERMISSION CHECKS ====================
+  
+  // Branch Manager can ONLY request stage advancements for branch stages
+  if (customClaims?.role === 'branch_manager') {
+    // Branch Manager can request:
+    // - Registration → Interview
+    // - Interview → Medical
+    // - Medical → Transfer (to HO)
+    // But CANNOT request HO stages (Transfer → Processing, Processing → Deployment, etc.)
+    
+    const isBranchStageTransition = BRANCH_STAGES.includes(currentStage);
+    const isTransferRequest = currentStage === ApplicantStage.MEDICAL && nextStage === TRANSITION_STAGE;
+    
+    if (!isBranchStageTransition && !isTransferRequest) {
+      console.log('[AdvanceStageButton] Branch Manager cannot request HO stage advancement:', {
+        currentStage,
+        nextStage,
+        reason: 'Branch Managers can only manage branch stages (Registration, Interview, Medical)'
+      });
+      return null;
+    }
+    
+    // Also check if applicant belongs to their branch
+    if (customClaims.branchId && applicant.branchId !== customClaims.branchId) {
+      console.log('[AdvanceStageButton] Branch Manager cannot manage applicant from different branch');
+      return null;
+    }
+  }
+  
+  // HO Recruitment Officer can ONLY request stage advancements for HO stages
+  if (customClaims?.role === 'ho_recruitment_officer') {
+    // HO Officer can request:
+    // - Transfer → Processing
+    // - Processing → Deployment
+    // - Deployment → Deployed
+    // But CANNOT request branch stages (they're managed by Branch Manager)
+    
+    const isHOStageOrTransition = currentStage === TRANSITION_STAGE || HEAD_OFFICE_STAGES.includes(currentStage);
+    
+    if (!isHOStageOrTransition) {
+      console.log('[AdvanceStageButton] HO Officer cannot request branch stage advancement:', {
+        currentStage,
+        nextStage,
+        reason: 'HO Officers can only manage HO stages (Transfer, Processing, Deployment, Deployed)'
+      });
+      return null;
+    }
+    
+    // Check if applicant is assigned to this officer
+    if (applicant.assignedRecruitmentOfficerId && 
+        applicant.assignedRecruitmentOfficerId !== user?.uid) {
+      console.log('[AdvanceStageButton] HO Officer cannot manage applicant assigned to different officer');
+      return null;
+    }
+    
+    // Check if applicant has been transferred to HO
+    if (!applicant.transferredToHO && currentStage !== TRANSITION_STAGE) {
+      console.log('[AdvanceStageButton] Applicant not yet transferred to HO');
+      return null;
+    }
+  }
+  
+  // Admin and President can request any stage advancement (no restrictions)
   
   const handleCheckDocuments = async () => {
     console.log('[AdvanceStageButton] Button clicked - checking documents', {

@@ -83,7 +83,7 @@ export const STAGE_CONFIGURATION: Record<ApplicantStage, StageRequirement> = {
   [ApplicantStage.TRANSFER]: {
     stage: ApplicantStage.TRANSFER,
     documents: [],
-    approvers: ['admin', 'president'], // Admin/President approve
+    approvers: ['admin', 'president'], // Only Admin/President can approve and assign HO Officer
     commissionTrigger: 'medical', // 1st commission trigger - when transferred to HO
     autoAdvance: false // Requires Admin/President approval and officer assignment
   },

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
 import { OfficerDashboard } from '../../components/officers/OfficerDashboard';
 import { OfficerAssignment } from '../../components/officers/OfficerAssignment';
@@ -14,14 +14,25 @@ import {
   TrophyIcon
 } from '@heroicons/react/24/outline';
 
+// Interface for officer statistics
+interface OfficerStats {
+  uid: string;
+  totalApplicants: number;
+  activeCases: number;
+  pendingDocuments: number;
+  completedApplicants: number;
+  successRate: number;
+}
+
 export const OfficerManagement = () => {
   const { user, customClaims } = useAuth();
   const [officers, setOfficers] = useState<User[]>([]);
+  const [officerStats, setOfficerStats] = useState<Record<string, OfficerStats>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchOfficers = async () => {
+    const fetchOfficersAndStats = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -39,14 +50,64 @@ export const OfficerManagement = () => {
         } as User));
         
         setOfficers(officersData);
+
+        // Fetch applicants data to calculate real statistics
+        const applicantsQuery = query(collection(firestore, 'applicants'));
+        const applicantsSnapshot = await getDocs(applicantsQuery);
+        const applicantsData = applicantsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // Calculate statistics for each officer
+        const stats: Record<string, OfficerStats> = {};
+        
+        for (const officer of officersData) {
+          const assignedApplicants = applicantsData.filter(
+            (a: any) => a.assignedRecruitmentOfficerId === officer.uid
+          );
+          
+          const activeCases = assignedApplicants.filter(
+            (a: any) => a.status === 'active' && a.currentStage !== 'deployed'
+          ).length;
+          
+          const completedApplicants = assignedApplicants.filter(
+            (a: any) => a.currentStage === 'deployed'
+          ).length;
+          
+          const successRate = assignedApplicants.length > 0
+            ? Math.round((completedApplicants / assignedApplicants.length) * 100)
+            : 0;
+
+          // Count pending documents (simplified - in production, query documents collection)
+          const pendingDocuments = assignedApplicants.reduce((count: number, applicant: any) => {
+            // Estimate: applicants in early stages likely have pending docs
+            if (['transfer', 'processing', 'deployment'].includes(applicant.currentStage)) {
+              return count + 1;
+            }
+            return count;
+          }, 0);
+
+          stats[officer.uid] = {
+            uid: officer.uid,
+            totalApplicants: assignedApplicants.length,
+            activeCases,
+            pendingDocuments,
+            completedApplicants,
+            successRate
+          };
+        }
+        
+        setOfficerStats(stats);
       } catch (err) {
+        console.error('Error fetching officers:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch officers');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOfficers();
+    fetchOfficersAndStats();
   }, []);
 
   const handleAssignOfficer = async (officerId: string) => {
@@ -58,8 +119,14 @@ export const OfficerManagement = () => {
     }
   };
 
-  // Calculate stats
+  // Calculate aggregate stats across all officers
   const activeOfficers = officers.filter(o => o.status === 'active').length;
+  
+  const totalWorkload = Object.values(officerStats).reduce((sum, stat) => sum + stat.totalApplicants, 0);
+  const avgWorkload = officers.length > 0 ? Math.floor(totalWorkload / officers.length) : 0;
+  
+  const totalSuccessRates = Object.values(officerStats).reduce((sum, stat) => sum + stat.successRate, 0);
+  const avgSuccessRate = officers.length > 0 ? Math.floor(totalSuccessRates / officers.length) : 0;
 
   if (loading) {
     return (
@@ -171,7 +238,7 @@ export const OfficerManagement = () => {
                   <span>Avg. Workload</span>
                 </dt>
                 <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
-                  {officers.length > 0 ? Math.floor(Math.random() * 20 + 10) : 0}
+                  {avgWorkload}
                 </dd>
                 <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 opacity-20 blur-2xl"></div>
               </div>
@@ -182,7 +249,7 @@ export const OfficerManagement = () => {
                   <span>Avg. Success Rate</span>
                 </dt>
                 <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
-                  {Math.floor(Math.random() * 20 + 75)}%
+                  {avgSuccessRate}%
                 </dd>
                 <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 opacity-20 blur-2xl"></div>
               </div>
@@ -240,9 +307,11 @@ export const OfficerManagement = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
                   {officers.map((officer) => {
-                    const totalApplicants = Math.floor(Math.random() * 50 + 10);
-                    const activeCases = Math.floor(Math.random() * 20 + 5);
-                    const successRate = Math.floor(Math.random() * 30 + 65);
+                    const stats = officerStats[officer.uid] || {
+                      totalApplicants: 0,
+                      activeCases: 0,
+                      successRate: 0
+                    };
 
                     return (
                       <tr
@@ -269,24 +338,24 @@ export const OfficerManagement = () => {
                           </div>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
-                          {totalApplicants}
+                          {stats.totalApplicants}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {activeCases}
+                            {stats.activeCases}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              successRate >= 80
+                              stats.successRate >= 80
                                 ? 'bg-green-100 text-green-800'
-                                : successRate >= 70
+                                : stats.successRate >= 70
                                 ? 'bg-yellow-100 text-yellow-800'
                                 : 'bg-red-100 text-red-800'
                             }`}
                           >
-                            {successRate}%
+                            {stats.successRate}%
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">
@@ -318,8 +387,12 @@ export const OfficerManagement = () => {
             </div>
           </div>
 
-          {/* Officer Assignment */}
-          <OfficerAssignment officers={officers} onAssign={handleAssignOfficer} />
+          {/* Officer Assignment - Pass real stats */}
+          <OfficerAssignment 
+            officers={officers} 
+            officerStats={officerStats}
+            onAssign={handleAssignOfficer} 
+          />
         </div>
       </div>
   );

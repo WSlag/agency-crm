@@ -142,7 +142,7 @@ service cloud.firestore {
       allow create: if isAdmin() || isBranchManager();
       allow update: if isAdmin() || 
         (isBranchManager() && belongsToBranch(resource.data.branchId)) ||
-        (isHORecruitmentOfficer() && resource.data.assignedRecruitmentOfficerId == request.auth.uid);
+        isHORecruitmentOfficer();
       allow delete: if isAdmin();
       
       // Applicant Documents Subcollection
@@ -308,7 +308,8 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAdmin() || isBranchManager() || isHORecruitmentOfficer();
       allow update: if isAdmin() || 
-        (isHORecruitmentOfficer() && resource.data.verifiedBy == request.auth.uid);
+        isBranchManager() ||
+        isHORecruitmentOfficer();
       allow delete: if isAdmin();
     }
     
@@ -457,9 +458,9 @@ service cloud.firestore {
       // Update: Only for approvals by authorized users
       allow update: if isAuthenticated() && (
         isAdmin() ||
-        (isPresident() && resource.data.toStage == 'transfer') ||
-        (isBranchManager() && resource.data.toStage in ['interview', 'medical']) ||
-        (isHORecruitmentOfficer() && resource.data.toStage in ['processing', 'deployment', 'deployed'])
+        (isPresident() && resource.data.toStage in ['transfer', 'processing', 'deployment', 'deployed']) ||
+        (isBranchManager() && resource.data.toStage == 'registration') ||
+        (isHORecruitmentOfficer() && resource.data.toStage in ['interview', 'medical'])
       ) && resource.data.status == 'pending';
       
       // Delete: Admin only

@@ -9,6 +9,14 @@ import {
 
 interface OfficerAssignmentProps {
   officers: User[];
+  officerStats: Record<string, {
+    uid: string;
+    totalApplicants: number;
+    activeCases: number;
+    pendingDocuments: number;
+    completedApplicants: number;
+    successRate: number;
+  }>;
   onAssign: (officerId: string) => Promise<void>;
   currentOfficerId?: string | null;
 }
@@ -21,28 +29,12 @@ interface OfficerWorkload {
 
 export const OfficerAssignment = ({
   officers,
+  officerStats,
   onAssign,
   currentOfficerId,
 }: OfficerAssignmentProps) => {
   const [selectedOfficer, setSelectedOfficer] = useState(currentOfficerId || '');
   const [isAssigning, setIsAssigning] = useState(false);
-  const [workloads, setWorkloads] = useState<{ [key: string]: OfficerWorkload }>(
-    {}
-  );
-
-  useEffect(() => {
-    // In a real application, fetch workload data for each officer
-    // For now, we'll use mock data
-    const mockWorkloads: { [key: string]: OfficerWorkload } = {};
-    officers.forEach((officer) => {
-      mockWorkloads[officer.uid] = {
-        totalApplicants: Math.floor(Math.random() * 20),
-        activeApplicants: Math.floor(Math.random() * 15),
-        pendingDocuments: Math.floor(Math.random() * 10),
-      };
-    });
-    setWorkloads(mockWorkloads);
-  }, [officers]);
 
   const handleAssign = async () => {
     if (!selectedOfficer) {
@@ -87,10 +79,12 @@ export const OfficerAssignment = ({
       <div className="p-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {officers.map((officer) => {
-            const workload = workloads[officer.uid] || {
+            const stats = officerStats[officer.uid] || {
               totalApplicants: 0,
-              activeApplicants: 0,
+              activeCases: 0,
               pendingDocuments: 0,
+              completedApplicants: 0,
+              successRate: 0
             };
 
             return (
@@ -122,13 +116,13 @@ export const OfficerAssignment = ({
                     <div className="flex items-center text-sm text-gray-600">
                       <ChartBarIcon
                         className={`mr-1.5 h-4 w-4 flex-shrink-0 ${getWorkloadColor(
-                          workload.totalApplicants
+                          stats.totalApplicants
                         )}`}
                       />
                       Total Applicants
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getWorkloadBadge(workload.totalApplicants)}`}>
-                      {workload.totalApplicants}
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getWorkloadBadge(stats.totalApplicants)}`}>
+                      {stats.totalApplicants}
                     </span>
                   </div>
 
@@ -140,7 +134,7 @@ export const OfficerAssignment = ({
                       Active Cases
                     </div>
                     <span className="text-sm font-medium text-gray-900">
-                      {workload.activeApplicants}
+                      {stats.activeCases}
                     </span>
                   </div>
 
@@ -152,7 +146,7 @@ export const OfficerAssignment = ({
                       Pending Docs
                     </div>
                     <span className="text-sm font-medium text-gray-900">
-                      {workload.pendingDocuments}
+                      {stats.pendingDocuments}
                     </span>
                   </div>
                 </div>
