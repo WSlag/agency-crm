@@ -689,10 +689,10 @@ const AdminDashboard = () => {
     <div className="space-y-6">
       {/* Grid Layout for Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pie Chart for Stages */}
+        {/* Bar Chart for Stages */}
         {breakdowns?.applicantsByStage && breakdowns.applicantsByStage.length > 0 && (
-          <PieChart 
-            title="Pipeline Stages"
+          <BarChart 
+            title="Recruitment Pipeline Stages"
             data={breakdowns.applicantsByStage}
           />
         )}

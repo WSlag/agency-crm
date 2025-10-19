@@ -203,28 +203,28 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
   }
   
   return (
-    <div className="space-y-6">
-      {/* Upload Document Button - Always visible */}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Upload Document Button - Always visible, Full width on mobile */}
       <div className="flex justify-end">
         <button
           onClick={() => setUploadModalOpen(true)}
-          className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+          className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-md hover:shadow-lg"
         >
           <CloudArrowUpIcon className="w-5 h-5 mr-2" />
           Upload Document
         </button>
       </div>
       
-      {/* Current Stage Requirements */}
+      {/* Current Stage Requirements - Mobile Optimized */}
       {stageConfig.documents.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <DocumentTextIcon className="w-5 h-5 text-blue-600" />
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 sm:p-4">
+          <div className="flex items-center gap-2 mb-2 sm:mb-3">
+            <DocumentTextIcon className="w-5 h-5 text-blue-600 flex-shrink-0" />
             <h3 className="text-sm font-semibold text-blue-900">
               Required Documents for {STAGE_LABELS[currentStage]} Stage
             </h3>
           </div>
-          <p className="text-xs text-blue-700 mb-4">
+          <p className="text-xs text-blue-700 mb-3 sm:mb-4">
             These documents must be uploaded and verified before advancing to the next stage
           </p>
           
@@ -243,7 +243,7 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
               return (
                 <div 
                   key={idx}
-                  className={`p-4 rounded-lg border-2 ${
+                  className={`p-3 sm:p-4 rounded-xl border-2 ${
                     isVerified 
                       ? 'bg-green-50 border-green-200' 
                       : doc
@@ -251,11 +251,16 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
                       : 'bg-white border-gray-200'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3 flex-1">
-                      {getStatusIcon(doc?.status)}
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
+                  {/* Mobile & Desktop Layout */}
+                  <div className="flex flex-col gap-3">
+                    {/* Top Row: Icon, Info, and Status Badge */}
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="flex-shrink-0">
+                        {getStatusIcon(doc?.status)}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">
                           {req.description}
                         </p>
                         {req.required && (
@@ -264,8 +269,8 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
                           </span>
                         )}
                         {doc && (
-                          <div className="mt-1 space-y-1">
-                            <p className="text-xs text-gray-600">
+                          <div className="mt-1 space-y-0.5">
+                            <p className="text-xs text-gray-600 truncate">
                               File: {doc.fileName}
                             </p>
                             <p className="text-xs text-gray-500">
@@ -274,17 +279,20 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
                           </div>
                         )}
                       </div>
+
+                      <div className="flex-shrink-0">
+                        {getStatusBadge(doc?.status)}
+                      </div>
                     </div>
                     
-                    <div className="flex items-center gap-2">
-                      {getStatusBadge(doc?.status)}
-                      
+                    {/* Bottom Row: Action Buttons */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-200/50">
                       {!isVerified && (
                         <button
                           onClick={() => handleUploadClick(req.type)}
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md"
                         >
-                          <CloudArrowUpIcon className="w-4 h-4 mr-1" />
+                          <CloudArrowUpIcon className="w-4 h-4" />
                           {doc ? 'Re-upload' : 'Upload'}
                         </button>
                       )}
@@ -294,9 +302,9 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
                           href={doc.fileUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
                         >
-                          <EyeIcon className="w-4 h-4 mr-1" />
+                          <EyeIcon className="w-4 h-4" />
                           View
                         </a>
                       )}
@@ -309,9 +317,9 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
         </div>
       )}
       
-      {/* All Uploaded Documents */}
+      {/* All Uploaded Documents - Mobile Optimized */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4">
           <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
             <DocumentTextIcon className="w-5 h-5" />
             All Documents
@@ -322,12 +330,12 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
             <button
               onClick={handleAutoVerifyAll}
               disabled={autoVerifying}
-              className="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 shadow-sm"
+              className="w-full sm:w-auto px-3 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5 shadow-sm hover:shadow-md transition-all duration-200"
               title="Auto-verify all pending documents for current and past stages"
             >
               {autoVerifying ? (
                 <>
-                  <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                  <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
@@ -352,17 +360,22 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
             {documents.map((doc) => (
               <div
                 key={doc.id}
-                className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl border-2 border-gray-200 p-3 sm:p-4 hover:border-indigo-300 hover:shadow-lg transition-all duration-200"
               >
-                <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                    {getStatusIcon(doc.status)}
+                {/* Mobile & Desktop Layout */}
+                <div className="flex flex-col gap-3">
+                  {/* Top Row: Icon, Info, and Status Badge */}
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div className="flex-shrink-0">
+                      {getStatusIcon(doc.status)}
+                    </div>
+                    
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
                         {doc.type}
                       </p>
                       <p className="text-xs text-gray-500 truncate mt-1">
@@ -372,43 +385,49 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
                         {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : 'N/A'}
                       </p>
                     </div>
+
+                    <div className="flex-shrink-0">
+                      {getStatusBadge(doc.status)}
+                    </div>
                   </div>
                   
-                  <div className="flex flex-col items-end gap-2">
-                    {getStatusBadge(doc.status)}
+                  {/* Bottom Row: Action Buttons */}
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                    {/* View Button - Full width on mobile, auto on desktop */}
                     {doc.fileUrl && (
                       <a
                         href={doc.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                        className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
                       >
-                        <EyeIcon className="w-3 h-3" />
-                        View
+                        <EyeIcon className="w-4 h-4" />
+                        View Document
                       </a>
                     )}
                     
                     {/* Verification buttons for authorized users */}
                     {canVerifyDocuments() && doc.status === 'pending' && (
-                      <div className="flex gap-1 mt-1">
+                      <>
                         <button
                           onClick={() => handleVerifyDocument(doc.id, true)}
                           disabled={verifying === doc.id}
-                          className="px-2 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                           title="Approve document"
                         >
-                          <CheckIcon className="w-3 h-3" />
-                          {verifying === doc.id ? '...' : 'Verify'}
+                          <CheckIcon className="w-4 h-4" />
+                          <span className="hidden sm:inline">{verifying === doc.id ? '...' : 'Verify'}</span>
                         </button>
                         <button
                           onClick={() => handleVerifyDocument(doc.id, false)}
                           disabled={verifying === doc.id}
-                          className="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md"
                           title="Reject document"
                         >
-                          <XIcon className="w-3 h-3" />
+                          <XIcon className="w-4 h-4" />
+                          <span className="hidden sm:inline">Reject</span>
                         </button>
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>

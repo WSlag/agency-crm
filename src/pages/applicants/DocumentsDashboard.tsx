@@ -198,24 +198,24 @@ export const DocumentsDashboard = () => {
 
   return (
     <div className="min-h-full">
-      {/* Header */}
+      {/* Header - Mobile Optimized */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl">
-        <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
           <div className="sm:flex sm:items-center sm:justify-between">
             <div className="sm:flex-auto">
-              <div className="flex items-center space-x-3">
-                <SparklesIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">Document Management</h1>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white flex-shrink-0" />
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Document Management</h1>
               </div>
-              <p className="mt-2 text-indigo-100">
+              <p className="mt-2 text-sm sm:text-base text-indigo-100">
                 View, manage, and verify applicant documents across the system
               </p>
             </div>
-            {/* Quick Actions */}
+            {/* Quick Actions - Full width on mobile */}
             <div className="mt-4 sm:mt-0 flex space-x-3">
               <Link
                 to="/documents/templates"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-200"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-200"
               >
                 <DocumentTextIcon className="h-5 w-5 mr-2" />
                 Templates
@@ -223,27 +223,27 @@ export const DocumentsDashboard = () => {
             </div>
           </div>
 
-          {/* Statistics Cards */}
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Total</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.total}</div>
+          {/* Statistics Cards - Mobile Optimized (2 cols on mobile, 5 on desktop) */}
+          <div className="mt-4 sm:mt-6 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-5">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 sm:p-4">
+              <div className="text-white text-xs sm:text-sm font-medium">Total</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">{stats.total}</div>
             </div>
-            <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Pending</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.pending}</div>
+            <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-3 sm:p-4">
+              <div className="text-white text-xs sm:text-sm font-medium">Pending</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">{stats.pending}</div>
             </div>
-            <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Verified</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.verified}</div>
+            <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-3 sm:p-4">
+              <div className="text-white text-xs sm:text-sm font-medium">Verified</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">{stats.verified}</div>
             </div>
-            <div className="bg-orange-500/20 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Expiring</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.expiring}</div>
+            <div className="bg-orange-500/20 backdrop-blur-sm rounded-lg p-3 sm:p-4">
+              <div className="text-white text-xs sm:text-sm font-medium">Expiring</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">{stats.expiring}</div>
             </div>
-            <div className="bg-red-500/20 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Expired</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.expired}</div>
+            <div className="bg-red-500/20 backdrop-blur-sm rounded-lg p-3 sm:p-4">
+              <div className="text-white text-xs sm:text-sm font-medium">Expired</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">{stats.expired}</div>
             </div>
           </div>
         </div>
@@ -252,26 +252,27 @@ export const DocumentsDashboard = () => {
       {/* Content */}
       <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Tabs */}
+          {/* Tabs - Mobile Optimized */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200">
-              <nav className="flex -mb-px space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
+              <nav className="flex -mb-px space-x-4 sm:space-x-8 px-3 sm:px-6 overflow-x-auto scrollbar-hide" aria-label="Tabs">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
-                      whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
-                      transition-all duration-200
+                      whitespace-nowrap py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm
+                      transition-all duration-200 flex-shrink-0
                       ${activeTab === tab.id
                         ? 'border-indigo-500 text-indigo-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                       }
                     `}
                   >
-                    {tab.name}
+                    <span className="hidden sm:inline">{tab.name}</span>
+                    <span className="sm:hidden">{tab.name.split(' ')[0]}</span>
                     <span className={`
-                      ml-2 py-0.5 px-2 rounded-full text-xs
+                      ml-1.5 sm:ml-2 py-0.5 px-1.5 sm:px-2 rounded-full text-xs
                       ${activeTab === tab.id
                         ? 'bg-indigo-100 text-indigo-600'
                         : 'bg-gray-100 text-gray-600'
@@ -284,16 +285,16 @@ export const DocumentsDashboard = () => {
               </nav>
             </div>
 
-            {/* Search Bar */}
-            <div className="p-4 bg-gray-50 border-b border-gray-200">
+            {/* Search Bar - Mobile Optimized */}
+            <div className="p-3 sm:p-4 bg-gray-50 border-b border-gray-200">
               <div className="relative">
-                <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 sm:h-5 sm:w-5 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search documents by filename, type, or applicant..."
+                  placeholder="Search documents..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -301,15 +302,15 @@ export const DocumentsDashboard = () => {
             {/* Documents List */}
             <div className="divide-y divide-gray-200">
               {loading ? (
-                <div className="p-12 text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Loading documents...</p>
+                <div className="p-8 sm:p-12 text-center">
+                  <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-indigo-600 mx-auto"></div>
+                  <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600">Loading documents...</p>
                 </div>
               ) : filteredDocuments.length === 0 ? (
-                <div className="p-12 text-center">
-                  <DocumentDuplicateIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <div className="p-8 sm:p-12 text-center">
+                  <DocumentDuplicateIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">No documents found</h3>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-xs sm:text-sm text-gray-500">
                     {activeTab === 'all' 
                       ? 'No documents have been uploaded yet.'
                       : `No ${activeTab} documents found.`
@@ -326,45 +327,58 @@ export const DocumentsDashboard = () => {
                       to={`/applicants/${document.applicantId}`}
                       className="block hover:bg-gray-50 transition-colors duration-150"
                     >
-                      <div className="px-6 py-4">
-                        <div className="flex items-center justify-between">
+                      <div className="px-3 sm:px-6 py-3 sm:py-4">
+                        {/* Mobile: Stack layout, Desktop: Side-by-side */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center space-x-3">
-                              {getStatusIcon(document.status)}
-                              <div>
-                                <div className="flex items-center space-x-2">
-                                  <DocumentTextIcon className="h-4 w-4 text-gray-400" />
-                                  <p className="text-sm font-medium text-gray-900 truncate">
-                                    {document.fileName}
+                            {/* Document header with icon and status */}
+                            <div className="flex items-start sm:items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                                {getStatusIcon(document.status)}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center space-x-1.5 sm:space-x-2">
+                                    <DocumentTextIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 flex-shrink-0" />
+                                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                                      {document.fileName}
+                                    </p>
+                                  </div>
+                                  <p className="text-xs sm:text-sm text-gray-500 truncate mt-0.5 sm:mt-1">
+                                    {document.type.replace(/_/g, ' ').toUpperCase()}
                                   </p>
                                 </div>
-                                <p className="text-sm text-gray-500 truncate mt-1">
-                                  {document.type.replace(/_/g, ' ').toUpperCase()}
-                                </p>
                               </div>
+                              {/* Status badge - visible on mobile */}
+                              <span className={`
+                                sm:hidden inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border flex-shrink-0
+                                ${getStatusBadge(document.status)}
+                              `}>
+                                {document.status.charAt(0).toUpperCase() + document.status.slice(1)}
+                              </span>
                             </div>
-                            <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                            
+                            {/* Metadata - Mobile optimized */}
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
                               <div className="flex items-center space-x-1">
-                                <UserIcon className="h-4 w-4" />
-                                <span>Applicant: {document.applicantId}</span>
+                                <UserIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+                                <span className="truncate">ID: {document.applicantId.slice(0, 8)}...</span>
                               </div>
-                              <span>•</span>
-                              <span>
-                                Uploaded: {document.uploadedAt.toLocaleDateString()}
+                              <span className="hidden sm:inline">•</span>
+                              <span className="truncate">
+                                {document.uploadedAt.toLocaleDateString()}
                               </span>
                               {document.verifiedAt && (
                                 <>
-                                  <span>•</span>
-                                  <span>
-                                    Verified: {document.verifiedAt.toLocaleDateString()}
+                                  <span className="hidden sm:inline">•</span>
+                                  <span className="text-green-600 font-medium">
+                                    ✓ Verified
                                   </span>
                                 </>
                               )}
                               {expiryStatus && (
                                 <>
-                                  <span>•</span>
+                                  <span className="hidden sm:inline">•</span>
                                   <div className="flex items-center space-x-1">
-                                    <CalendarIcon className="h-4 w-4" />
+                                    <CalendarIcon className="h-3.5 w-3.5 flex-shrink-0" />
                                     <span className={expiryStatus.color}>
                                       {expiryStatus.text}
                                     </span>
@@ -373,7 +387,9 @@ export const DocumentsDashboard = () => {
                               )}
                             </div>
                           </div>
-                          <div className="ml-4 flex-shrink-0 flex items-center space-x-3">
+                          
+                          {/* Status badges - Desktop only */}
+                          <div className="hidden sm:flex ml-4 flex-shrink-0 items-center space-x-3">
                             <span className={`
                               inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border
                               ${getStatusBadge(document.status)}
