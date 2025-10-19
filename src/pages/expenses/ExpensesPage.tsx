@@ -67,11 +67,11 @@ export const ExpensesPage = () => {
         <div className="px-4 sm:px-6 lg:px-8 py-8">
           <div className="sm:flex sm:items-center sm:justify-between">
             <div className="sm:flex-auto">
-              <div className="flex items-center space-x-3">
-                <SparklesIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">Expense Management</h1>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                <h1 className="text-xl sm:text-3xl font-bold text-white">Expense Management</h1>
               </div>
-              <p className="mt-2 text-indigo-100">
+              <p className="mt-2 text-sm sm:text-base text-indigo-100">
                 Track and manage all expenses with approval workflows
               </p>
             </div>
@@ -80,7 +80,7 @@ export const ExpensesPage = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/expenses/new')}
-                  className="group relative inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-2xl"
+                  className="group relative inline-flex items-center justify-center w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-2xl"
                 >
                   <PlusIcon className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
                   New Expense
@@ -89,24 +89,24 @@ export const ExpensesPage = () => {
             )}
           </div>
 
-          {/* Stats Cards */}
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Stats Cards - Responsive Grid */}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
               return (
                 <div
                   key={stat.name}
-                  className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105 cursor-pointer"
+                  className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-4 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105 cursor-pointer"
                 >
-                  <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                    <Icon className="h-5 w-5" />
+                  <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span>{stat.name}</span>
                   </dt>
-                  <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                  <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-white">
                     {stat.value}
                   </dd>
                   <div
-                    className={`absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br ${stat.color} opacity-20 blur-2xl`}
+                    className={`absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br ${stat.color} opacity-20 blur-2xl`}
                   ></div>
                 </div>
               );

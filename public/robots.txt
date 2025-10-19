@@ -1,0 +1,16 @@
+# Robots.txt for Recruitment Agency Management System
+# This is a private business application
+
+User-agent: *
+Disallow: /
+
+# Allow access to manifest and icons for PWA functionality
+Allow: /manifest.json
+Allow: /logo192.png
+Allow: /logo512.png
+Allow: /favicon.ico
+Allow: /apple-touch-icon.png
+
+# Sitemap (optional - uncomment and update URL if you have a public marketing site)
+# Sitemap: https://yourdomain.com/sitemap.xml
+

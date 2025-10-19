@@ -197,7 +197,75 @@ export const ExpenseList = () => {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile Card View - Show on screens < 768px */}
+            <div className="md:hidden p-4 space-y-3">
+              {expenses.map((expense) => (
+                <div
+                  key={expense.id}
+                  className="bg-white rounded-xl border-2 border-gray-200 p-4 hover:border-indigo-300 hover:shadow-lg transition-all duration-200"
+                >
+                  {/* Header Row - Date and Amount */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base text-gray-900">
+                        {formatDate(expense.expenseDate)}
+                      </h3>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {EXPENSE_CONFIG[expense.expenseType].name}
+                      </p>
+                    </div>
+                    <div className="text-right ml-3">
+                      <div className="text-lg font-bold text-gray-900">
+                        {formatCurrency(expense.amount, expense.currency)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className="mb-4">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${getStatusBadgeColor(
+                        expense.status
+                      )} shadow-sm`}
+                    >
+                      {expense.status.charAt(0).toUpperCase() + expense.status.slice(1)}
+                    </span>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-3 border-t border-gray-100">
+                    <Link
+                      to={`/expenses/${expense.id}`}
+                      className="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <EyeIcon className="h-4 w-4 mr-2" />
+                      View Details
+                    </Link>
+                    {expense.status === 'pending' && expense.enteredBy === user?.uid && (
+                      <Link
+                        to={`/expenses/${expense.id}/edit`}
+                        className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                        title="Edit expense"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {!expenses?.length && !loading && (
+                <div className="text-center py-16 text-gray-500">
+                  <BanknotesIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-4 text-lg font-medium text-gray-900">No expenses found</p>
+                  <p className="text-sm mt-2 text-gray-600">
+                    Try adjusting your filters or add a new expense
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Table View - Show on screens >= 768px */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>

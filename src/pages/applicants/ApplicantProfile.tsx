@@ -99,21 +99,22 @@ export const ApplicantProfile = () => {
 
   return (
     <div className="min-h-full">
-      {/* Header with gradient background */}
+      {/* Header with gradient background - Responsive */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-        <div className="py-8">
+        <div className="py-6 sm:py-8">
           <button
             onClick={() => navigate(-1)}
-            className="group mb-4 inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/20 transition-all duration-200"
+            className="group mb-3 sm:mb-4 inline-flex items-center px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg hover:bg-white/20 transition-all duration-200"
           >
-            <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back to Applicants
+            <ArrowLeftIcon className="h-3 w-3 sm:h-4 sm:w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            <span className="hidden sm:inline">Back to Applicants</span>
+            <span className="sm:hidden">Back</span>
           </button>
-          <div className="flex items-center space-x-3">
-            <SparklesIcon className="h-8 w-8 text-white" />
-            <h1 className="text-3xl font-bold text-white">Applicant Profile</h1>
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+            <h1 className="text-xl sm:text-3xl font-bold text-white">Applicant Profile</h1>
           </div>
-          <p className="mt-2 text-indigo-100">
+          <p className="mt-2 text-sm sm:text-base text-indigo-100">
             View and manage applicant information and status
           </p>
         </div>
@@ -129,8 +130,8 @@ export const ApplicantProfile = () => {
           />
           
           {/* Stage Progress Section */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Recruitment Pipeline Progress</h2>
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-4">Recruitment Pipeline Progress</h2>
             <StageProgress 
               currentStage={selectedApplicant.currentStageEnum || selectedApplicant.currentStage}
               status={selectedApplicant.currentStatus || selectedApplicant.status}

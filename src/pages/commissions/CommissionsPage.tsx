@@ -249,11 +249,11 @@ export const CommissionsPage = () => {
         <div className="px-4 sm:px-6 lg:px-8 py-8">
           <div className="sm:flex sm:items-center sm:justify-between">
             <div className="sm:flex-auto">
-              <div className="flex items-center space-x-3">
-                <SparklesIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">Commission Management</h1>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                <h1 className="text-xl sm:text-3xl font-bold text-white">Commission Management</h1>
               </div>
-              <p className="mt-2 text-indigo-100">
+              <p className="mt-2 text-sm sm:text-base text-indigo-100">
                 Track and manage agent commissions with approval workflows
               </p>
             </div>
@@ -262,7 +262,7 @@ export const CommissionsPage = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/commissions/request')}
-                  className="group relative inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-2xl"
+                  className="group relative inline-flex items-center justify-center w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-2xl"
                 >
                   <PlusIcon className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
                   New Commission
@@ -271,24 +271,24 @@ export const CommissionsPage = () => {
             )}
           </div>
 
-          {/* Stats Cards */}
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Stats Cards - Responsive Grid */}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
               return (
                 <div
                   key={stat.name}
-                  className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105 cursor-pointer"
+                  className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-4 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105 cursor-pointer"
                 >
-                  <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                    <Icon className="h-5 w-5" />
+                  <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span>{stat.name}</span>
                   </dt>
-                  <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                  <dd className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-white">
                     {stat.value}
                   </dd>
                   <div
-                    className={`absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br ${stat.color} opacity-20 blur-2xl`}
+                    className={`absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br ${stat.color} opacity-20 blur-2xl`}
                   ></div>
                 </div>
               );
@@ -412,7 +412,95 @@ export const CommissionsPage = () => {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                {/* Mobile Card View - Show on screens < 768px */}
+                <div className="md:hidden p-4 space-y-3">
+                  {(loadingNames ? commissions : commissionsWithNames).map((commission) => (
+                    <div
+                      key={commission.id}
+                      className="bg-white rounded-xl border-2 border-gray-200 p-4 hover:border-indigo-300 hover:shadow-lg transition-all duration-200"
+                    >
+                      {/* Header Row - Date and Amount */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-base text-gray-900">
+                            {formatDate(commission.createdAt)}
+                          </h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {COMMISSION_CONFIG[commission.commissionType]?.name || commission.commissionType || 'Unknown'}
+                          </p>
+                        </div>
+                        <div className="text-right ml-3">
+                          <div className="text-lg font-bold text-gray-900">
+                            {formatCurrency(commission.amount || 0, commission.currency || 'PHP')}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Info Grid */}
+                      <div className="space-y-2 mb-4">
+                        {/* Applicant */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Applicant:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {loadingNames ? 'Loading...' : (commission.applicantName || '—')}
+                          </span>
+                        </div>
+
+                        {/* Agent */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Agent:</span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {loadingNames ? 'Loading...' : (commission.agentName || '—')}
+                          </span>
+                        </div>
+
+                        {/* Status Badge */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Status:</span>
+                          <span
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${getStatusBadgeColor(
+                              commission.status
+                            )} shadow-sm`}
+                          >
+                            {commission.status ? commission.status.charAt(0).toUpperCase() + commission.status.slice(1) : 'Unknown'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 pt-3 border-t border-gray-100">
+                        <button
+                          onClick={() => navigate(`/commissions/${commission.id}`)}
+                          className="flex-1 inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                        >
+                          <EyeIcon className="h-4 w-4 mr-2" />
+                          View Details
+                        </button>
+                        {commission.status === 'pending' && commission.requestedBy === user?.uid && (
+                          <button
+                            onClick={() => navigate(`/commissions/${commission.id}/edit`)}
+                            className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                            title="Edit commission"
+                          >
+                            <PencilIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {!commissions?.length && !loading && (
+                    <div className="text-center py-16 text-gray-500">
+                      <BanknotesIcon className="mx-auto h-12 w-12 text-gray-400" />
+                      <p className="mt-4 text-lg font-medium text-gray-900">No commissions found</p>
+                      <p className="text-sm mt-2 text-gray-600">
+                        Try adjusting your filters or add a new commission
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop Table View - Show on screens >= 768px */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                       <tr>

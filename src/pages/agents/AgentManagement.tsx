@@ -79,24 +79,24 @@ export const AgentManagement = () => {
 
   return (
     <div className="min-h-full">
-      {/* Header */}
+      {/* Header - Mobile Optimized */}
       <div className="bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 shadow-xl">
-        <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="sm:flex sm:items-center sm:justify-between">
             <div className="sm:flex-auto">
-              <div className="flex items-center space-x-3">
-                <SparklesIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">Agent Management</h1>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                <h1 className="text-xl sm:text-3xl font-bold text-white">Agent Management</h1>
               </div>
-              <p className="mt-2 text-teal-100">
+              <p className="mt-2 text-sm sm:text-base text-teal-100">
                 Manage agents, track performance, and monitor commission earnings
               </p>
             </div>
             {canManageAgents && (
-              <div className="mt-4 sm:mt-0">
+              <div className="mt-4 sm:mt-0 sm:ml-4">
                 <Link
                   to="/agents/new"
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-teal-600 bg-white hover:bg-teal-50 transition-all duration-200"
+                  className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2.5 sm:py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-teal-600 bg-white hover:bg-teal-50 transition-all duration-200"
                 >
                   <PlusIcon className="h-5 w-5 mr-2" />
                   Add New Agent
@@ -105,27 +105,27 @@ export const AgentManagement = () => {
             )}
           </div>
 
-          {/* Statistics Cards */}
-          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Total Agents</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.total}</div>
+          {/* Statistics Cards - Mobile Responsive Grid */}
+          <div className="mt-6 sm:mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-3 py-3 sm:px-4 sm:py-4">
+              <div className="text-white text-xs sm:text-sm font-medium">Total Agents</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">{stats.total}</div>
             </div>
-            <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Active</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.active}</div>
+            <div className="bg-green-500/20 backdrop-blur-sm rounded-lg px-3 py-3 sm:px-4 sm:py-4">
+              <div className="text-white text-xs sm:text-sm font-medium">Active</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">{stats.active}</div>
             </div>
-            <div className="bg-gray-500/20 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Inactive</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.inactive}</div>
+            <div className="bg-gray-500/20 backdrop-blur-sm rounded-lg px-3 py-3 sm:px-4 sm:py-4">
+              <div className="text-white text-xs sm:text-sm font-medium">Inactive</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">{stats.inactive}</div>
             </div>
-            <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Total Applicants</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.totalApplicants}</div>
+            <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg px-3 py-3 sm:px-4 sm:py-4 col-span-2 lg:col-span-1">
+              <div className="text-white text-xs sm:text-sm font-medium">Total Applicants</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">{stats.totalApplicants}</div>
             </div>
-            <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg p-4">
-              <div className="text-white text-sm font-medium">Total Commissions</div>
-              <div className="text-white text-2xl font-bold mt-1">
+            <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg px-3 py-3 sm:px-4 sm:py-4 col-span-2 lg:col-span-1">
+              <div className="text-white text-xs sm:text-sm font-medium">Total Commissions</div>
+              <div className="text-white text-xl sm:text-2xl font-bold mt-1">
                 ${stats.totalCommissions.toLocaleString()}
               </div>
             </div>
@@ -136,9 +136,9 @@ export const AgentManagement = () => {
       {/* Content */}
       <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Filters */}
+          {/* Filters - Mobile Optimized */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-4 space-y-4">
+            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
               {/* Search Bar */}
               <div className="relative">
                 <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
@@ -147,39 +147,42 @@ export const AgentManagement = () => {
                   placeholder="Search agents by name, email, or phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full pl-10 pr-4 py-2.5 sm:py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
 
-              {/* Filter Options */}
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center space-x-2">
+              {/* Filter Options - Responsive Layout */}
+              <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-4">
+                <div className="hidden sm:flex items-center space-x-2">
                   <FunnelIcon className="h-5 w-5 text-gray-400" />
                   <span className="text-sm font-medium text-gray-700">Filters:</span>
                 </div>
                 
-                {/* Status Filter */}
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value as any)}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-
-                {customClaims?.role !== 'branch_manager' && (
+                {/* Mobile: Full Width Filters, Desktop: Auto Width */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1 sm:flex-initial">
+                  {/* Status Filter */}
                   <select
-                    value={branchFilter}
-                    onChange={(e) => setBranchFilter(e.target.value)}
-                    className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value as any)}
+                    className="w-full sm:w-auto px-3 py-2.5 sm:py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                   >
-                    <option value="all">All Branches</option>
-                    {/* TODO: Load branches from store */}
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
                   </select>
-                )}
+
+                  {customClaims?.role !== 'branch_manager' && (
+                    <select
+                      value={branchFilter}
+                      onChange={(e) => setBranchFilter(e.target.value)}
+                      className="w-full sm:w-auto px-3 py-2.5 sm:py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                    >
+                      <option value="all">All Branches</option>
+                      {/* TODO: Load branches from store */}
+                    </select>
+                  )}
+                </div>
 
                 {(searchTerm || statusFilter !== 'all' || branchFilter !== 'all') && (
                   <button
@@ -188,7 +191,7 @@ export const AgentManagement = () => {
                       setStatusFilter('all');
                       setBranchFilter('all');
                     }}
-                    className="text-sm text-teal-600 hover:text-teal-800 font-medium"
+                    className="w-full sm:w-auto px-4 py-2 text-sm text-white bg-teal-600 hover:bg-teal-700 rounded-lg font-medium transition-colors sm:bg-transparent sm:text-teal-600 sm:hover:text-teal-800 sm:hover:bg-transparent sm:p-0"
                   >
                     Clear Filters
                   </button>
@@ -242,54 +245,54 @@ export const AgentManagement = () => {
                 <Link
                   key={agent.id}
                   to={`/agents/${agent.id}`}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
+                  className="bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-teal-300 hover:shadow-lg transition-all duration-200 overflow-hidden"
                 >
-                  <div className="p-6">
-                    {/* Agent Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center text-white font-bold text-lg">
+                  <div className="p-4 sm:p-6">
+                    {/* Agent Header - Mobile Optimized */}
+                    <div className="flex items-start justify-between mb-3 sm:mb-4">
+                      <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0">
                           {agent.agentName?.charAt(0).toUpperCase() || '?'}
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                             {agent.agentName || 'Unknown Agent'}
                           </h3>
-                          <p className="text-sm text-gray-500">{agent.email || 'No email'}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 truncate">{agent.email || 'No email'}</p>
                         </div>
                       </div>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(agent.status)}`}>
+                      <span className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(agent.status)} flex-shrink-0 ml-2`}>
                         {agent.status ? agent.status.charAt(0).toUpperCase() + agent.status.slice(1) : 'Unknown'}
                       </span>
                     </div>
 
-                    {/* Agent Details */}
-                    <div className="space-y-2 text-sm">
+                    {/* Agent Details - Mobile Optimized */}
+                    <div className="space-y-2 text-xs sm:text-sm">
                       <div className="flex items-center text-gray-600">
-                        <BuildingOfficeIcon className="h-4 w-4 mr-2" />
-                        <span>Branch: {getBranchName(agent.branchId)}</span>
+                        <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">Branch: {getBranchName(agent.branchId)}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
-                        <BanknotesIcon className="h-4 w-4 mr-2" />
+                        <BanknotesIcon className="h-4 w-4 mr-2 flex-shrink-0" />
                         <span>Commission Amount: ₱{agent.commissionAmount.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
-                        <UserGroupIcon className="h-4 w-4 mr-2" />
+                        <UserGroupIcon className="h-4 w-4 mr-2 flex-shrink-0" />
                         <span>Applicants: {agent.totalApplicants || 0}</span>
                       </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-4">
+                    {/* Stats - Mobile Optimized */}
+                    <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 grid grid-cols-2 gap-3 sm:gap-4">
                       <div>
                         <div className="text-xs text-gray-500">Deployed</div>
-                        <div className="text-lg font-semibold text-gray-900">
+                        <div className="text-base sm:text-lg font-semibold text-gray-900 mt-0.5">
                           {agent.deployedApplicants || 0}
                         </div>
                       </div>
                       <div>
                         <div className="text-xs text-gray-500">Total Earnings</div>
-                        <div className="text-lg font-semibold text-teal-600">
+                        <div className="text-base sm:text-lg font-semibold text-teal-600 mt-0.5">
                           ${(agent.totalCommissions || 0).toLocaleString()}
                         </div>
                       </div>

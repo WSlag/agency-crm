@@ -77,7 +77,56 @@ export const StageProgress: React.FC<StageProgressProps> = ({
   
   return (
     <div className={`py-6 ${className}`}>
-      <div className="relative">
+      {/* Mobile: Vertical Layout (< 768px) */}
+      <div className="md:hidden space-y-3">
+        {STAGE_ORDER.map((stage, index) => (
+          <div key={stage} className="flex items-center gap-3">
+            {/* Icon */}
+            <div className="relative flex-shrink-0">
+              {getStageIcon(stage, index)}
+              
+              {/* Commission badges */}
+              {stage === ApplicantStage.TRANSFER && commissionMedicalTriggered && (
+                <span 
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center"
+                  title="1st Commission triggered"
+                >
+                  💰
+                </span>
+              )}
+              {stage === ApplicantStage.DEPLOYED && commissionDeploymentTriggered && (
+                <span 
+                  className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 text-white text-xs rounded-full flex items-center justify-center"
+                  title="2nd Commission triggered"
+                >
+                  💰
+                </span>
+              )}
+            </div>
+            
+            {/* Stage label and status */}
+            <div className="flex-1">
+              <div className={`text-sm font-medium ${getStageColor(stage, index)}`}>
+                {STAGE_LABELS[stage]}
+              </div>
+              {index === currentIndex && (status === 'pending_approval' || status === ApplicantStatus.PENDING_APPROVAL) && (
+                <div className="text-xs text-yellow-600 mt-1">Pending approval</div>
+              )}
+              {index === currentIndex && (status === 'rejected' || status === ApplicantStatus.REJECTED) && (
+                <div className="text-xs text-red-600 mt-1">Rejected</div>
+              )}
+            </div>
+            
+            {/* Connector line (except for last item) */}
+            {index < STAGE_ORDER.length - 1 && (
+              <div className="absolute left-[11px] mt-8 w-0.5 h-8 bg-gray-300" />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: Horizontal Layout (≥ 768px) */}
+      <div className="hidden md:block relative">
         {/* Progress line */}
         <div className="absolute top-3 left-0 right-0 h-0.5 bg-gray-300 -z-10" />
         

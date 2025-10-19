@@ -323,12 +323,14 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
               key={approval.id}
               className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white"
             >
-              <div className="flex justify-between items-start gap-4">
-                <div className="flex-1">
+              {/* Mobile-first: Stack everything vertically, then side-by-side on larger screens */}
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                {/* Left side: Applicant information */}
+                <div className="flex-1 min-w-0">
                   <div className="flex items-start gap-3 mb-3">
                     <UserIcon className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg text-gray-900 truncate">
                         {approval.applicant.fullName}
                       </h3>
                       <p className="text-sm text-gray-600 mt-1">
@@ -343,7 +345,7 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
                   
                   <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
                     <CalendarIcon className="w-4 h-4" />
-                    <span>
+                    <span className="text-xs">
                       Requested: {format(changedAt, 'MMM dd, yyyy HH:mm')}
                     </span>
                   </div>
@@ -355,7 +357,7 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
                   )}
                   
                   {/* Applicant details */}
-                  <div className="mt-3 pt-3 border-t border-gray-100 flex gap-4 text-xs text-gray-600">
+                  <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap gap-x-4 gap-y-2 text-xs text-gray-600">
                     {approval.applicant.branchId && (
                       <div className="flex items-center gap-1">
                         <BuildingOfficeIcon className="w-3.5 h-3.5 text-gray-400" />
@@ -374,34 +376,35 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
                   </div>
                 </div>
                 
-                <div className="flex flex-col gap-2 flex-shrink-0">
+                {/* Right side: Action buttons - Stack on mobile, column on tablet+ */}
+                <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[160px]">
                   {/* View Documents Button */}
                   <Link
                     to={`${customClaims?.role === 'ho_recruitment_officer' ? '/my-applicants' : '/applicants'}/${approval.applicantId}?tab=documents`}
-                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
+                    className="px-3 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors shadow-sm hover:shadow-md"
                     title="View uploaded documents"
                   >
                     <DocumentTextIcon className="w-4 h-4" />
-                    View Documents
+                    <span>View Documents</span>
                   </Link>
                   
-                  {/* Action Buttons */}
-                  <div className="flex gap-2">
+                  {/* Approve/Reject Buttons - Full width on mobile, side-by-side on larger screens */}
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={() => handleApprove(approval)}
                       disabled={isProcessing}
-                      className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex-1 px-3 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm hover:shadow-md"
                     >
                       <CheckCircleIcon className="w-4 h-4" />
-                      {isProcessing ? 'Processing...' : 'Approve'}
+                      <span>{isProcessing ? 'Processing...' : 'Approve'}</span>
                     </button>
                     <button
                       onClick={() => setSelectedApproval(approval)}
                       disabled={isProcessing}
-                      className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex-1 px-3 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm hover:shadow-md"
                     >
                       <XCircleIcon className="w-4 h-4" />
-                      Reject
+                      <span>Reject</span>
                     </button>
                   </div>
                 </div>
