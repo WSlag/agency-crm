@@ -119,16 +119,16 @@ export const BranchList = () => {
 
   return (
     <div className="min-h-full">
-      {/* Header with gradient background */}
+      {/* Header with gradient background - Mobile Optimized */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl">
-        <div className="px-4 sm:px-6 lg:px-8 py-8">
+        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="sm:flex sm:items-center sm:justify-between">
             <div className="sm:flex-auto">
-              <div className="flex items-center space-x-3">
-                <SparklesIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">Branch Management</h1>
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                <h1 className="text-xl sm:text-3xl font-bold text-white">Branch Management</h1>
               </div>
-              <p className="mt-2 text-indigo-100">
+              <p className="mt-2 text-sm sm:text-base text-indigo-100">
                 Manage all branches including their location, managers, and status
               </p>
             </div>
@@ -136,7 +136,7 @@ export const BranchList = () => {
               <button
                 type="button"
                 onClick={() => navigate('/branches/new')}
-                className="group relative inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-2xl"
+                className="group relative inline-flex items-center justify-center w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-2xl"
               >
                 <PlusIcon className="h-5 w-5 mr-2 group-hover:rotate-90 transition-transform duration-300" />
                 Add Branch
@@ -144,24 +144,24 @@ export const BranchList = () => {
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Stats Cards - Mobile Responsive */}
+          <div className="mt-6 sm:mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {stats.map((stat) => {
               const Icon = stat.icon;
               return (
                 <div
                   key={stat.name}
-                  className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105 cursor-pointer"
+                  className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-3 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105 cursor-pointer"
                 >
-                  <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                    <Icon className="h-5 w-5" />
+                  <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                     <span>{stat.name}</span>
                   </dt>
-                  <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                  <dd className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">
                     {stat.value}
                   </dd>
                   <div
-                    className={`absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br ${stat.color} opacity-20 blur-2xl`}
+                    className={`absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br ${stat.color} opacity-20 blur-2xl`}
                   ></div>
                 </div>
               );
@@ -208,8 +208,117 @@ export const BranchList = () => {
             </div>
           ) : (
             <>
-              {/* Table */}
-              <div className="overflow-x-auto">
+              {/* Mobile Card View - Show on screens < 768px */}
+              <div className="md:hidden p-4 space-y-3">
+                {branches?.map((branch) => (
+                  <div
+                    key={branch?.id}
+                    className="bg-white rounded-xl border-2 border-gray-200 p-4 hover:border-indigo-300 hover:shadow-lg transition-all duration-200"
+                  >
+                    {/* Header Row - Name and Type */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center flex-1 min-w-0">
+                        <div
+                          className={`w-3 h-3 rounded-full mr-3 flex-shrink-0 ${
+                            branch?.active ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                          }`}
+                        ></div>
+                        <h3 className="font-semibold text-base text-gray-900 truncate">
+                          {branch?.name || '—'}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Info Grid */}
+                    <div className="space-y-2 mb-4">
+                      {/* Type Badge */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Type:</span>
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${getTypeBadgeColor(
+                            branch?.type || ''
+                          )} shadow-sm`}
+                        >
+                          {branch?.type === 'HEAD_OFFICE' ? '🏢 Head Office' : '🏪 Branch'}
+                        </span>
+                      </div>
+
+                      {/* Location */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Location:</span>
+                        <span className="text-sm font-medium text-gray-900 flex items-center">
+                          <MapPinIcon className="h-4 w-4 mr-1 text-gray-400" />
+                          {branch?.location?.city || '—'}, {branch?.location?.state || '—'}
+                        </span>
+                      </div>
+
+                      {/* Managers */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Managers:</span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800 font-medium text-sm">
+                          {managerCounts[branch?.id] || 0}
+                        </span>
+                      </div>
+
+                      {/* Status Dropdown */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <select
+                          value={branch?.active ? 'active' : 'inactive'}
+                          onChange={(e) =>
+                            handleStatusChange(branch?.id ?? '', e.target.value === 'active')
+                          }
+                          className={`rounded-lg border-2 px-3 py-1 text-xs font-semibold transition-all ${
+                            branch?.active
+                              ? 'border-green-300 bg-green-50 text-green-800'
+                              : 'border-red-300 bg-red-50 text-red-800'
+                          }`}
+                          disabled={!branch?.id}
+                        >
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-3 border-t border-gray-100">
+                      <Link
+                        to={`/branches/${branch?.id}`}
+                        className="flex-1 inline-flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                      >
+                        <EyeIcon className="h-4 w-4 mr-2" />
+                        View
+                      </Link>
+                      <Link
+                        to={`/branches/${branch?.id}/edit`}
+                        className="px-3 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                        title="Edit branch"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(branch?.id ?? '')}
+                        className="px-3 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-700 rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                        disabled={!branch?.id}
+                        title="Delete branch"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {!branches?.length && !loading && (
+                  <div className="text-center py-16 text-gray-500">
+                    <BuildingOfficeIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-4 text-lg font-medium text-gray-900">No branches found</p>
+                    <p className="text-sm mt-2 text-gray-600">Get started by adding a new branch</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View - Show on screens >= 768px */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>

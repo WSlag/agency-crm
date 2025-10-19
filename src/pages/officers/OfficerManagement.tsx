@@ -171,14 +171,14 @@ export const OfficerManagement = () => {
   if (customClaims?.role === 'ho_recruitment_officer') {
     return (
       <div className="min-h-full">
-          {/* Header with gradient background */}
+          {/* Header with gradient background - Mobile Optimized */}
           <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-            <div className="py-8">
-              <div className="flex items-center space-x-3">
-                <SparklesIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">My Dashboard</h1>
+            <div className="py-6 sm:py-8">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                <h1 className="text-xl sm:text-3xl font-bold text-white">My Dashboard</h1>
               </div>
-              <p className="mt-2 text-indigo-100">
+              <p className="mt-2 text-sm sm:text-base text-indigo-100">
                 Track your assigned applicants and performance metrics
               </p>
             </div>
@@ -195,63 +195,63 @@ export const OfficerManagement = () => {
   // Admin/Manager view - show all officers
   return (
     <div className="min-h-full">
-        {/* Header with gradient background */}
+        {/* Header with gradient background - Mobile Optimized */}
         <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-          <div className="py-8">
-            <div className="flex items-center space-x-3">
-              <SparklesIcon className="h-8 w-8 text-white" />
-              <h1 className="text-3xl font-bold text-white">
+          <div className="py-6 sm:py-8">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+              <h1 className="text-xl sm:text-3xl font-bold text-white">
                 Recruitment Officer Management
               </h1>
             </div>
-            <p className="mt-2 text-indigo-100">
+            <p className="mt-2 text-sm sm:text-base text-indigo-100">
               Monitor performance and manage recruitment officer assignments
             </p>
 
-            {/* Stats Cards */}
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
-                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                  <UserGroupIcon className="h-5 w-5" />
+            {/* Stats Cards - Mobile Responsive */}
+            <div className="mt-6 sm:mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-3 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                  <UserGroupIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Total Officers</span>
                 </dt>
-                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                <dd className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">
                   {officers.length}
                 </dd>
-                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 opacity-20 blur-2xl"></div>
+                <div className="absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 opacity-20 blur-2xl"></div>
               </div>
 
-              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
-                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                  <CheckCircleIcon className="h-5 w-5" />
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-3 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                  <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Active Officers</span>
                 </dt>
-                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                <dd className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">
                   {activeOfficers}
                 </dd>
-                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-green-500 to-green-600 opacity-20 blur-2xl"></div>
+                <div className="absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-green-500 to-green-600 opacity-20 blur-2xl"></div>
               </div>
 
-              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
-                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                  <ClockIcon className="h-5 w-5" />
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-3 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                  <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Avg. Workload</span>
                 </dt>
-                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                <dd className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">
                   {avgWorkload}
                 </dd>
-                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 opacity-20 blur-2xl"></div>
+                <div className="absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 opacity-20 blur-2xl"></div>
               </div>
 
-              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
-                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                  <TrophyIcon className="h-5 w-5" />
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-3 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                  <TrophyIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Avg. Success Rate</span>
                 </dt>
-                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                <dd className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">
                   {avgSuccessRate}%
                 </dd>
-                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 opacity-20 blur-2xl"></div>
+                <div className="absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 opacity-20 blur-2xl"></div>
               </div>
             </div>
           </div>
@@ -260,16 +260,106 @@ export const OfficerManagement = () => {
         {/* Officer Performance Table */}
         <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden mb-6">
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
               <div className="flex items-center space-x-2">
-                <ChartBarIcon className="h-6 w-6 text-indigo-600" />
-                <h3 className="text-xl font-bold text-gray-900">
+                <ChartBarIcon className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600" />
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">
                   Officer Performance Overview
                 </h3>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Mobile Card View - Show on screens < 768px */}
+            <div className="md:hidden p-4 space-y-3">
+              {officers.map((officer) => {
+                const stats = officerStats[officer.uid] || {
+                  totalApplicants: 0,
+                  activeCases: 0,
+                  successRate: 0
+                };
+
+                return (
+                  <div
+                    key={officer.uid}
+                    className="bg-white rounded-xl border-2 border-gray-200 p-4 hover:border-indigo-300 hover:shadow-lg transition-all duration-200"
+                  >
+                    {/* Header Row - Avatar, Name */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center flex-1 min-w-0">
+                        <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {officer.displayName?.charAt(0).toUpperCase() || '?'}
+                          </span>
+                        </div>
+                        <div className="ml-3 flex-1 min-w-0">
+                          <h3 className="font-semibold text-base text-gray-900 truncate">
+                            {officer.displayName || 'Unknown Officer'}
+                          </h3>
+                          <p className="text-xs text-gray-500 truncate">{officer.email || 'No email'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Info Grid */}
+                    <div className="space-y-2 mb-4">
+                      {/* Total Applicants */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Total Applicants:</span>
+                        <span className="text-sm font-semibold text-gray-900">{stats.totalApplicants}</span>
+                      </div>
+
+                      {/* Active Cases */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Active Cases:</span>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {stats.activeCases}
+                        </span>
+                      </div>
+
+                      {/* Success Rate */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Success Rate:</span>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            stats.successRate >= 80
+                              ? 'bg-green-100 text-green-800'
+                              : stats.successRate >= 70
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {stats.successRate}%
+                        </span>
+                      </div>
+
+                      {/* Status */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">Status:</span>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            officer.status === 'active'
+                              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                              : 'bg-gradient-to-r from-gray-500 to-gray-600 text-white'
+                          }`}
+                        >
+                          {officer.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {officers.length === 0 && (
+                <div className="text-center py-16 text-gray-500">
+                  <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-4 text-lg font-medium text-gray-900">No officers found</p>
+                  <p className="text-sm mt-2 text-gray-600">No recruitment officers are currently registered</p>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Table View - Show on screens >= 768px */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>

@@ -145,23 +145,23 @@ export const UserList = () => {
 
   return (
     <div className="min-h-full">
-        {/* Header with gradient background */}
+        {/* Header with gradient background - Mobile Optimized */}
         <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-          <div className="py-8">
+          <div className="py-6 sm:py-8">
             <div className="sm:flex sm:items-center sm:justify-between">
               <div className="sm:flex-auto">
-                <div className="flex items-center space-x-3">
-                  <SparklesIcon className="h-8 w-8 text-white" />
-                  <h1 className="text-3xl font-bold text-white">User Management</h1>
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                  <h1 className="text-xl sm:text-3xl font-bold text-white">User Management</h1>
                 </div>
-                <p className="mt-2 text-indigo-100">
+                <p className="mt-2 text-sm sm:text-base text-indigo-100">
                   Manage system users, roles, and permissions
                 </p>
               </div>
               <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
                 <Link
                   to="/users/new"
-                  className="group relative inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-2xl"
+                  className="group relative inline-flex items-center justify-center w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-semibold text-white bg-white/10 backdrop-blur-sm border-2 border-white/30 rounded-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-2xl"
                 >
                   <UserPlusIcon className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform duration-300" />
                   Add User
@@ -169,50 +169,50 @@ export const UserList = () => {
               </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
-                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                  <UserGroupIcon className="h-5 w-5" />
+            {/* Stats Cards - Mobile Responsive */}
+            <div className="mt-6 sm:mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-3 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                  <UserGroupIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Total Users</span>
                 </dt>
-                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                <dd className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">
                   {users.length}
                 </dd>
-                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 opacity-20 blur-2xl"></div>
+                <div className="absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 opacity-20 blur-2xl"></div>
               </div>
 
-              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
-                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                  <CheckCircleIcon className="h-5 w-5" />
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-3 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                  <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Active Users</span>
                 </dt>
-                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                <dd className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">
                   {activeUsers}
                 </dd>
-                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-green-500 to-green-600 opacity-20 blur-2xl"></div>
+                <div className="absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-green-500 to-green-600 opacity-20 blur-2xl"></div>
               </div>
 
-              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
-                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                  <XCircleIcon className="h-5 w-5" />
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-3 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                  <XCircleIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Inactive Users</span>
                 </dt>
-                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                <dd className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">
                   {inactiveUsers}
                 </dd>
-                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 opacity-20 blur-2xl"></div>
+                <div className="absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 opacity-20 blur-2xl"></div>
               </div>
 
-              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
-                <dt className="flex items-center space-x-2 truncate text-sm font-medium text-indigo-100">
-                  <BuildingOfficeIcon className="h-5 w-5" />
+              <div className="relative overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 px-3 py-3 sm:px-4 sm:py-5 shadow-lg hover:bg-white/15 transition-all duration-200 hover:scale-105">
+                <dt className="flex items-center space-x-2 truncate text-xs sm:text-sm font-medium text-indigo-100">
+                  <BuildingOfficeIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   <span>Branch Managers</span>
                 </dt>
-                <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
+                <dd className="mt-1 text-xl sm:text-3xl font-semibold tracking-tight text-white">
                   {branchManagers}
                 </dd>
-                <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 opacity-20 blur-2xl"></div>
+                <div className="absolute -right-4 -bottom-4 h-16 w-16 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 opacity-20 blur-2xl"></div>
               </div>
             </div>
           </div>
@@ -221,7 +221,110 @@ export const UserList = () => {
         {/* Table */}
         <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
+            {/* Mobile Card View - Show on screens < 768px */}
+            <div className="md:hidden p-4 space-y-3">
+              {users.map((user) => (
+                <div
+                  key={user.uid}
+                  className="bg-white rounded-xl border-2 border-gray-200 p-4 hover:border-indigo-300 hover:shadow-lg transition-all duration-200"
+                >
+                  {/* Header Row - Avatar, Name, and Status */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+                        <span className="text-white font-semibold text-sm">
+                          {user.displayName?.charAt(0).toUpperCase() || '?'}
+                        </span>
+                      </div>
+                      <div className="ml-3 flex-1 min-w-0">
+                        <h3 className="font-semibold text-base text-gray-900 truncate">
+                          {user.displayName || 'Unknown User'}
+                        </h3>
+                        <p className="text-xs text-gray-500 truncate">{user.email || 'No email'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info Grid */}
+                  <div className="space-y-2 mb-4">
+                    {/* Role Badge */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Role:</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                        {formatRoleName(user.role)}
+                      </span>
+                    </div>
+
+                    {/* Branch */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Branch:</span>
+                      {user.branchId ? (
+                        <span className="text-sm font-medium text-gray-900 flex items-center">
+                          <BuildingOfficeIcon className="h-4 w-4 mr-1 text-gray-400" />
+                          {getBranchName(user.branchId)}
+                        </span>
+                      ) : (
+                        <span className="text-sm font-medium text-gray-900">🏢 Head Office</span>
+                      )}
+                    </div>
+
+                    {/* Status Dropdown */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Status:</span>
+                      <select
+                        value={user.status || 'inactive'}
+                        onChange={(e) => handleStatusChange(user.uid, e.target.value as 'active' | 'inactive')}
+                        className={`rounded-lg border-2 px-3 py-1.5 text-xs font-medium focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
+                          user.status === 'active'
+                            ? 'border-green-300 text-green-700 bg-green-50'
+                            : 'border-gray-300 text-gray-700 bg-gray-50'
+                        }`}
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-3 border-t border-gray-100">
+                    <Link
+                      to={`/users/${user.uid}/edit`}
+                      className="flex-1 inline-flex items-center justify-center px-3 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <PencilIcon className="h-4 w-4 mr-2" />
+                      Edit
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(user.uid)}
+                      className="px-3 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-red-700 rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-sm hover:shadow-md"
+                      title="Delete user"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {users.length === 0 && (
+                <div className="text-center py-16 text-gray-500">
+                  <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-4 text-lg font-medium text-gray-900">No users found</p>
+                  <p className="text-sm mt-2 text-gray-600">Get started by creating a new user</p>
+                  <div className="mt-6">
+                    <Link
+                      to="/users/new"
+                      className="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:scale-105 transition-all duration-200"
+                    >
+                      <UserPlusIcon className="h-5 w-5 mr-2" />
+                      Add User
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Table View - Show on screens >= 768px */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>

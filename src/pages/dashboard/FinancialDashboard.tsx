@@ -110,25 +110,25 @@ export const FinancialDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 px-4 py-6">
       <div className="mx-auto max-w-7xl">
-        {/* Header */}
-        <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl p-8 mb-8 overflow-hidden">
+        {/* Header - Mobile Optimized */}
+        <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl p-6 sm:p-8 mb-6 sm:mb-8 overflow-hidden">
           <div className="absolute inset-0 bg-black opacity-10"></div>
           <div className="relative z-10">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <div className="flex items-center space-x-3">
-                  <SparklesIcon className="h-8 w-8 text-white animate-pulse" />
-                  <h1 className="text-3xl font-bold text-white">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white animate-pulse" />
+                  <h1 className="text-xl sm:text-3xl font-bold text-white">
                     Financial Dashboard
                   </h1>
                 </div>
-                <p className="text-indigo-100 mt-1">
+                <p className="text-sm sm:text-base text-indigo-100 mt-1">
                   Monitor expenses and commissions in real-time
                 </p>
               </div>
               <Link
                 to="/reports"
-                className="inline-flex items-center px-6 py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white font-medium hover:bg-white/30 transition-all transform hover:scale-105 shadow-lg"
+                className="inline-flex items-center justify-center w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white text-sm font-medium hover:bg-white/30 transition-all transform hover:scale-105 shadow-lg"
               >
                 <ChartBarIcon className="h-5 w-5 mr-2" />
                 View Reports
@@ -137,75 +137,75 @@ export const FinancialDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        {/* Summary Cards - Mobile Responsive */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 mb-6 sm:mb-8">
           {/* Total Expenses */}
-          <div className="group relative bg-white rounded-2xl shadow-xl border border-gray-200 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+          <div className="group relative bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-orange-50 opacity-50"></div>
             <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
-                  <BanknotesIcon className="h-6 w-6 text-white" />
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                  <BanknotesIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
                 Total Expenses
               </p>
-              <p className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+              <p className="text-base sm:text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
                 {formatCurrency(summary.totalExpenses)}
               </p>
             </div>
           </div>
 
           {/* Pending Expenses */}
-          <div className="group relative bg-white rounded-2xl shadow-xl border border-gray-200 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+          <div className="group relative bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-50 to-amber-50 opacity-50"></div>
             <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
-                  <ClockIcon className="h-6 w-6 text-white" />
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                  <ClockIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
                 Pending Expenses
               </p>
-              <p className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
+              <p className="text-base sm:text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
                 {formatCurrency(summary.pendingExpenses)}
               </p>
             </div>
           </div>
 
           {/* Total Commissions */}
-          <div className="group relative bg-white rounded-2xl shadow-xl border border-gray-200 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+          <div className="group relative bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-50"></div>
             <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
-                  <BanknotesIcon className="h-6 w-6 text-white" />
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                  <BanknotesIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
                 Total Commissions
               </p>
-              <p className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              <p className="text-base sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 {formatCurrency(summary.totalCommissions)}
               </p>
             </div>
           </div>
 
           {/* Pending Commissions */}
-          <div className="group relative bg-white rounded-2xl shadow-xl border border-gray-200 p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+          <div className="group relative bg-white rounded-2xl shadow-xl border border-gray-200 p-4 sm:p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-cyan-50 opacity-50"></div>
             <div className="relative">
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
-                  <ArrowTrendingUpIcon className="h-6 w-6 text-white" />
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform">
+                  <ArrowTrendingUpIcon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
               </div>
-              <p className="text-sm font-medium text-gray-600 mb-1">
+              <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">
                 Pending Commissions
               </p>
-              <p className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              <p className="text-base sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                 {formatCurrency(summary.pendingCommissions)}
               </p>
             </div>
@@ -215,19 +215,19 @@ export const FinancialDashboard: React.FC = () => {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Recent Expenses */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-red-50 to-orange-50 px-6 py-4 border-b border-gray-200">
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl">
-                    <DocumentTextIcon className="h-5 w-5 text-white" />
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl">
+                    <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                     Recent Expenses
                   </h3>
                 </div>
                 <Link
                   to="/expenses"
-                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                  className="text-xs sm:text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
                 >
                   View all →
                 </Link>
@@ -286,19 +286,19 @@ export const FinancialDashboard: React.FC = () => {
 
           {/* Recent Commissions */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200">
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                    <BanknotesIcon className="h-5 w-5 text-white" />
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
+                    <BanknotesIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                     Recent Commissions
                   </h3>
                 </div>
                 <Link
                   to="/commissions"
-                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                  className="text-xs sm:text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
                 >
                   View all →
                 </Link>
@@ -357,12 +357,12 @@ export const FinancialDashboard: React.FC = () => {
 
           {/* Expenses by Type */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
-                  <ChartBarIcon className="h-5 w-5 text-white" />
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
+                  <ChartBarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                   Expenses by Type
                 </h3>
               </div>
@@ -410,12 +410,12 @@ export const FinancialDashboard: React.FC = () => {
 
           {/* Commissions Summary */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                  <ChartBarIcon className="h-5 w-5 text-white" />
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
+                  <ChartBarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                   Commissions Summary
                 </h3>
               </div>
