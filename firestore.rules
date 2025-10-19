@@ -90,11 +90,11 @@ service cloud.firestore {
     
     function isValidNotification() {
       let data = request.resource.data;
-      return data.keys().hasAll(['recipientId', 'type', 'title', 'message', 'status'])
+      return data.keys().hasAll(['recipientId', 'type', 'title', 'body', 'status'])
         && data.recipientId is string
-        && data.type in ['info', 'success', 'warning', 'error']
+        && data.type is string
         && data.title is string
-        && data.message is string
+        && data.body is string
         && data.status in ['unread', 'read', 'archived'];
     }
     
@@ -139,7 +139,8 @@ service cloud.firestore {
     
     match /applicants/{applicantId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isBranchManager();
+      allow create: if isAdmin() || 
+        (isBranchManager() && belongsToBranch(request.resource.data.branchId));
       allow update: if isAdmin() || 
         (isBranchManager() && belongsToBranch(resource.data.branchId)) ||
         isHORecruitmentOfficer();
@@ -151,10 +152,11 @@ service cloud.firestore {
         allow create: if isAuthenticated() && (
           isAdmin() ||
           (isBranchManager() && belongsToBranch(get(/databases/$(database)/documents/applicants/$(applicantId)).data.branchId)) ||
-          (isHORecruitmentOfficer() && get(/databases/$(database)/documents/applicants/$(applicantId)).data.assignedRecruitmentOfficerId == request.auth.uid)
+          isHORecruitmentOfficer()
         );
         allow update: if isAdmin() || 
-          (isHORecruitmentOfficer() && get(/databases/$(database)/documents/applicants/$(applicantId)).data.assignedRecruitmentOfficerId == request.auth.uid);
+          isHORecruitmentOfficer() || 
+          (isBranchManager() && belongsToBranch(get(/databases/$(database)/documents/applicants/$(applicantId)).data.branchId));
         allow delete: if isAdmin();
       }
       
@@ -307,10 +309,30 @@ service cloud.firestore {
     match /documents/{documentId} {
       allow read: if isAuthenticated();
       allow create: if isAdmin() || isBranchManager() || isHORecruitmentOfficer();
-      allow update: if isAdmin() || 
-        isBranchManager() ||
-        isHORecruitmentOfficer();
+      // TEMPORARY: Allow branch managers to update any document for testing
+      // TODO: Add branch validation after confirming basic permissions work
+      allow update: if isAdmin() || isHORecruitmentOfficer() || isBranchManager();
       allow delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // DOCUMENT VERIFICATIONS COLLECTION
+    // ==========================================
+    
+    match /document_verifications/{verificationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHORecruitmentOfficer() || isBranchManager();
+      allow update, delete: if isAdmin();
+    }
+    
+    // ==========================================
+    // DOCUMENT HISTORY COLLECTION
+    // ==========================================
+    
+    match /document_history/{historyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() || isHORecruitmentOfficer() || isBranchManager();
+      allow update, delete: if isAdmin();
     }
     
     // ==========================================
@@ -330,7 +352,8 @@ service cloud.firestore {
     
     match /commissions/{commissionId} {
       allow read: if isAuthenticated();
-      allow create: if isAdmin() || isHOAccountant() || isBranchManager();
+      allow create: if isAdmin() || isHOAccountant() || 
+        (isBranchManager() && belongsToBranch(request.resource.data.branchId));
       allow update: if isAdmin() || isHOAccountant() || isPresident();
       allow delete: if isAdmin();
     }
@@ -401,8 +424,13 @@ service cloud.firestore {
         (isBranchManager() && belongsToBranch(request.resource.data.branchId))
       );
       
-      // Update: Admins, President, and HO Accountant
-      allow update: if isAdmin() || isPresident() || isHOAccountant();
+      // Update: Admins, President, HO Accountant, and Branch Managers (own branch only, for receipts)
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        isHOAccountant() ||
+        (isBranchManager() && belongsToBranch(resource.data.branchId))
+      );
       
       // Delete: Admin only
       allow delete: if isAdmin();

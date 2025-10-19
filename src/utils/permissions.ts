@@ -268,9 +268,26 @@ export const canCreateDocument = async (
 
 /**
  * Check if user can verify document
+ * @param user - The user attempting to verify
+ * @param applicantBranchId - Optional: The branch ID of the applicant (for branch manager validation)
  */
-export const canVerifyDocument = (user: User): boolean => {
-  return ['admin', 'ho_recruitment_officer'].includes(user.role);
+export const canVerifyDocument = (user: User, applicantBranchId?: string): boolean => {
+  // Admin can verify any document
+  if (user.role === 'admin') {
+    return true;
+  }
+  
+  // HO Recruitment Officer can verify any document
+  if (user.role === 'ho_recruitment_officer') {
+    return true;
+  }
+  
+  // Branch Manager can only verify documents for their branch applicants
+  if (user.role === 'branch_manager' && user.branchId && applicantBranchId) {
+    return user.branchId === applicantBranchId;
+  }
+  
+  return false;
 };
 
 /**

@@ -100,14 +100,14 @@ export const OfficerAssignment = ({
                 <div className="flex items-start">
                   <div className="h-12 w-12 flex-shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                     <span className="text-white font-semibold text-lg">
-                      {officer.displayName.charAt(0).toUpperCase()}
+                      {officer.displayName?.charAt(0).toUpperCase() || '?'}
                     </span>
                   </div>
                   <div className="ml-4 flex-1">
                     <h4 className="text-base font-semibold text-gray-900">
-                      {officer.displayName}
+                      {officer.displayName || 'Unknown Officer'}
                     </h4>
-                    <p className="text-xs text-gray-500">{officer.email}</p>
+                    <p className="text-xs text-gray-500">{officer.email || 'No email'}</p>
                   </div>
                 </div>
 

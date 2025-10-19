@@ -90,6 +90,12 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
   
   // ==================== PERMISSION CHECKS ====================
   
+  // HO Accountant CANNOT advance stages (read-only access)
+  if (customClaims?.role === 'ho_accountant') {
+    console.log('[AdvanceStageButton] HO Accountant cannot advance stages - read-only access');
+    return null;
+  }
+  
   // Branch Manager can ONLY request stage advancements for branch stages
   if (customClaims?.role === 'branch_manager') {
     // Branch Manager can request:

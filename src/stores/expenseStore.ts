@@ -12,7 +12,9 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  addDoc,
   serverTimestamp,
+  Timestamp,
 } from 'firebase/firestore';
 import {
   ref,
@@ -20,6 +22,7 @@ import {
   getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
+import { getAuth } from 'firebase/auth';
 import { firestore, storage } from '../config/firebase';
 import {
   Expense,
@@ -184,6 +187,25 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   createExpense: async (data) => {
     try {
       set({ loading: true, error: null });
+      
+      // Check authentication
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Get and log custom claims
+      const tokenResult = await currentUser.getIdTokenResult(true); // Force refresh
+      console.log('🔐 Authentication Check:', {
+        userId: currentUser.uid,
+        email: currentUser.email,
+        customClaims: tokenResult.claims,
+        role: tokenResult.claims.role,
+        branchId: tokenResult.claims.branchId,
+      });
+      
       const docRef = doc(collection(firestore, 'expenses'));
       const timestamp = serverTimestamp();
 
@@ -203,6 +225,13 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         updatedAt: timestamp,
       };
 
+      console.log('🔥 Firestore Write Attempt:', {
+        docId: docRef.id,
+        expenseData: { ...expenseData, createdAt: '[serverTimestamp]', updatedAt: '[serverTimestamp]' },
+        hasBranchId: !!expenseData.branchId,
+        hasEnteredBy: !!expenseData.enteredBy,
+      });
+
       await setDoc(docRef, expenseData);
 
       // Create audit log
@@ -214,6 +243,69 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         performedAt: timestamp,
         details: cleanData,
       });
+
+      // Send notifications
+      try {
+        const notificationsRef = collection(firestore, 'notifications');
+        const recipients: string[] = [];
+
+        // Notify HO Accountant
+        const accountantQuery = query(
+          collection(firestore, 'users'),
+          where('role', '==', 'ho_accountant')
+        );
+        const accountantSnapshot = await getDocs(accountantQuery);
+        accountantSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+        // Notify all admins
+        const adminQuery = query(
+          collection(firestore, 'users'),
+          where('role', '==', 'admin')
+        );
+        const adminSnapshot = await getDocs(adminQuery);
+        adminSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+        // Get applicant name
+        let applicantName = 'Unknown Applicant';
+        if (data.applicantId && data.applicantId.trim() !== '') {
+          const applicantDoc = await getDoc(doc(firestore, 'applicants', data.applicantId));
+          if (applicantDoc.exists()) {
+            applicantName = applicantDoc.data().fullName || applicantName;
+          }
+        }
+
+        // Create notifications
+        const uniqueRecipients = [...new Set(recipients)];
+        for (const recipientId of uniqueRecipients) {
+          // Filter out undefined values from metadata
+          const metadata: any = {
+            expenseId: docRef.id,
+          };
+          
+          if (data.applicantId && data.applicantId.trim() !== '') metadata.applicantId = data.applicantId;
+          if (applicantName && applicantName !== 'Unknown Applicant') metadata.applicantName = applicantName;
+          if (data.category) metadata.category = data.category;
+          if (data.amount !== undefined) metadata.amount = data.amount;
+          if (data.enteredBy) metadata.enteredBy = data.enteredBy;
+          
+          await addDoc(notificationsRef, {
+            type: 'expense_created',
+            title: 'New Expense Submitted',
+            body: `New ${data.category || 'expense'} expense of ₱${data.amount?.toLocaleString() || '0'} submitted${data.applicantId && data.applicantId.trim() !== '' ? ` for ${applicantName}` : ''}`,
+            priority: 'medium',
+            status: 'unread',
+            recipientId: recipientId,
+            recipientEmail: '',
+            icon: '📝',
+            metadata,
+            createdAt: Timestamp.now(),
+          });
+        }
+
+        console.log(`✅ Sent ${uniqueRecipients.length} notifications for new expense`);
+      } catch (notifError) {
+        console.error('Error sending expense creation notifications:', notifError);
+      }
 
       return docRef.id;
     } catch (error) {
@@ -292,10 +384,25 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
   uploadReceipt: async (expenseId, file) => {
     try {
       set({ loading: true, error: null });
+      
+      // Get expense to retrieve branchId
+      const expenseDoc = await getDoc(doc(firestore, 'expenses', expenseId));
+      if (!expenseDoc.exists()) {
+        throw new Error('Expense not found');
+      }
+      
+      const expenseData = expenseDoc.data();
+      const branchId = expenseData.branchId;
+      
+      if (!branchId) {
+        throw new Error('Expense does not have a branch ID');
+      }
+      
       const timestamp = Date.now();
+      // Use expense_receipts path with branchId which matches storage.rules line 149
       const storageRef = ref(
         storage,
-        `receipts/${expenseId}/${timestamp}_${file.name}`
+        `expense_receipts/${branchId}/${expenseId}/${timestamp}_${file.name}`
       );
 
       await uploadBytes(storageRef, file);
@@ -348,6 +455,10 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
 
+      // Get expense data first
+      const expenseDoc = await getDoc(doc(firestore, 'expenses', verification.expenseId));
+      const expenseData = expenseDoc.data();
+
       // Update expense status
       await updateDoc(doc(firestore, 'expenses', verification.expenseId), {
         status: verification.status,
@@ -371,6 +482,67 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         performedAt: timestamp,
         details: verification,
       });
+
+      // Send notifications
+      if (expenseData) {
+        try {
+          const notificationsRef = collection(firestore, 'notifications');
+          const recipients: string[] = [];
+
+          // Notify HO Accountant who needs to approve after verification
+          const accountantQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'ho_accountant')
+          );
+          const accountantSnapshot = await getDocs(accountantQuery);
+          accountantSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Notify all admins
+          const adminQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'admin')
+          );
+          const adminSnapshot = await getDocs(adminQuery);
+          adminSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Get applicant name
+          let applicantName = 'Unknown Applicant';
+          if (expenseData.applicantId) {
+            const applicantDoc = await getDoc(doc(firestore, 'applicants', expenseData.applicantId));
+            if (applicantDoc.exists()) {
+              applicantName = applicantDoc.data().fullName || applicantName;
+            }
+          }
+
+          // Create notifications
+          const uniqueRecipients = [...new Set(recipients)];
+          for (const recipientId of uniqueRecipients) {
+            await addDoc(notificationsRef, {
+              type: 'expense_verified',
+              title: 'Expense Verified - Pending Approval',
+              body: `${expenseData.category} expense of ₱${expenseData.amount?.toLocaleString() || '0'} for ${applicantName} has been verified and needs approval`,
+              priority: 'medium',
+              status: 'unread',
+              recipientId: recipientId,
+              recipientEmail: '',
+              icon: '✓',
+              metadata: {
+                expenseId: verification.expenseId,
+                applicantId: expenseData.applicantId,
+                applicantName,
+                category: expenseData.category,
+                amount: expenseData.amount,
+                verifiedBy: verification.verifiedBy,
+              },
+              createdAt: Timestamp.now(),
+            });
+          }
+
+          console.log(`✅ Sent ${uniqueRecipients.length} notifications for expense verification`);
+        } catch (notifError) {
+          console.error('Error sending expense verification notifications:', notifError);
+        }
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to verify expense',
@@ -386,6 +558,10 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
+
+      // Get expense data first
+      const expenseDoc = await getDoc(doc(firestore, 'expenses', expenseId));
+      const expenseData = expenseDoc.data();
 
       await updateDoc(doc(firestore, 'expenses', expenseId), {
         status: 'rejected',
@@ -404,6 +580,64 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
           reason,
         },
       });
+
+      // Send notifications
+      if (expenseData) {
+        try {
+          const notificationsRef = collection(firestore, 'notifications');
+          const recipients: string[] = [];
+
+          // Notify the expense creator
+          if (expenseData.enteredBy) {
+            recipients.push(expenseData.enteredBy);
+          }
+
+          // Notify all admins
+          const adminQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'admin')
+          );
+          const adminSnapshot = await getDocs(adminQuery);
+          adminSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Get applicant name
+          let applicantName = 'Unknown Applicant';
+          if (expenseData.applicantId) {
+            const applicantDoc = await getDoc(doc(firestore, 'applicants', expenseData.applicantId));
+            if (applicantDoc.exists()) {
+              applicantName = applicantDoc.data().fullName || applicantName;
+            }
+          }
+
+          // Create notifications
+          const uniqueRecipients = [...new Set(recipients)];
+          for (const recipientId of uniqueRecipients) {
+            await addDoc(notificationsRef, {
+              type: 'expense_rejected',
+              title: 'Expense Rejected',
+              body: `${expenseData.category} expense of ₱${expenseData.amount?.toLocaleString() || '0'} for ${applicantName} has been rejected. Reason: ${reason}`,
+              priority: 'high',
+              status: 'unread',
+              recipientId: recipientId,
+              recipientEmail: '',
+              icon: '❌',
+              metadata: {
+                expenseId,
+                applicantId: expenseData.applicantId,
+                applicantName,
+                category: expenseData.category,
+                amount: expenseData.amount,
+                reason,
+              },
+              createdAt: Timestamp.now(),
+            });
+          }
+
+          console.log(`✅ Sent ${uniqueRecipients.length} notifications for expense rejection`);
+        } catch (notifError) {
+          console.error('Error sending expense rejection notifications:', notifError);
+        }
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to reject expense',
@@ -419,6 +653,10 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
+
+      // Get expense data first
+      const expenseDoc = await getDoc(doc(firestore, 'expenses', approval.expenseId));
+      const expenseData = expenseDoc.data();
 
       // Update expense status
       await updateDoc(doc(firestore, 'expenses', approval.expenseId), {
@@ -443,6 +681,72 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
         performedAt: timestamp,
         details: approval,
       });
+
+      // Send notifications
+      if (expenseData) {
+        try {
+          const notificationsRef = collection(firestore, 'notifications');
+          const recipients: string[] = [];
+
+          // Notify the expense creator
+          if (expenseData.enteredBy) {
+            recipients.push(expenseData.enteredBy);
+          }
+
+          // Notify HO Accountant
+          const accountantQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'ho_accountant')
+          );
+          const accountantSnapshot = await getDocs(accountantQuery);
+          accountantSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Notify all admins
+          const adminQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'admin')
+          );
+          const adminSnapshot = await getDocs(adminQuery);
+          adminSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Get applicant name
+          let applicantName = 'Unknown Applicant';
+          if (expenseData.applicantId) {
+            const applicantDoc = await getDoc(doc(firestore, 'applicants', expenseData.applicantId));
+            if (applicantDoc.exists()) {
+              applicantName = applicantDoc.data().fullName || applicantName;
+            }
+          }
+
+          // Create notifications
+          const uniqueRecipients = [...new Set(recipients)];
+          for (const recipientId of uniqueRecipients) {
+            await addDoc(notificationsRef, {
+              type: 'expense_approved',
+              title: 'Expense Approved',
+              body: `${expenseData.category} expense of ₱${expenseData.amount?.toLocaleString() || '0'} for ${applicantName} has been approved`,
+              priority: 'high',
+              status: 'unread',
+              recipientId: recipientId,
+              recipientEmail: '',
+              icon: '✅',
+              metadata: {
+                expenseId: approval.expenseId,
+                applicantId: expenseData.applicantId,
+                applicantName,
+                category: expenseData.category,
+                amount: expenseData.amount,
+                approvedBy: approval.approvedBy,
+              },
+              createdAt: Timestamp.now(),
+            });
+          }
+
+          console.log(`✅ Sent ${uniqueRecipients.length} notifications for expense approval`);
+        } catch (notifError) {
+          console.error('Error sending expense approval notifications:', notifError);
+        }
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to approve expense',

@@ -323,16 +323,16 @@ export const OfficerManagement = () => {
                             <div className="h-10 w-10 flex-shrink-0">
                               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                                 <span className="text-white font-semibold text-sm">
-                                  {officer.displayName.charAt(0).toUpperCase()}
+                                  {officer.displayName?.charAt(0).toUpperCase() || '?'}
                                 </span>
                               </div>
                             </div>
                             <div className="ml-4">
                               <div className="font-semibold text-gray-900">
-                                {officer.displayName}
+                                {officer.displayName || 'Unknown Officer'}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {officer.email}
+                                {officer.email || 'No email'}
                               </div>
                             </div>
                           </div>

@@ -9,6 +9,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  addDoc,
   orderBy,
   Timestamp 
 } from 'firebase/firestore';
@@ -235,6 +236,80 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       };
       
       await setDoc(agentRef, agentData);
+      
+      // Send notifications
+      try {
+        const notificationsRef = collection(firestore, 'notifications');
+        const recipients: string[] = [];
+
+        // Notify all admins
+        const adminQuery = query(
+          collection(firestore, 'users'),
+          where('role', '==', 'admin')
+        );
+        const adminSnapshot = await getDocs(adminQuery);
+        adminSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+        // Notify all presidents
+        const presidentQuery = query(
+          collection(firestore, 'users'),
+          where('role', '==', 'president')
+        );
+        const presidentSnapshot = await getDocs(presidentQuery);
+        presidentSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+        // Notify branch manager of the agent's branch
+        if (data.branchId) {
+          const managerQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'branch_manager'),
+            where('branchId', '==', data.branchId)
+          );
+          const managerSnapshot = await getDocs(managerQuery);
+          managerSnapshot.docs.forEach(doc => recipients.push(doc.id));
+        }
+
+        // Get branch name
+        let branchName = 'Unknown Branch';
+        if (data.branchId) {
+          try {
+            const branchDoc = await getDoc(doc(firestore, 'branches', data.branchId));
+            if (branchDoc.exists()) {
+              branchName = branchDoc.data().name || data.branchId;
+            }
+          } catch (branchError) {
+            console.error('Error fetching branch name:', branchError);
+          }
+        }
+
+        // Create notifications
+        const uniqueRecipients = [...new Set(recipients)];
+        for (const recipientId of uniqueRecipients) {
+          await addDoc(notificationsRef, {
+            type: 'agent_created',
+            title: 'New Agent Registered',
+            body: `${data.agentName} has been registered as a new agent in ${branchName}`,
+            priority: 'medium',
+            status: 'unread',
+            recipientId: recipientId,
+            recipientEmail: '',
+            icon: '👔',
+            metadata: {
+              agentId: agentRef.id,
+              agentName: data.agentName,
+              agentEmail: data.email,
+              branchId: data.branchId,
+              branchName,
+              commissionAmount: data.commissionAmount,
+            },
+            createdAt: Timestamp.now(),
+          });
+        }
+
+        console.log(`✅ Sent ${uniqueRecipients.length} notifications for new agent creation`);
+      } catch (notifError) {
+        console.error('Error sending agent creation notifications:', notifError);
+      }
       
       // Refresh agents list
       await get().fetchAllAgents();

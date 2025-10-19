@@ -97,16 +97,32 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
       if (filter.agentId) {
         queryConstraints.push(where('agentId', '==', filter.agentId));
       }
-      if (filter.assignedOfficerId) {
-        // Check both fields for backward compatibility
-        queryConstraints.push(where('assignedRecruitmentOfficerId', '==', filter.assignedOfficerId));
+      // Handle assignedOfficerId filter
+      // Note: filter.assignedOfficerId === null means "show unassigned" (for All HO Applicants)
+      // Note: filter.assignedOfficerId === undefined means "no filter" (show all)
+      // Note: filter.assignedOfficerId === "some-id" means "show assigned to this officer" (for My Applicants)
+      if (filter.assignedOfficerId !== undefined) {
+        if (filter.assignedOfficerId === null) {
+          // For unassigned applicants, we can't query directly for null in Firestore
+          // We'll fetch all and filter client-side below
+          console.log('🔍 Filtering for unassigned applicants (assignedOfficerId is null)');
+        } else {
+          // For specific officer assignment
+          queryConstraints.push(where('assignedRecruitmentOfficerId', '==', filter.assignedOfficerId));
+        }
       }
       if (filter.currentStage) {
         // Check both fields for backward compatibility
         queryConstraints.push(where('currentStage', '==', filter.currentStage));
       }
       if (filter.status) {
-        queryConstraints.push(where('status', '==', filter.status));
+        // Special handling for "pending_approval" status
+        // Pending approval applicants are identified by requiresApproval field, not status field
+        if (filter.status === 'pending_approval') {
+          queryConstraints.push(where('requiresApproval', '==', true));
+        } else {
+          queryConstraints.push(where('status', '==', filter.status));
+        }
       }
       if (filter.transferredToHO !== undefined) {
         queryConstraints.push(where('transferredToHO', '==', Boolean(filter.transferredToHO)));
@@ -237,16 +253,29 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
           return processedData as Applicant;
         });
 
+        // Client-side filter for unassigned applicants (if requested)
+        let filteredApplicants = applicants;
+        if (filter.assignedOfficerId === null) {
+          // Filter to show only unassigned applicants (for All HO Applicants view)
+          filteredApplicants = applicants.filter(app => 
+            !app.assignedRecruitmentOfficerId || app.assignedRecruitmentOfficerId === null
+          );
+          console.log('🔍 Client-side filtering for unassigned applicants:', {
+            beforeFilter: applicants.length,
+            afterFilter: filteredApplicants.length
+          });
+        }
+
         console.log('=== Setting applicants in store ===');
-        console.log('Applicants count:', applicants.length);
-        console.log('Sample applicant:', applicants[0]);
+        console.log('Applicants count:', filteredApplicants.length);
+        console.log('Sample applicant:', filteredApplicants[0]);
         
         set({ 
-          applicants, 
+          applicants: filteredApplicants, 
           loading: false,
           pagination: {
             ...get().pagination,
-            total: snapshot.size,
+            total: filteredApplicants.length,
           }
         });
         
@@ -323,6 +352,83 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+
+      // Send notifications to admins and presidents about new applicant
+      try {
+        const notificationsRef = collection(firestore, 'notifications');
+        const recipients: string[] = [];
+
+        // Get all admin users
+        const adminQuery = query(
+          collection(firestore, 'users'),
+          where('role', '==', 'admin')
+        );
+        const adminSnapshot = await getDocs(adminQuery);
+        adminSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+        // Get all president users
+        const presidentQuery = query(
+          collection(firestore, 'users'),
+          where('role', '==', 'president')
+        );
+        const presidentSnapshot = await getDocs(presidentQuery);
+        presidentSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+        // Get branch manager of the applicant's branch
+        if (applicant.branchId) {
+          const branchManagerQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'branch_manager'),
+            where('branchId', '==', applicant.branchId)
+          );
+          const branchManagerSnapshot = await getDocs(branchManagerQuery);
+          branchManagerSnapshot.docs.forEach(doc => recipients.push(doc.id));
+        }
+
+        // Get branch name for notification
+        let branchName = 'Unknown Branch';
+        if (applicant.branchId) {
+          try {
+            const branchDoc = await getDoc(doc(firestore, 'branches', applicant.branchId));
+            if (branchDoc.exists()) {
+              branchName = branchDoc.data().name || applicant.branchId;
+            }
+          } catch (branchError) {
+            console.error('Error fetching branch name:', branchError);
+          }
+        }
+
+        // Create notifications for all recipients
+        const applicationType = applicant.applicationType === 'with_agent' ? 'With Agent' : 'Direct Hire';
+
+        for (const recipientId of recipients) {
+          await addDoc(notificationsRef, {
+            type: 'applicant_created',
+            title: 'New Applicant Registered',
+            body: `${applicant.fullName} (${applicationType}) has been registered from ${branchName}`,
+            priority: 'medium',
+            status: 'unread',
+            recipientId: recipientId,
+            recipientEmail: '',
+            icon: '👤',
+            metadata: {
+              applicantId: docRef.id,
+              applicantName: applicant.fullName,
+              applicantEmail: applicant.email,
+              applicationType: applicant.applicationType,
+              branchId: applicant.branchId,
+              branchName: branchName,
+            },
+            createdAt: Timestamp.now(),
+          });
+        }
+
+        console.log(`✅ Sent ${recipients.length} notifications for new applicant registration`);
+      } catch (notifError) {
+        console.error('Error sending notifications:', notifError);
+        // Don't fail the whole operation if notifications fail
+      }
+
       return docRef.id;
     } catch (error) {
       console.error('Error creating applicant:', error);

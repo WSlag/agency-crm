@@ -13,13 +13,19 @@ import {
   UserIcon,
   CalendarIcon,
   ArrowPathIcon,
-  DocumentTextIcon
+  DocumentTextIcon,
+  BuildingOfficeIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline';
 import { useStageStore } from '../../stores/stageStore';
 import { useAuth } from '../../contexts/AuthContext';
+import { useBranchStore } from '../../stores/branchStore';
+import { useAgentStore } from '../../stores/agentStore';
 import { STAGE_LABELS } from '../../config/stageConfig';
 import { ApplicantStage } from '../../types/applicant';
 import { format } from 'date-fns';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { firestore } from '../../config/firebase';
 
 interface PendingApprovalsProps {
   className?: string;
@@ -35,11 +41,18 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
     approveStage, 
     loading 
   } = useStageStore();
+  const { branches, fetchBranches } = useBranchStore();
+  const { agents, fetchAllAgents } = useAgentStore();
   
   const [selectedApproval, setSelectedApproval] = useState<any>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showOfficerModal, setShowOfficerModal] = useState(false);
+  const [pendingTransferApproval, setPendingTransferApproval] = useState<any>(null);
+  const [selectedOfficer, setSelectedOfficer] = useState<string>('');
+  const [hoOfficers, setHoOfficers] = useState<any[]>([]);
+  const [loadingOfficers, setLoadingOfficers] = useState(false);
   
   // Construct a proper User object with role from customClaims
   const userWithRole = user && customClaims ? {
@@ -57,7 +70,42 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
     if (userWithRole) {
       fetchPendingApprovals(userWithRole);
     }
-  }, [user, customClaims, fetchPendingApprovals]);
+    // Fetch branches and agents for display names
+    if (branches.length === 0) {
+      fetchBranches();
+    }
+    if (agents.length === 0) {
+      fetchAllAgents();
+    }
+    // Fetch HO Recruitment Officers
+    fetchHOOfficers();
+  }, [user, customClaims, fetchPendingApprovals, branches.length, agents.length, fetchBranches, fetchAllAgents]);
+  
+  // Fetch HO Recruitment Officers
+  const fetchHOOfficers = async () => {
+    try {
+      setLoadingOfficers(true);
+      const usersRef = collection(firestore, 'users');
+      const q = query(
+        usersRef,
+        where('role', '==', 'ho_recruitment_officer'),
+        where('status', '==', 'active')
+      );
+      const snapshot = await getDocs(q);
+      const officers = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        displayName: doc.data().displayName || doc.data().name || doc.data().email || `Officer ${doc.id.substring(0, 8)}`
+      }));
+      console.log('Fetched HO Recruitment Officers:', officers);
+      setHoOfficers(officers);
+    } catch (err) {
+      console.error('Error fetching HO officers:', err);
+      setError('Failed to load HO Recruitment Officers');
+    } finally {
+      setLoadingOfficers(false);
+    }
+  };
   
   // Auto-refresh approvals every 30 seconds
   useEffect(() => {
@@ -73,6 +121,17 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
   const handleApprove = async (approval: any) => {
     if (!userWithRole) return;
     
+    // Check if this is a transfer to HO stage - requires officer assignment
+    if (approval.toStage === ApplicantStage.TRANSFER) {
+      // Show officer selection modal
+      setPendingTransferApproval(approval);
+      setShowOfficerModal(true);
+      setSelectedOfficer('');
+      setError(null);
+      return;
+    }
+    
+    // For non-transfer stages, proceed with normal approval
     if (!window.confirm(
       `Approve advancement to ${STAGE_LABELS[approval.toStage as ApplicantStage]} stage for ${approval.applicant.fullName}?`
     )) {
@@ -96,6 +155,40 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
       await fetchPendingApprovals(userWithRole);
     } catch (err: any) {
       setError(err.message || 'Failed to approve stage');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+  
+  // Handle transfer approval with officer assignment
+  const handleTransferApproval = async () => {
+    if (!userWithRole || !pendingTransferApproval || !selectedOfficer) {
+      setError('Please select an HO Recruitment Officer');
+      return;
+    }
+    
+    setProcessingId(pendingTransferApproval.id);
+    setError(null);
+    
+    try {
+      await approveStage(
+        {
+          applicantId: pendingTransferApproval.applicantId,
+          stage: pendingTransferApproval.toStage as ApplicantStage,
+          approvedBy: userWithRole.uid,
+          approved: true,
+          assignedOfficerId: selectedOfficer // Pass officer ID for transfer
+        },
+        userWithRole
+      );
+      
+      // Close modal and refresh
+      setShowOfficerModal(false);
+      setPendingTransferApproval(null);
+      setSelectedOfficer('');
+      await fetchPendingApprovals(userWithRole);
+    } catch (err: any) {
+      setError(err.message || 'Failed to approve transfer');
     } finally {
       setProcessingId(null);
     }
@@ -176,6 +269,23 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
     }
   };
   
+  // Helper function to get branch name from ID
+  const getBranchName = (branchId: string | null | undefined) => {
+    if (!branchId) return null;
+    const branch = branches.find(b => b.id === branchId);
+    return branch?.name || branchId;
+  };
+
+  // Helper function to get agent name from ID
+  const getAgentName = (agentId: string | null | undefined) => {
+    if (!agentId) return null;
+    const agent = agents.find(a => a.id === agentId);
+    return agent?.agentName || agentId;
+  };
+
+  // SECURITY: Hide agent info from HO Recruitment Officers
+  const shouldHideAgentInfo = customClaims?.role === 'ho_recruitment_officer';
+  
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="flex items-center justify-between mb-4">
@@ -246,14 +356,19 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
                   
                   {/* Applicant details */}
                   <div className="mt-3 pt-3 border-t border-gray-100 flex gap-4 text-xs text-gray-600">
-                    <div>
-                      <span className="font-medium">Branch:</span>{' '}
-                      {approval.applicant.branchId || 'N/A'}
-                    </div>
-                    {approval.applicant.agentId && (
-                      <div>
+                    {approval.applicant.branchId && (
+                      <div className="flex items-center gap-1">
+                        <BuildingOfficeIcon className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="font-medium">Branch:</span>{' '}
+                        <span className="text-gray-900">{getBranchName(approval.applicant.branchId) || 'N/A'}</span>
+                      </div>
+                    )}
+                    {/* SECURITY: Hide agent info from HO Recruitment Officers */}
+                    {approval.applicant.agentId && !shouldHideAgentInfo && (
+                      <div className="flex items-center gap-1">
+                        <UserIcon className="w-3.5 h-3.5 text-gray-400" />
                         <span className="font-medium">Agent:</span>{' '}
-                        {approval.applicant.agentId}
+                        <span className="text-gray-900">{getAgentName(approval.applicant.agentId)}</span>
                       </div>
                     )}
                   </div>
@@ -262,7 +377,7 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
                 <div className="flex flex-col gap-2 flex-shrink-0">
                   {/* View Documents Button */}
                   <Link
-                    to={`/applicants/${approval.applicantId}?tab=documents`}
+                    to={`${customClaims?.role === 'ho_recruitment_officer' ? '/my-applicants' : '/applicants'}/${approval.applicantId}?tab=documents`}
                     className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 text-sm font-medium transition-colors"
                     title="View uploaded documents"
                   >
@@ -295,6 +410,98 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
           );
         })}
       </div>
+      
+      {/* Officer Selection Modal for Transfer Approval */}
+      {showOfficerModal && pendingTransferApproval && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
+                <UsersIcon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Approve Transfer to Head Office</h3>
+                <p className="text-sm text-gray-600">Assign HO Recruitment Officer</p>
+              </div>
+            </div>
+            
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-gray-800">
+                <span className="font-semibold">{pendingTransferApproval.applicant.fullName}</span> will be transferred to Head Office.
+              </p>
+              <p className="text-xs text-gray-600 mt-1">
+                Branch: {getBranchName(pendingTransferApproval.applicant.branchId) || 'N/A'}
+              </p>
+            </div>
+            
+            <label className="block text-sm font-medium mb-2 text-gray-700">
+              Select HO Recruitment Officer <span className="text-red-600">*</span>
+            </label>
+            
+            {loadingOfficers ? (
+              <div className="p-4 text-center">
+                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                <p className="text-sm text-gray-600 mt-2">Loading officers...</p>
+              </div>
+            ) : hoOfficers.length === 0 ? (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ No active HO Recruitment Officers found. Please create an HO officer account first.
+                </p>
+              </div>
+            ) : (
+              <select
+                value={selectedOfficer}
+                onChange={(e) => setSelectedOfficer(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                required
+              >
+                <option value="">-- Select an Officer --</option>
+                {hoOfficers.map((officer) => (
+                  <option key={officer.id} value={officer.id}>
+                    {officer.displayName} ({officer.email})
+                  </option>
+                ))}
+              </select>
+            )}
+            
+            {error && (
+              <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+                {error}
+              </div>
+            )}
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowOfficerModal(false);
+                  setPendingTransferApproval(null);
+                  setSelectedOfficer('');
+                  setError(null);
+                }}
+                disabled={processingId === pendingTransferApproval.id}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleTransferApproval}
+                disabled={!selectedOfficer || processingId === pendingTransferApproval.id || hoOfficers.length === 0}
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {processingId === pendingTransferApproval.id ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Processing...
+                  </span>
+                ) : (
+                  'Approve & Assign'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Rejection Modal */}
       {selectedApproval && (

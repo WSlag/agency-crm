@@ -9,7 +9,7 @@ import { ArrowLeftIcon, SparklesIcon } from '@heroicons/react/24/outline';
 export const CommissionRequest = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuthStore();
+  const { user, customClaims } = useAuthStore();
   const {
     selectedCommission,
     loading,
@@ -30,11 +30,15 @@ export const CommissionRequest = () => {
       if (id) {
         await updateCommission(id, data);
       } else {
+        // Use branchId from form data (already set by CommissionRequestForm)
         const newCommissionData = {
           ...data,
           requestedBy: user?.uid || '',
-          branchId: user?.branchId || '',
+          branchId: data.branchId || customClaims?.branchId || '', // Use form's branchId or customClaims
         };
+        
+        console.log('📤 Commission Request: Submitting with branchId:', newCommissionData.branchId);
+        
         await createCommission(
           newCommissionData as Omit<
             Commission,
@@ -45,6 +49,7 @@ export const CommissionRequest = () => {
       navigate('/commissions');
     } catch (error) {
       console.error('Failed to save commission:', error);
+      alert('Failed to save commission. Please try again.');
     }
   };
 

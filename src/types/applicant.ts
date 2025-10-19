@@ -113,6 +113,8 @@ export interface Applicant {
   nationality: string;
   civilStatus: 'single' | 'married' | 'widowed' | 'divorced';
   gender: 'male' | 'female' | 'other';
+  positionApplied?: string;
+  countryDestination?: string;
   address: {
     present: string;
     permanent: string;
@@ -197,7 +199,7 @@ export interface ApplicantFilter {
     start: Date;
     end: Date;
   };
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | 'pending_approval' | 'approved' | 'rejected' | 'withdrawn' | 'on_hold' | 'deployed';
   transferredToHO?: boolean;
   currentStatus?: ApplicantStatus; // New filter for current status
   requiresApproval?: boolean; // Filter for pending approvals
@@ -258,6 +260,7 @@ export interface StageApproval {
   approvedBy: string; // user_id
   approved: boolean;
   rejectionReason?: string;
+  assignedOfficerId?: string; // For transfer stage - HO officer assignment
 }
 
 /**

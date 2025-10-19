@@ -44,13 +44,23 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         ? new Date(initialData.expenseDate)
         : new Date(),
       currency: initialData?.currency || 'PHP',
-      branchId: initialData?.branchId || customClaims?.branchId || '',
+      branchId: initialData?.branchId || '',  // Will be set in useEffect
       receiptNumber: initialData?.receiptNumber || '',
       notes: initialData?.notes || '',
       tags: initialData?.tags || [],
-      applicantId: initialData?.applicantId || '',
+      applicantId: initialData?.applicantId || null,  // null instead of empty string
     },
   });
+
+  // Set branchId from customClaims once loaded
+  React.useEffect(() => {
+    if (customClaims?.branchId && !initialData?.branchId) {
+      setValue('branchId', customClaims.branchId);
+      console.log('✅ Expense Form: Branch ID set from custom claims:', customClaims.branchId);
+    } else if (customClaims?.role === 'branch_manager' && !customClaims?.branchId) {
+      console.error('❌ Expense Form: Branch Manager has no branchId in custom claims!');
+    }
+  }, [customClaims, initialData, setValue]);
 
   const expenseType = watch('expenseType');
   const config = expenseType ? EXPENSE_CONFIG[expenseType] : null;
@@ -69,13 +79,12 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
   const handleFormSubmit = async (data: any) => {
     try {
-      if (selectedFile && config?.requiresReceipt) {
-        const receiptUrl = await useExpenseStore
-          .getState()
-          .uploadReceipt(initialData?.id || 'temp', selectedFile);
-        data.receiptUrl = receiptUrl;
-      }
-      await onSubmit(data);
+      // Pass the selected file along with the data
+      // The upload will happen after the expense is created
+      await onSubmit({
+        ...data,
+        _selectedFile: selectedFile, // Pass the file to the parent
+      });
     } catch (error) {
       console.error('Failed to submit expense:', error);
     }
@@ -226,57 +235,63 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
           </div>
         )}
 
-        {/* Receipt Upload (if required) */}
-        {config?.requiresReceipt && (
-          <div className="col-span-full">
-            <label className="block text-sm font-medium text-gray-700">
-              Receipt
-            </label>
-            <div className="mt-1 flex items-center space-x-4">
-              <input
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-              />
-              {previewUrl && (
-                <div className="relative h-20 w-20">
-                  <img
-                    src={previewUrl}
-                    alt="Receipt preview"
-                    className="h-full w-full object-cover rounded"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedFile(null);
-                      setPreviewUrl(null);
-                      setValue('receiptUrl', null);
-                    }}
-                    className="absolute -top-2 -right-2 rounded-full bg-red-500 text-white p-1 hover:bg-red-600"
+        {/* Receipt Upload - Always visible for all expense types */}
+        <div className="col-span-full">
+          <label className="block text-sm font-medium text-gray-700">
+            Receipt / Supporting Documents
+            {config?.requiresReceipt && (
+              <span className="text-red-600 ml-1">*</span>
+            )}
+          </label>
+          <p className="mt-1 text-sm text-gray-500">
+            {config?.requiresReceipt
+              ? 'Receipt required for this expense type'
+              : 'Optional: Upload receipt or supporting documents for verification'}
+          </p>
+          <div className="mt-2 flex items-center space-x-4">
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              onChange={handleFileChange}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+            />
+            {previewUrl && (
+              <div className="relative h-20 w-20">
+                <img
+                  src={previewUrl}
+                  alt="Receipt preview"
+                  className="h-full w-full object-cover rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setPreviewUrl(null);
+                    setValue('receiptUrl', null);
+                  }}
+                  className="absolute -top-2 -right-2 rounded-full bg-red-500 text-white p-1 hover:bg-red-600"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              )}
-            </div>
-            {errors.receiptUrl && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.receiptUrl.message as string}
-              </p>
+                    <path d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             )}
           </div>
-        )}
+          {errors.receiptUrl && (
+            <p className="mt-1 text-sm text-red-600">
+              {errors.receiptUrl.message as string}
+            </p>
+          )}
+        </div>
 
         {/* Receipt Number */}
         <div>

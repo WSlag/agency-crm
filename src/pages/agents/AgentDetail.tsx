@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAgentStore } from '../../stores/agentStore';
+import { useBranchStore } from '../../stores/branchStore';
 import { useAuth } from '../../contexts/AuthContext';
 import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
@@ -24,6 +25,7 @@ export const AgentDetail = () => {
   const navigate = useNavigate();
   const { customClaims } = useAuth();
   const { selectedAgent, loading, error, fetchAgentById, fetchAgentPerformance } = useAgentStore();
+  const { branches, fetchBranches } = useBranchStore();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   const [performance, setPerformance] = useState<AgentPerformance | null>(null);
   const [applicants, setApplicants] = useState<any[]>([]);
@@ -31,10 +33,21 @@ export const AgentDetail = () => {
   const [loadingData, setLoadingData] = useState(false);
 
   useEffect(() => {
+    // Fetch branches for branch name display
+    if (branches.length === 0) {
+      fetchBranches();
+    }
+    
     if (id) {
       fetchAgentById(id);
     }
   }, [id]);
+
+  // Helper function to get branch name
+  const getBranchName = (branchId: string) => {
+    const branch = branches.find(b => b.id === branchId);
+    return branch?.name || branchId;
+  };
 
   useEffect(() => {
     if (id && activeTab === 'performance') {
@@ -187,11 +200,11 @@ export const AgentDetail = () => {
           <div className="sm:flex sm:items-center sm:justify-between">
             <div className="flex items-center space-x-4">
               <div className="h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white font-bold text-2xl">
-                {selectedAgent.agentName.charAt(0).toUpperCase()}
+                {selectedAgent.agentName?.charAt(0).toUpperCase() || '?'}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">{selectedAgent.agentName}</h1>
-                <p className="mt-1 text-teal-100">{selectedAgent.email}</p>
+                <h1 className="text-3xl font-bold text-white">{selectedAgent.agentName || 'Unknown Agent'}</h1>
+                <p className="mt-1 text-teal-100">{selectedAgent.email || 'No email'}</p>
               </div>
             </div>
             {canEdit && (
@@ -255,8 +268,8 @@ export const AgentDetail = () => {
                       </span>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium text-gray-500">Branch ID</h3>
-                      <p className="mt-1 text-sm text-gray-900">{selectedAgent.branchId}</p>
+                      <h3 className="text-sm font-medium text-gray-500">Branch</h3>
+                      <p className="mt-1 text-sm text-gray-900">{getBranchName(selectedAgent.branchId)}</p>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">Commission Amount</h3>

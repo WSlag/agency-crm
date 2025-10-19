@@ -25,22 +25,52 @@ export const ExpenseEntry: React.FC = () => {
     }
   }, [id, fetchExpenseById]);
 
-  const handleSubmit = async (data: Partial<Expense>) => {
+  const handleSubmit = async (data: Partial<Expense> & { _selectedFile?: File }) => {
     try {
+      const { _selectedFile, ...expenseData } = data;
+      
       if (id) {
-        await updateExpense(id, data);
+        await updateExpense(id, expenseData);
+        
+        // Upload receipt if a new file was selected
+        if (_selectedFile) {
+          await useExpenseStore.getState().uploadReceipt(id, _selectedFile);
+        }
       } else {
         const newExpenseData = {
-          ...data,
+          ...expenseData,
           enteredBy: user?.uid || '',
           // branchId is already set in the form from customClaims
-          branchId: data.branchId || customClaims?.branchId || '',
+          branchId: expenseData.branchId || customClaims?.branchId || '',
         };
-        await createExpense(newExpenseData as Omit<Expense, 'id' | 'status' | 'createdAt' | 'updatedAt'>);
+        
+        console.log('📋 Expense Data Before Submission:', {
+          ...newExpenseData,
+          customClaimsRole: customClaims?.role,
+          customClaimsBranchId: customClaims?.branchId,
+          userUid: user?.uid,
+        });
+        
+        const expenseId = await createExpense(newExpenseData as Omit<Expense, 'id' | 'status' | 'createdAt' | 'updatedAt'>);
+        
+        console.log('✅ Expense created successfully with ID:', expenseId);
+        
+        // Upload receipt if a file was selected
+        if (_selectedFile) {
+          try {
+            console.log('📎 Uploading receipt for expense:', expenseId);
+            await useExpenseStore.getState().uploadReceipt(expenseId, _selectedFile);
+            console.log('✅ Receipt uploaded successfully');
+          } catch (receiptError) {
+            console.error('❌ Receipt upload failed (expense already created):', receiptError);
+            alert('Expense created successfully, but receipt upload failed. You can try uploading it later from the expense detail page.');
+          }
+        }
       }
       navigate('/expenses');
     } catch (error) {
       console.error('Failed to save expense:', error);
+      alert('Failed to save expense. Please try again.');
     }
   };
 

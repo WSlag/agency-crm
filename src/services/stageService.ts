@@ -370,11 +370,12 @@ class StageService {
         user.uid
       );
       
-      // Advance to next stage
+      // Advance to next stage (with officer assignment for transfer)
       await this.advanceStage(
         approval.applicantId,
         approval.stage,
-        user
+        user,
+        approval.assignedOfficerId
       );
       
       // Create notification
@@ -473,7 +474,8 @@ class StageService {
   private async advanceStage(
     applicantId: string,
     toStage: ApplicantStage,
-    user: User
+    user: User,
+    assignedOfficerId?: string
   ): Promise<void> {
     const applicantRef = doc(firestore, 'applicants', applicantId);
     const applicantSnap = await getDoc(applicantRef);
@@ -493,6 +495,23 @@ class StageService {
       requiresApproval: false,
       updatedAt: Timestamp.now()
     };
+    
+    // Handle Transfer stage - set transfer flags and assign HO officer
+    if (toStage === ApplicantStage.TRANSFER) {
+      if (!assignedOfficerId) {
+        throw new Error('HO Recruitment Officer must be assigned for transfer stage');
+      }
+      
+      updateData.transferredToHO = true;
+      updateData.transferredDate = Timestamp.now();
+      updateData.assignedRecruitmentOfficerId = assignedOfficerId;
+      
+      console.log('[StageService] Transfer approved - Applicant transferred to HO:', {
+        applicantId,
+        assignedOfficerId,
+        transferredToHO: true
+      });
+    }
     
     // Check if this stage triggers commission
     const stageConfig = STAGE_CONFIGURATION[toStage];

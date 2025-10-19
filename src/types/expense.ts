@@ -209,7 +209,7 @@ export const EXPENSE_CONFIG: { [key in ExpenseType]: {
   other: {
     name: 'Other Expenses',
     requiresReceipt: true,
-    requiresApplicant: false,
+    requiresApplicant: true,
     allowedCurrencies: ['PHP', 'USD'],
     verificationChecklist: [
       'Valid receipt attached',

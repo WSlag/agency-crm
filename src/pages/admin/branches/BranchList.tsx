@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { firestore } from '../../../config/firebase';
 import { useBranchStore } from '../../../stores/branchStore';
 import { PlusIcon, SparklesIcon, BuildingOfficeIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/20/solid';
@@ -15,9 +17,50 @@ export const BranchList = () => {
     deleteBranch,
   } = useBranchStore();
 
+  // Track manager counts per branch
+  const [managerCounts, setManagerCounts] = useState<Record<string, number>>({});
+
   useEffect(() => {
     fetchBranches();
   }, [fetchBranches]);
+
+  // Fetch manager counts for all branches
+  useEffect(() => {
+    const fetchManagerCounts = async () => {
+      if (!branches || branches.length === 0) return;
+
+      try {
+        // Fetch all branch managers
+        const usersRef = collection(firestore, 'users');
+        const managersQuery = query(
+          usersRef,
+          where('role', '==', 'branch_manager')
+        );
+        
+        const managersSnapshot = await getDocs(managersQuery);
+        
+        // Count managers per branch
+        const counts: Record<string, number> = {};
+        branches.forEach(branch => {
+          counts[branch.id] = 0;
+        });
+
+        managersSnapshot.docs.forEach(doc => {
+          const branchId = doc.data().branchId;
+          if (branchId && counts[branchId] !== undefined) {
+            counts[branchId]++;
+          }
+        });
+
+        console.log('Manager counts per branch:', counts);
+        setManagerCounts(counts);
+      } catch (err) {
+        console.error('Error fetching manager counts:', err);
+      }
+    };
+
+    fetchManagerCounts();
+  }, [branches]);
 
   const handleStatusChange = async (branchId: string, active: boolean) => {
     try {
@@ -243,7 +286,7 @@ export const BranchList = () => {
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800 font-medium">
-                            {branch?.managers?.length || 0}
+                            {managerCounts[branch?.id] || 0}
                           </span>
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm">

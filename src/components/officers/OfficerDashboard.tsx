@@ -171,12 +171,45 @@ export const OfficerDashboard = () => {
         })}
       </div>
 
-      {/* Recent Applicants */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">
-            Recent Applicants
+      {/* Quick Menu - Access to Shared Applicant Pool */}
+      <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center">
+            <SparklesIcon className="h-5 w-5 mr-2 text-indigo-600" />
+            Quick Menu
           </h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Link
+              to="/ho-applicants/all"
+              className="group relative overflow-hidden rounded-lg border-2 border-gray-200 bg-white p-4 hover:border-indigo-500 hover:shadow-lg transition-all duration-200"
+            >
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <div className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 p-3 group-hover:scale-110 transition-transform">
+                    <UserGroupIcon className="h-6 w-6 text-white" aria-hidden="true" />
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <h4 className="text-base font-semibold text-gray-900 group-hover:text-indigo-600">
+                    All Applicants
+                  </h4>
+                  <p className="text-sm text-gray-500">Shared work pool (unassigned)</p>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Assigned Applicants */}
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+          <h3 className="text-lg font-bold text-gray-900">
+            My Recent Assigned Applicants
+          </h3>
+          <p className="text-sm text-gray-600 mt-1">Applicants assigned specifically to you</p>
         </div>
 
         <div className="overflow-x-auto">
@@ -247,7 +280,7 @@ export const OfficerDashboard = () => {
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-right text-sm font-medium">
                       <Link
-                        to={`/applicants/${applicant.id}`}
+                        to={`/my-applicants/${applicant.id}`}
                         className="inline-flex items-center px-3 py-1.5 text-indigo-600 hover:text-white bg-indigo-50 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-purple-600 rounded-lg transition-all duration-200 hover:scale-105 hover:shadow-md"
                       >
                         <EyeIcon className="h-4 w-4 mr-1" />
@@ -262,10 +295,10 @@ export const OfficerDashboard = () => {
 
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
           <Link
-            to="/applicants"
+            to="/my-applicants"
             className="inline-flex items-center text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
           >
-            View all applicants →
+            View all my assigned applicants →
           </Link>
         </div>
       </div>

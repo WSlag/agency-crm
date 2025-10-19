@@ -42,7 +42,9 @@ export const ApplicantRegistration = () => {
     resolver: zodResolver(applicantRegistrationSchema),
     mode: 'onChange',
     defaultValues: {
-      branchId: customClaims?.branchId || '',
+      branchId: '',  // Will be set in useEffect after customClaims load
+      agentId: null,  // Set to null for direct_hire applications
+      assignedRecruitmentOfficerId: null,  // Set to null initially
       applicationType: 'direct_hire',
       status: 'active',
       currentStage: 'registration',
@@ -73,6 +75,16 @@ export const ApplicantRegistration = () => {
       },
     },
   });
+
+  // Set branchId from customClaims once loaded
+  useEffect(() => {
+    if (customClaims?.branchId && !isEditMode) {
+      methods.setValue('branchId', customClaims.branchId);
+      console.log('✅ Branch ID set from custom claims:', customClaims.branchId);
+    } else if (customClaims?.role === 'branch_manager' && !customClaims?.branchId) {
+      console.error('❌ Branch Manager has no branchId in custom claims!');
+    }
+  }, [customClaims, isEditMode, methods]);
 
   // Load existing applicant data if editing
   useEffect(() => {
@@ -141,7 +153,14 @@ export const ApplicantRegistration = () => {
     }
   }, [isEditMode, selectedApplicant, id, methods]);
 
-  const { handleSubmit, trigger, formState: { errors } } = methods;
+  const { handleSubmit, trigger, formState: { errors, isValid } } = methods;
+
+  // Log validation errors whenever they change
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log('❌ Form validation errors:', errors);
+    }
+  }, [errors]);
 
   const handleNext = async () => {
     const fields = getFieldsForStep(currentStep);
@@ -228,6 +247,18 @@ export const ApplicantRegistration = () => {
   const onSubmit = async (data: ApplicantRegistrationData) => {
     try {
       setIsSubmitting(true);
+      console.log('=== Form Submission Started ===');
+      console.log('User role:', customClaims?.role);
+      console.log('User branchId:', customClaims?.branchId);
+      console.log('Form data branchId:', data.branchId);
+      console.log('Form data agentId:', data.agentId);
+      console.log('Application type:', data.applicationType);
+      console.log('Full form data:', data);
+      
+      if (!data.branchId) {
+        throw new Error('Branch ID is required. Please contact administrator if this issue persists.');
+      }
+      
       if (isEditMode && id) {
         // Update existing applicant
         console.log('Updating applicant with data:', data);
@@ -243,6 +274,7 @@ export const ApplicantRegistration = () => {
       }
     } catch (error: any) {
       console.error(`Failed to ${isEditMode ? 'update' : 'create'} applicant:`, error);
+      console.error('Full error object:', error);
       alert(`Error: ${error.message || 'Failed to save applicant. Please try again.'}`);
     } finally {
       setIsSubmitting(false);
@@ -358,6 +390,12 @@ export const ApplicantRegistration = () => {
                     <button
                       type="submit"
                       disabled={isSubmitting}
+                      onClick={(e) => {
+                        console.log('🔄 Submit button clicked');
+                        console.log('Current errors:', errors);
+                        console.log('Is form valid:', isValid);
+                        console.log('Current form values:', methods.getValues());
+                      }}
                       className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 border-2 border-transparent rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                     >
                       {isSubmitting ? (

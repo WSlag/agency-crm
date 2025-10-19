@@ -104,15 +104,41 @@ export const CommissionDetailPage = () => {
     }
   };
 
+  const handleVerify = async () => {
+    if (!commission || !user) return;
+    
+    try {
+      setActionLoading(true);
+      await CommissionService.verifyCommission(commission.id, user.uid, 'verified');
+      await loadCommission();
+    } catch (err) {
+      console.error('Error verifying commission:', err);
+      alert('Failed to verify commission');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const canVerify = () => {
+    if (!commission || !user || !customClaims) return false;
+    
+    // Admin/President can verify all commissions
+    // HO Accountant can verify commissions ONLY if they didn't create it (conflict prevention)
+    return ((customClaims.role === 'admin' || customClaims.role === 'president') ||
+            (customClaims.role === 'ho_accountant' && commission.requestedBy !== user?.uid)) &&
+      commission.status === 'pending';
+  };
+
   const canApprove = () => {
     if (!commission || !user || !customClaims) return false;
     
-    const approverRoles = ['admin', 'president', 'ho_accountant'];
+    const approverRoles = ['admin', 'president']; // ✅ ONLY Admin/President can approve!
     
+    // Commission must be VERIFIED before it can be approved
     // Only show approve button for manually requested commissions (not auto-triggered)
     // Auto-triggered commissions can be paid directly without approval
     return approverRoles.includes(customClaims.role || '') && 
-      commission.status === 'pending' &&
+      commission.status === 'verified' &&  // ✅ Changed from 'pending' to 'verified'
       commission.requestedBy !== 'system_auto_trigger';
   };
 
@@ -479,15 +505,15 @@ export const CommissionDetailPage = () => {
             <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 sticky top-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
               <div className="space-y-3">
-                {canApprove() && (
+                {canVerify() && (
                   <>
                     <button
-                      onClick={handleApprove}
+                      onClick={handleVerify}
                       disabled={actionLoading}
-                      className="w-full inline-flex items-center justify-center px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 rounded-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 shadow-lg"
+                      className="w-full inline-flex items-center justify-center px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 shadow-lg"
                     >
                       <CheckCircleIcon className="h-5 w-5 mr-2" />
-                      Approve Commission
+                      Verify Commission
                     </button>
                     
                     <button
@@ -497,6 +523,19 @@ export const CommissionDetailPage = () => {
                     >
                       <XCircleIcon className="h-5 w-5 mr-2" />
                       Reject Commission
+                    </button>
+                  </>
+                )}
+
+                {canApprove() && (
+                  <>
+                    <button
+                      onClick={handleApprove}
+                      disabled={actionLoading}
+                      className="w-full inline-flex items-center justify-center px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-green-700 rounded-lg hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 shadow-lg"
+                    >
+                      <CheckCircleIcon className="h-5 w-5 mr-2" />
+                      Approve Commission
                     </button>
                   </>
                 )}

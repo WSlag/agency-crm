@@ -20,7 +20,7 @@ export const expenseSchema = z.object({
   currency: z.enum(['PHP', 'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'AED']),
   exchangeRate: z.number().optional().refine(validateExchangeRate, 'Exchange rate must be greater than 0'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  receiptUrl: z.string().url().optional(),
+  receiptUrl: z.string().url().nullable().optional(),
   receiptNumber: z.string().optional(),
   expenseDate: z.date(),
   notes: z.string().optional(),

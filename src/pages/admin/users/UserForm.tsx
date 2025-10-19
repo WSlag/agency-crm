@@ -3,9 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc, query, where, Timestamp } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { firestore, auth } from '../../../config/firebase';
+import { useAuth } from '../../../contexts/AuthContext';
 import { 
   SparklesIcon, 
   UserIcon,
@@ -32,6 +33,7 @@ type UserFormData = z.infer<typeof userSchema>;
 export const UserForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [branches, setBranches] = useState<Array<{ id: string; branchName: string }>>([]);
@@ -148,6 +150,66 @@ export const UserForm = () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         });
+
+        // Send notifications to admins and president about new user creation
+        try {
+          const notificationsRef = collection(firestore, 'notifications');
+          const recipients: string[] = [];
+
+          // Get all admin users
+          const adminQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'admin')
+          );
+          const adminSnapshot = await getDocs(adminQuery);
+          adminSnapshot.docs.forEach(doc => {
+            if (doc.id !== user?.uid) { // Don't notify the creator
+              recipients.push(doc.id);
+            }
+          });
+
+          // Get all president users
+          const presidentQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'president')
+          );
+          const presidentSnapshot = await getDocs(presidentQuery);
+          presidentSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Create notifications for all recipients
+          const roleNames: Record<string, string> = {
+            admin: 'Admin',
+            president: 'President',
+            ho_recruitment_officer: 'HO Recruitment Officer',
+            ho_accountant: 'HO Accountant',
+            branch_manager: 'Branch Manager'
+          };
+
+          for (const recipientId of recipients) {
+            await addDoc(notificationsRef, {
+              type: 'user_created',
+              title: 'New User Created',
+              body: `${data.displayName} (${roleNames[data.role]}) has been added to the system`,
+              priority: 'medium',
+              status: 'unread',
+              recipientId: recipientId,
+              recipientEmail: '',
+              icon: '👤',
+              metadata: {
+                userId: userCredential.user.uid,
+                userName: data.displayName,
+                userEmail: data.email,
+                userRole: data.role,
+              },
+              createdAt: Timestamp.now(),
+            });
+          }
+
+          console.log(`✅ Sent ${recipients.length} notifications for new user creation`);
+        } catch (notifError) {
+          console.error('Error sending notifications:', notifError);
+          // Don't fail the whole operation if notifications fail
+        }
       }
 
       navigate('/users');

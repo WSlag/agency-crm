@@ -105,6 +105,16 @@ const PersonalInfo = ({ applicant }: ProfileDetailsProps) => (
         <dt className="text-sm font-medium text-gray-500">Gender</dt>
         <dd className="mt-1 text-sm text-gray-900 capitalize">{applicant.gender || 'N/A'}</dd>
       </div>
+      
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Position Applied</dt>
+        <dd className="mt-1 text-sm text-gray-900">{applicant.positionApplied || 'N/A'}</dd>
+      </div>
+      
+      <div>
+        <dt className="text-sm font-medium text-gray-500">Country Destination</dt>
+        <dd className="mt-1 text-sm text-gray-900">{applicant.countryDestination || 'N/A'}</dd>
+      </div>
     </div>
 
     <div>

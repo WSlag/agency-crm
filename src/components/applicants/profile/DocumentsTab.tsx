@@ -124,8 +124,19 @@ export const DocumentsTab = ({ applicant }: DocumentsTabProps) => {
   };
   
   const canVerifyDocuments = () => {
-    if (!customClaims?.role) return false;
-    return ['admin', 'branch_manager', 'ho_recruitment_officer'].includes(customClaims.role);
+    if (!user || !customClaims?.role) return false;
+    
+    // Admin and HO Recruitment Officer can verify any document
+    if (['admin', 'ho_recruitment_officer'].includes(customClaims.role)) {
+      return true;
+    }
+    
+    // Branch Manager can only verify documents for their branch applicants
+    if (customClaims.role === 'branch_manager' && customClaims.branchId) {
+      return applicant.branchId === customClaims.branchId;
+    }
+    
+    return false;
   };
   
   const hasPendingDocuments = () => {

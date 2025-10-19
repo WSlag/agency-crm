@@ -143,14 +143,15 @@ service firebase.storage {
     }
     
     // ==========================================
-    // EXPENSE RECEIPTS
+    // EXPENSE RECEIPTS (Branch-specific path)
     // ==========================================
     
-    match /expense_receipts/{expenseId}/{receiptId} {
+    match /expense_receipts/{branchId}/{expenseId}/{receiptId} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
         isPresident() ||
-        isHOAccountant()
+        isHOAccountant() ||
+        belongsToBranch(branchId)
       );
       
       allow write: if isAuthenticated() &&
@@ -158,7 +159,7 @@ service firebase.storage {
         isValidDocumentType() &&
         (isAdmin() ||
          isHOAccountant() ||
-         isBranchManager());
+         (isBranchManager() && belongsToBranch(branchId)));
       
       allow delete: if isAdmin();
     }

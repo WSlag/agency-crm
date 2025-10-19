@@ -24,6 +24,7 @@ import type {
   NotificationStats,
   PushSubscription,
 } from '../types/notification';
+import { NOTIFICATION_TEMPLATES } from '../types/notification';
 import { useAuthStore } from './authStore';
 
 interface NotificationState {
@@ -44,24 +45,24 @@ interface NotificationState {
   setPagination: (pagination: NotificationPagination) => void;
 
   // Notification Operations
-  fetchNotifications: () => Promise<void>;
+  fetchNotifications: (userId?: string) => Promise<void>;
   fetchNotificationById: (id: string) => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
-  markAllAsRead: () => Promise<void>;
+  markAllAsRead: (userId?: string) => Promise<void>;
   archiveNotification: (id: string) => Promise<void>;
   deleteNotification: (id: string) => Promise<void>;
 
   // Preferences Operations
-  fetchPreferences: () => Promise<void>;
-  updatePreferences: (preferences: Partial<NotificationPreferences>) => Promise<void>;
+  fetchPreferences: (userId?: string) => Promise<void>;
+  updatePreferences: (preferences: Partial<NotificationPreferences>, userId?: string) => Promise<void>;
 
   // Push Subscription Operations
-  fetchSubscription: () => Promise<void>;
-  updateSubscription: (subscription: PushSubscription) => Promise<void>;
-  deleteSubscription: () => Promise<void>;
+  fetchSubscription: (userId?: string) => Promise<void>;
+  updateSubscription: (subscription: PushSubscription, userId?: string) => Promise<void>;
+  deleteSubscription: (userId?: string) => Promise<void>;
 
   // Stats Operations
-  fetchStats: () => Promise<void>;
+  fetchStats: (userId?: string) => Promise<void>;
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -87,20 +88,32 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   setSort: (sort) => set({ sort }),
   setPagination: (pagination) => set({ pagination }),
 
-  fetchNotifications: async () => {
+  fetchNotifications: async (userId?: string) => {
     try {
       set({ loading: true, error: null });
       const { filter, sort, pagination } = get();
-      const user = useAuthStore.getState().user;
+      
+      // Try to get user from parameter, store, or Firebase auth
+      let currentUserId = userId;
+      if (!currentUserId) {
+        const storeUser = useAuthStore.getState().user;
+        if (storeUser) {
+          currentUserId = storeUser.uid;
+        }
+      }
 
-      if (!user) {
+      if (!currentUserId) {
         throw new Error('User not authenticated');
       }
+
+      console.log('🔔 Fetching notifications for user:', currentUserId);
 
       let q = collection(firestore, 'notifications');
 
       // Apply filters
-      q = query(q, where('recipientId', '==', user.uid));
+      q = query(q, where('recipientId', '==', currentUserId));
+      
+      console.log('📋 Query filter:', { recipientId: currentUserId, filter, sort });
 
       if (filter.type) {
         q = query(q, where('type', '==', filter.type));
@@ -129,8 +142,18 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       }
 
       const snapshot = await getDocs(q);
+      
+      console.log(`✅ Found ${snapshot.docs.length} notifications`);
+      
       const notifications = snapshot.docs.map((doc) => {
         const data = doc.data();
+        console.log('📬 Notification:', {
+          id: doc.id,
+          type: data.type,
+          title: data.title,
+          recipientId: data.recipientId,
+          status: data.status,
+        });
         return {
           id: doc.id,
           ...data,
@@ -141,6 +164,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
       set({ notifications, loading: false });
     } catch (error) {
+      console.error('❌ Error fetching notifications:', error);
       set({
         error: error instanceof Error ? error.message : 'Failed to fetch notifications',
         loading: false,
@@ -204,12 +228,20 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }
   },
 
-  markAllAsRead: async () => {
+  markAllAsRead: async (userId?: string) => {
     try {
       set({ loading: true, error: null });
-      const user = useAuthStore.getState().user;
+      
+      // Try to get user from parameter or store
+      let currentUserId = userId;
+      if (!currentUserId) {
+        const storeUser = useAuthStore.getState().user;
+        if (storeUser) {
+          currentUserId = storeUser.uid;
+        }
+      }
 
-      if (!user) {
+      if (!currentUserId) {
         throw new Error('User not authenticated');
       }
 
@@ -446,19 +478,27 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     }
   },
 
-  fetchStats: async () => {
+  fetchStats: async (userId?: string) => {
     try {
       set({ loading: true, error: null });
-      const user = useAuthStore.getState().user;
+      
+      // Try to get user from parameter or store
+      let currentUserId = userId;
+      if (!currentUserId) {
+        const storeUser = useAuthStore.getState().user;
+        if (storeUser) {
+          currentUserId = storeUser.uid;
+        }
+      }
 
-      if (!user) {
+      if (!currentUserId) {
         throw new Error('User not authenticated');
       }
 
       // Get notification counts
       const q = query(
         collection(firestore, 'notifications'),
-        where('recipientId', '==', user.uid)
+        where('recipientId', '==', currentUserId)
       );
       const snapshot = await getDocs(q);
       const notifications = snapshot.docs.map((doc) => doc.data() as Notification);

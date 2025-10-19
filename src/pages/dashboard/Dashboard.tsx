@@ -24,6 +24,7 @@ import {
   ArrowsRightLeftIcon,
   DocumentDuplicateIcon,
   UsersIcon,
+  UserGroupIcon,
   BriefcaseIcon,
   TrophyIcon,
   FireIcon,
@@ -360,8 +361,7 @@ const QuickActionsPanel: React.FC<{ role: string }> = ({ role }) => {
         { label: 'Financial Dashboard', icon: ChartBarIcon, href: '/financial-dashboard', color: 'from-green-500 to-green-600' },
       ],
       ho_recruitment_officer: [
-        { label: 'My Applicants', icon: UserPlusIcon, href: '/officers', color: 'from-purple-500 to-purple-600' },
-        { label: 'All Applicants', icon: UserPlusIcon, href: '/applicants', color: 'from-indigo-500 to-indigo-600' },
+        { label: 'All Applicants', icon: UserGroupIcon, href: '/ho-applicants/all', color: 'from-indigo-500 to-indigo-600' },
         { label: 'Job Postings', icon: BriefcaseIcon, href: '/jobs', color: 'from-cyan-500 to-cyan-600' },
         { label: 'Documents', icon: DocumentDuplicateIcon, href: '/applicants/documents', color: 'from-green-500 to-green-600' },
         { label: 'Reports', icon: ChartBarIcon, href: '/reports', color: 'from-blue-500 to-blue-600' },

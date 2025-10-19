@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { doc, getDoc, setDoc, updateDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { firestore } from '../../../config/firebase';
+import { useAuth } from '../../../contexts/AuthContext';
 import {
   SparklesIcon,
   BuildingOfficeIcon,
@@ -30,6 +31,7 @@ type BranchFormData = z.infer<typeof branchSchema>;
 export const BranchForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,6 +102,60 @@ export const BranchForm = () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         });
+
+        // Send notifications to admins and president about new branch creation
+        try {
+          const notificationsRef = collection(firestore, 'notifications');
+          const recipients: string[] = [];
+
+          // Get all admin users
+          const adminQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'admin')
+          );
+          const adminSnapshot = await getDocs(adminQuery);
+          adminSnapshot.docs.forEach(doc => {
+            if (doc.id !== user?.uid) { // Don't notify the creator
+              recipients.push(doc.id);
+            }
+          });
+
+          // Get all president users
+          const presidentQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'president')
+          );
+          const presidentSnapshot = await getDocs(presidentQuery);
+          presidentSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Create notifications for all recipients
+          const branchTypeLabel = data.type === 'HEAD_OFFICE' ? 'Head Office' : 'Branch Office';
+
+          for (const recipientId of recipients) {
+            await addDoc(notificationsRef, {
+              type: 'branch_created',
+              title: 'New Branch Created',
+              body: `${data.name} (${branchTypeLabel}) has been added in ${data.location.city}, ${data.location.state}`,
+              priority: 'medium',
+              status: 'unread',
+              recipientId: recipientId,
+              recipientEmail: '',
+              icon: '🏢',
+              metadata: {
+                branchId: branchRef.id,
+                branchName: data.name,
+                branchType: data.type,
+                location: data.location,
+              },
+              createdAt: Timestamp.now(),
+            });
+          }
+
+          console.log(`✅ Sent ${recipients.length} notifications for new branch creation`);
+        } catch (notifError) {
+          console.error('Error sending notifications:', notifError);
+          // Don't fail the whole operation if notifications fail
+        }
       }
 
       navigate('/branches');

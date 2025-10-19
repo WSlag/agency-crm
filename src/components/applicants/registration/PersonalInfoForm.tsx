@@ -7,6 +7,7 @@ export const PersonalInfoForm = () => {
   const {
     register,
     watch,
+    setValue,
     formState: { errors },
   } = useFormContext<ApplicantRegistrationData>();
 
@@ -19,6 +20,14 @@ export const PersonalInfoForm = () => {
 
   // Watch the applicationType field to conditionally show agent dropdown
   const applicationType = watch('applicationType');
+
+  // Reset agentId to null when changing to direct_hire
+  useEffect(() => {
+    if (applicationType === 'direct_hire') {
+      setValue('agentId', null);
+      console.log('✅ Agent ID reset to null (direct_hire)');
+    }
+  }, [applicationType, setValue]);
 
   return (
     <div className="space-y-6">
@@ -202,6 +211,56 @@ export const PersonalInfoForm = () => {
             </select>
             {errors.gender && (
               <p className="mt-1 text-sm text-red-600">{errors.gender.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="positionApplied" className="block text-sm font-medium text-gray-700">
+            Position Applied
+          </label>
+          <div className="mt-1">
+            <input
+              type="text"
+              {...register('positionApplied')}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              placeholder="e.g., Factory Worker, Caregiver, Nurse"
+            />
+            {errors.positionApplied && (
+              <p className="mt-1 text-sm text-red-600">{errors.positionApplied.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="countryDestination" className="block text-sm font-medium text-gray-700">
+            Country Destination
+          </label>
+          <div className="mt-1">
+            <select
+              {...register('countryDestination')}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+            >
+              <option value="">Select Country</option>
+              <option value="Saudi Arabia">Saudi Arabia</option>
+              <option value="United Arab Emirates">United Arab Emirates</option>
+              <option value="Qatar">Qatar</option>
+              <option value="Kuwait">Kuwait</option>
+              <option value="Bahrain">Bahrain</option>
+              <option value="Oman">Oman</option>
+              <option value="Singapore">Singapore</option>
+              <option value="Hong Kong">Hong Kong</option>
+              <option value="Taiwan">Taiwan</option>
+              <option value="Japan">Japan</option>
+              <option value="South Korea">South Korea</option>
+              <option value="Canada">Canada</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="Australia">Australia</option>
+              <option value="New Zealand">New Zealand</option>
+              <option value="Other">Other</option>
+            </select>
+            {errors.countryDestination && (
+              <p className="mt-1 text-sm text-red-600">{errors.countryDestination.message}</p>
             )}
           </div>
         </div>

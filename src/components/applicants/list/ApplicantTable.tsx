@@ -1,17 +1,23 @@
 import { Link } from 'react-router-dom';
 import { Applicant, ApplicantSort } from '../../../types/applicant';
-import { ChevronUpIcon, ChevronDownIcon, EyeIcon } from '@heroicons/react/20/solid';
+import { ChevronUpIcon, ChevronDownIcon, EyeIcon, TrashIcon } from '@heroicons/react/20/solid';
 
 interface ApplicantTableProps {
   applicants: Applicant[];
   sort: ApplicantSort;
   onSortChange: (sort: ApplicantSort) => void;
+  isAdmin?: boolean;
+  onDelete?: (applicantId: string, applicantName: string) => void;
+  basePath?: string; // Base path for applicant links - '/applicants' or '/my-applicants'
 }
 
 export const ApplicantTable = ({
   applicants,
   sort,
   onSortChange,
+  isAdmin = false,
+  onDelete,
+  basePath = '/applicants', // Default to '/applicants' for backward compatibility
 }: ApplicantTableProps) => {
   const handleSort = (field: keyof Applicant) => {
     if (sort.field === field) {
@@ -270,13 +276,25 @@ export const ApplicantTable = ({
                       {formatDate(applicant?.createdAt)}
                     </td>
                     <td className="relative whitespace-nowrap py-4 pl-3 pr-6 text-right text-sm font-medium">
-                      <Link
-                        to={`/applicants/${applicant?.id}`}
-                        className="inline-flex items-center px-3 py-1.5 text-indigo-600 hover:text-white bg-indigo-50 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-purple-600 rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg"
-                      >
-                        <EyeIcon className="h-4 w-4 mr-1" />
-                        View
-                      </Link>
+                      <div className="flex items-center justify-end space-x-2">
+                        <Link
+                          to={`${basePath}/${applicant?.id}`}
+                          className="inline-flex items-center px-3 py-1.5 text-indigo-600 hover:text-white bg-indigo-50 hover:bg-gradient-to-r hover:from-indigo-600 hover:to-purple-600 rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                        >
+                          <EyeIcon className="h-4 w-4 mr-1" />
+                          View
+                        </Link>
+                        {isAdmin && onDelete && (
+                          <button
+                            onClick={() => onDelete(applicant?.id, applicant?.fullName || applicant?.name || 'Unknown')}
+                            className="inline-flex items-center px-3 py-1.5 text-red-600 hover:text-white bg-red-50 hover:bg-gradient-to-r hover:from-red-600 hover:to-red-700 rounded-lg font-semibold transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                            title="Delete applicant"
+                          >
+                            <TrashIcon className="h-4 w-4 mr-1" />
+                            Delete
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

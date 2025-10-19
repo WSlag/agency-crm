@@ -55,8 +55,16 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
               getDocs(collection(firestore, 'commissions'))
             ]);
 
-            // Calculate stage breakdowns
-            const applicantsByStage = applicants.docs.reduce((acc, doc) => {
+            // Filter out any soft-deleted or invalid applicants
+            // Only count applicants that have valid data and aren't marked as deleted
+            const validApplicants = applicants.docs.filter(doc => {
+              const data = doc.data();
+              // Exclude if explicitly marked as deleted or has no required fields
+              return data && !data.isDeleted && doc.id;
+            });
+
+            // Calculate stage breakdowns using only valid applicants
+            const applicantsByStage = validApplicants.reduce((acc, doc) => {
               const stage = doc.data().currentStage || 'registration';
               acc[stage] = (acc[stage] || 0) + 1;
               return acc;
@@ -68,13 +76,21 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
             const deploymentCount = applicantsByStage['deployment'] || 0;
             const deployedCount = applicantsByStage['deployed'] || 0;
 
-            // Calculate specific status counts
-            const activeCount = applicants.docs.filter(doc => doc.data().status === 'active').length;
-            const pendingApprovalCount = applicants.docs.filter(doc => {
+            // Calculate specific status counts using only valid applicants
+            // Note: Pending Approval applicants are a subset of Active applicants
+            const pendingApprovalCount = validApplicants.filter(doc => {
               const data = doc.data();
               return data.requiresApproval === true && !data.approvedBy;
             }).length;
-            const withdrawnCount = applicants.docs.filter(doc => doc.data().status === 'withdrawn').length;
+            
+            // Active count excludes pending approval to avoid double-counting
+            // (Pending approval applicants are active but waiting for stage advancement)
+            const activeCount = validApplicants.filter(doc => {
+              const data = doc.data();
+              return data.status === 'active' && !(data.requiresApproval === true && !data.approvedBy);
+            }).length;
+            
+            const withdrawnCount = validApplicants.filter(doc => doc.data().status === 'withdrawn').length;
             
             setMetrics([
               {
@@ -317,6 +333,14 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
     };
 
     fetchMetrics();
+    
+    // Also refetch when window regains focus (user comes back to tab)
+    const handleFocus = () => {
+      fetchMetrics();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [role, branchId]);
 
   return { metrics, breakdowns, isLoading, error };

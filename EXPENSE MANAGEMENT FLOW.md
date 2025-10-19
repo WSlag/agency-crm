@@ -39,7 +39,7 @@ Office	✅ Yes	❌ No	PHP
 Medical	✅ Yes	✅ Yes	PHP
 Training	✅ Yes	✅ Yes	PHP, USD
 Documentation	✅ Yes	✅ Yes	PHP
-Other	✅ Yes	❌ No	PHP, USD
+Other	✅ Yes	✅ Yes	PHP, USD
 🔄 Complete Workflow Example
 Scenario: Branch Manager Submits Passport Fee
 Day 1 - SUBMISSION (Branch Manager)

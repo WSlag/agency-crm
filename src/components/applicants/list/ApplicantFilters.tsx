@@ -10,6 +10,7 @@ interface ApplicantFiltersProps {
   branches: Array<{ id: string; branchName: string }>;
   agents: Array<{ id: string; agentName: string }>;
   officers: Array<{ id: string; displayName: string }>;
+  hideAgentFilter?: boolean; // SECURITY: Hide agent filter from certain roles
 }
 
 export const ApplicantFilters = ({
@@ -18,6 +19,7 @@ export const ApplicantFilters = ({
   branches,
   agents,
   officers,
+  hideAgentFilter = false,
 }: ApplicantFiltersProps) => {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<ApplicantFilter>(filters);
@@ -171,32 +173,34 @@ export const ApplicantFilters = ({
         </select>
       </div>
 
-      {/* Agent Filter */}
-      <div>
-        <label
-          htmlFor="agent"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Agent
-        </label>
-        <select
-          id="agent"
-          value={localFilters.agentId || ''}
-          onChange={(e) => handleFilterChange('agentId', e.target.value || undefined)}
-          className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
-        >
-          <option value="">All Agents</option>
-          {Array.isArray(agents) && agents.length > 0 ? (
-            agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agent.agentName || 'Unknown Agent'}
-              </option>
-            ))
-          ) : (
-            <option value="" disabled>Loading agents...</option>
-          )}
-        </select>
-      </div>
+      {/* SECURITY: Hide agent filter from certain roles */}
+      {!hideAgentFilter && (
+        <div>
+          <label
+            htmlFor="agent"
+            className="block text-sm font-medium text-gray-700"
+          >
+            Agent
+          </label>
+          <select
+            id="agent"
+            value={localFilters.agentId || ''}
+            onChange={(e) => handleFilterChange('agentId', e.target.value || undefined)}
+            className="mt-1 block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
+          >
+            <option value="">All Agents</option>
+            {Array.isArray(agents) && agents.length > 0 ? (
+              agents.map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.agentName || 'Unknown Agent'}
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>Loading agents...</option>
+            )}
+          </select>
+        </div>
+      )}
 
       {/* Recruitment Officer Filter */}
       <div>

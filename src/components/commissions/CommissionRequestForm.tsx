@@ -1,17 +1,12 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { commissionSchema } from '../../schemas/financial';
-import { COMMISSION_CONFIG, type Commission } from '../../types/commission';
-import { useCommissionStore } from '../../stores/commissionStore';
+import { type Commission } from '../../types/commission';
 import { useAuthStore } from '../../stores/authStore';
-import { CommissionCalculator } from './CommissionCalculator';
+import { useAgentStore } from '../../stores/agentStore';
+import { useApplicantStore } from '../../stores/applicantStore';
 import { 
-  BanknotesIcon, 
   UserIcon, 
-  DocumentTextIcon,
-  CalculatorIcon,
-  InformationCircleIcon
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 
 interface CommissionRequestFormProps {
@@ -25,40 +20,112 @@ export const CommissionRequestForm: React.FC<CommissionRequestFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
-  const { user } = useAuthStore();
-  const [calculatedResult, setCalculatedResult] = React.useState<any>(null);
+  const { user, customClaims } = useAuthStore();
+  const { agents, fetchActiveAgents } = useAgentStore();
+  const { applicants, fetchApplicants } = useApplicantStore();
+  const [filteredAgents, setFilteredAgents] = React.useState<any[]>([]);
+  const [filteredApplicants, setFilteredApplicants] = React.useState<any[]>([]);
 
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm({
-    resolver: zodResolver(commissionSchema),
+  } = useForm<any>({
     defaultValues: {
       ...initialData,
-      branchId: initialData?.branchId || user?.branchId || '',
+      branchId: initialData?.branchId || '',  // Will be set in useEffect
       currency: initialData?.currency || 'PHP',
+      commissionType: initialData?.commissionType || 'medical',
+      amount: initialData?.amount || undefined, // Start with empty field
     },
   });
 
-  const commissionType = watch('commissionType');
-  const config = COMMISSION_CONFIG[commissionType];
+  // Set branchId from customClaims once loaded
+  React.useEffect(() => {
+    if (customClaims?.branchId && !initialData?.branchId) {
+      setValue('branchId', customClaims.branchId);
+      console.log('✅ Commission Form: Branch ID set from custom claims:', customClaims.branchId);
+    } else if (customClaims?.role === 'branch_manager' && !customClaims?.branchId) {
+      console.error('❌ Commission Form: Branch Manager has no branchId in custom claims!');
+    }
+  }, [customClaims, initialData, setValue]);
 
-  const handleCalculatorResult = (result: any) => {
-    setCalculatedResult(result);
-    setValue('baseAmount', result.baseAmount);
-    setValue('bonusAmount', result.bonusAmount);
-    setValue('totalAmount', result.totalAmount);
-    setValue('calculationDetails', result.calculationDetails);
-  };
+  // Fetch agents and applicants on mount
+  React.useEffect(() => {
+    const loadData = async () => {
+      try {
+        console.log('🔄 Commission Form: Loading agents and applicants...');
+        await Promise.all([
+          fetchActiveAgents(),
+          fetchApplicants()
+        ]);
+        console.log('✅ Commission Form: Data loaded successfully');
+      } catch (error) {
+        console.error('❌ Commission Form: Error loading data:', error);
+      }
+    };
+    
+    loadData();
+  }, [fetchActiveAgents, fetchApplicants]);
+
+  // Filter agents and applicants by branch for Branch Managers
+  React.useEffect(() => {
+    if (!customClaims?.branchId) {
+      // If no branch filter, show all
+      setFilteredAgents(agents);
+      setFilteredApplicants(applicants);
+      return;
+    }
+
+    // For Branch Managers, filter by their branch
+    if (customClaims.role === 'branch_manager') {
+      const branchAgents = agents.filter(agent => agent.branchId === customClaims.branchId);
+      const branchApplicants = applicants.filter(applicant => applicant.branchId === customClaims.branchId);
+      
+      setFilteredAgents(branchAgents);
+      setFilteredApplicants(branchApplicants);
+      
+      console.log('🔍 Commission Form: Filtered for branch', customClaims.branchId, {
+        totalAgents: agents.length,
+        filteredAgents: branchAgents.length,
+        totalApplicants: applicants.length,
+        filteredApplicants: branchApplicants.length
+      });
+    } else {
+      // For other roles (Admin, HO Accountant), show all
+      setFilteredAgents(agents);
+      setFilteredApplicants(applicants);
+    }
+  }, [agents, applicants, customClaims]);
 
   const handleFormSubmit = async (data: any) => {
     try {
-      if (!calculatedResult) {
-        throw new Error('Please calculate the commission first');
+      // Validate required fields
+      if (!data.agentId) {
+        alert('Please select an agent');
+        return;
       }
+      if (!data.applicantId) {
+        alert('Please select an applicant');
+        return;
+      }
+      if (!data.amount || isNaN(data.amount) || data.amount <= 0) {
+        alert('Please enter a valid commission amount greater than 0');
+        return;
+      }
+      if (!data.branchId) {
+        alert('Branch ID is missing. Please try again.');
+        return;
+      }
+
+      console.log('📤 Submitting commission request:', {
+        agentId: data.agentId,
+        applicantId: data.applicantId,
+        amount: data.amount,
+        branchId: data.branchId,
+      });
+
       await onSubmit({
         ...data,
         requestedBy: user?.uid || '',
@@ -66,20 +133,12 @@ export const CommissionRequestForm: React.FC<CommissionRequestFormProps> = ({
       });
     } catch (error) {
       console.error('Failed to submit commission request:', error);
+      alert('Failed to submit commission request. Please try again.');
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Commission Calculator Section */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-        <div className="flex items-center space-x-2 mb-6">
-          <CalculatorIcon className="h-6 w-6 text-indigo-600" />
-          <h3 className="text-xl font-bold text-gray-900">Calculate Commission</h3>
-        </div>
-        <CommissionCalculator onCalculate={handleCalculatorResult} />
-      </div>
-
       {/* Commission Request Form */}
       <form
         onSubmit={handleSubmit(handleFormSubmit)}
@@ -105,13 +164,22 @@ export const CommissionRequestForm: React.FC<CommissionRequestFormProps> = ({
                 className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
               >
                 <option value="">Select Agent</option>
-                {/* TODO: Add agent options from context/store */}
+                {filteredAgents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.agentName}
+                  </option>
+                ))}
               </select>
             )}
           />
           {errors.agentId && (
             <p className="mt-2 text-sm text-red-600 flex items-center">
               ⚠ {errors.agentId.message as string}
+            </p>
+          )}
+          {filteredAgents.length === 0 && (
+            <p className="mt-2 text-sm text-gray-500">
+              No agents available for your branch
             </p>
           )}
         </div>
@@ -131,7 +199,11 @@ export const CommissionRequestForm: React.FC<CommissionRequestFormProps> = ({
                 className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
               >
                 <option value="">Select Applicant</option>
-                {/* TODO: Add applicant options from context/store */}
+                {filteredApplicants.map((applicant) => (
+                  <option key={applicant.id} value={applicant.id}>
+                    {applicant.fullName} - {applicant.currentStage}
+                  </option>
+                ))}
               </select>
             )}
           />
@@ -140,73 +212,42 @@ export const CommissionRequestForm: React.FC<CommissionRequestFormProps> = ({
               ⚠ {errors.applicantId.message as string}
             </p>
           )}
+          {filteredApplicants.length === 0 && (
+            <p className="mt-2 text-sm text-gray-500">
+              No applicants available for your branch
+            </p>
+          )}
         </div>
 
-        {/* Metadata Section */}
-        <div className="space-y-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
-          <div className="flex items-center space-x-2 mb-4">
-            <InformationCircleIcon className="h-5 w-5 text-indigo-600" />
-            <h4 className="text-sm font-semibold text-gray-700">Additional Information</h4>
-          </div>
-
-          {/* Job Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Job Category
-            </label>
-            <Controller
-              name="metadata.jobCategory"
-              control={control}
-              render={({ field }) => (
-                <input
-                  type="text"
-                  {...field}
-                  className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
-                  placeholder="Enter job category"
-                />
-              )}
-            />
-          </div>
-
-          {/* Employer Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Employer Name
-            </label>
-            <Controller
-              name="metadata.employerName"
-              control={control}
-              render={({ field }) => (
-                <input
-                  type="text"
-                  {...field}
-                  className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
-                  placeholder="Enter employer name"
-                />
-              )}
-            />
-          </div>
-
-          {/* Contract Duration */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contract Duration (months)
-            </label>
-            <Controller
-              name="metadata.contractDuration"
-              control={control}
-              render={({ field }) => (
-                <input
-                  type="number"
-                  {...field}
-                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                  className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
-                  placeholder="0"
-                  min={0}
-                />
-              )}
-            />
-          </div>
+        {/* Commission Amount */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Commission Amount (PHP)
+          </label>
+          <Controller
+            name="amount"
+            control={control}
+            render={({ field }) => (
+              <input
+                type="number"
+                {...field}
+                value={field.value || ''} // Show empty string instead of 0
+                onChange={(e) => {
+                  const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                  field.onChange(value);
+                }}
+                className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400"
+                placeholder="Enter commission amount"
+                min={0}
+                step="0.01"
+              />
+            )}
+          />
+          {errors.amount && (
+            <p className="mt-2 text-sm text-red-600 flex items-center">
+              ⚠ {errors.amount.message as string}
+            </p>
+          )}
         </div>
 
         {/* Notes */}
@@ -233,49 +274,6 @@ export const CommissionRequestForm: React.FC<CommissionRequestFormProps> = ({
           )}
         </div>
 
-        {/* Calculation Summary */}
-        {calculatedResult && (
-          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-200">
-            <div className="flex items-center space-x-2 mb-4">
-              <BanknotesIcon className="h-6 w-6 text-indigo-600" />
-              <h4 className="text-lg font-bold text-gray-900">Commission Summary</h4>
-            </div>
-            <dl className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-              <div className="bg-white rounded-lg p-4 shadow-sm">
-                <dt className="text-sm font-medium text-gray-600">Base Amount</dt>
-                <dd className="mt-1 text-2xl font-bold text-gray-900">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'PHP',
-                  }).format(calculatedResult.baseAmount)}
-                </dd>
-              </div>
-              <div className="bg-white rounded-lg p-4 shadow-sm">
-                <dt className="text-sm font-medium text-gray-600">
-                  Bonus Amount
-                </dt>
-                <dd className="mt-1 text-2xl font-bold text-gray-900">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'PHP',
-                  }).format(calculatedResult.bonusAmount)}
-                </dd>
-              </div>
-              <div className="sm:col-span-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg p-4 shadow-lg">
-                <dt className="text-sm font-medium text-indigo-100">
-                  Total Commission
-                </dt>
-                <dd className="mt-1 text-3xl font-bold text-white">
-                  {new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'PHP',
-                  }).format(calculatedResult.totalAmount)}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        )}
-
         {/* Form Actions */}
         <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
           <button
@@ -287,7 +285,7 @@ export const CommissionRequestForm: React.FC<CommissionRequestFormProps> = ({
           </button>
           <button
             type="submit"
-            disabled={isSubmitting || !calculatedResult}
+            disabled={isSubmitting}
             className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 border-2 border-transparent rounded-lg shadow-lg hover:from-indigo-700 hover:to-purple-700 hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             {isSubmitting ? (

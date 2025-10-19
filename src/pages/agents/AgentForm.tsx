@@ -18,14 +18,24 @@ export const AgentForm = () => {
     email: '',
     contactNumber: '',
     address: '',
-    branchId: customClaims?.branchId || '',
-    commissionAmount: 0,
+    branchId: '',  // Will be set in useEffect after customClaims load
+    commissionAmount: undefined as any,
     licenseNumber: '',
     licenseExpiry: undefined,
     status: 'active',
   });
 
   const isEdit = Boolean(id);
+
+  // Set branchId from customClaims once loaded
+  useEffect(() => {
+    if (customClaims?.branchId && !isEdit) {
+      setFormData(prev => ({ ...prev, branchId: customClaims.branchId! }));
+      console.log('✅ Agent Form: Branch ID set from custom claims:', customClaims.branchId);
+    } else if (customClaims?.role === 'branch_manager' && !customClaims?.branchId) {
+      console.error('❌ Agent Form: Branch Manager has no branchId in custom claims!');
+    }
+  }, [customClaims, isEdit]);
 
   useEffect(() => {
     if (id) {
@@ -53,7 +63,9 @@ export const AgentForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'commissionAmount' ? parseFloat(value) || 0 : value
+      [name]: name === 'commissionAmount' 
+        ? (value === '' ? undefined : parseFloat(value)) 
+        : value
     }));
   };
 
@@ -69,6 +81,13 @@ export const AgentForm = () => {
     e.preventDefault();
     setSaveError(null);
     setIsSaving(true);
+
+    // Validate commission amount
+    if (formData.commissionAmount === undefined || formData.commissionAmount < 0) {
+      setSaveError('Please enter a valid commission amount');
+      setIsSaving(false);
+      return;
+    }
 
     try {
       if (isEdit && id) {
@@ -243,8 +262,9 @@ export const AgentForm = () => {
                       required
                       min="0"
                       step="0.01"
-                      value={formData.commissionAmount}
+                      value={formData.commissionAmount ?? ''}
                       onChange={handleChange}
+                      placeholder="Enter commission amount"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500"
                     />
                   </div>

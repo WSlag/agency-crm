@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { UserCircleIcon } from '@heroicons/react/24/solid';
 import { Applicant } from '../../../types/applicant';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useBranchStore } from '../../../stores/branchStore';
@@ -13,19 +12,19 @@ interface ProfileHeaderProps {
 
 export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHeaderProps) => {
   const { user, customClaims } = useAuth();
-  const { branches, fetchActiveBranches } = useBranchStore();
+  const { branches, fetchBranches } = useBranchStore();
   const { agents, fetchActiveAgents } = useAgentStore();
   const [isChangingStatus, setIsChangingStatus] = useState(false);
 
   // Fetch branches and agents on mount
   useEffect(() => {
     if (branches.length === 0) {
-      fetchActiveBranches();
+      fetchBranches(); // Fetch all branches (not just active ones)
     }
     if (agents.length === 0) {
       fetchActiveAgents();
     }
-  }, [branches.length, agents.length, fetchActiveBranches, fetchActiveAgents]);
+  }, [branches.length, agents.length, fetchBranches, fetchActiveAgents]);
 
   // Get branch and agent details
   const branch = branches.find(b => b.id === applicant.branchId);
@@ -55,38 +54,48 @@ export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHead
     (customClaims?.role === 'branch_manager' && customClaims?.branchId === applicant.branchId) ||
     (customClaims?.role === 'ho_recruitment_officer' && user?.uid === applicant.assignedRecruitmentOfficerId);
 
+  // SECURITY: Hide agent info from HO Recruitment Officers
+  const shouldHideAgentInfo = customClaims?.role === 'ho_recruitment_officer';
+
   return (
     <div className="bg-white shadow">
       <div className="px-4 py-5 sm:px-6 lg:px-8">
         <div className="md:flex md:items-center md:justify-between">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center">
-              <div className="h-16 w-16 flex-shrink-0">
-                <UserCircleIcon className="h-16 w-16 text-gray-300" />
-              </div>
-              <div className="ml-4">
-                <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:leading-9">
-                  {applicant.fullName}
-                </h1>
-                <div className="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
+            <div>
+              <h1 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:leading-9">
+                {applicant.fullName}
+              </h1>
+              <div className="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
+                <div className="mt-2 flex items-center text-sm text-gray-500">
+                  <span className="font-medium">ID:</span>
+                  <span className="ml-1">{applicant.id}</span>
+                </div>
+                <div className="mt-2 flex items-center text-sm text-gray-500">
+                  <span className="font-medium">Application Type:</span>
+                  <span className="ml-1 capitalize">{applicant.applicationType?.replace('_', ' ') || 'N/A'}</span>
+                </div>
+                <div className="mt-2 flex items-center text-sm text-gray-500">
+                  <span className="font-medium">Current Stage:</span>
+                  <span className="ml-1 capitalize">{applicant.currentStage || applicant.currentStageEnum || 'N/A'}</span>
+                </div>
+                {applicant.positionApplied && (
                   <div className="mt-2 flex items-center text-sm text-gray-500">
-                    <span className="font-medium">ID:</span>
-                    <span className="ml-1">{applicant.id}</span>
+                    <span className="font-medium">Position Applied:</span>
+                    <span className="ml-1">{applicant.positionApplied}</span>
                   </div>
+                )}
+                {applicant.countryDestination && (
                   <div className="mt-2 flex items-center text-sm text-gray-500">
-                    <span className="font-medium">Application Type:</span>
-                    <span className="ml-1 capitalize">{applicant.applicationType?.replace('_', ' ') || 'N/A'}</span>
+                    <span className="font-medium">Country Destination:</span>
+                    <span className="ml-1">{applicant.countryDestination}</span>
                   </div>
-                  <div className="mt-2 flex items-center text-sm text-gray-500">
-                    <span className="font-medium">Current Stage:</span>
-                    <span className="ml-1 capitalize">{applicant.currentStage || applicant.currentStageEnum || 'N/A'}</span>
-                  </div>
-                  <div className="mt-2 flex items-center text-sm">
-                    <span className="font-medium">Status:</span>
-                    <span className={`ml-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(applicant.status || applicant.currentStatus || 'active')}`}>
-                      {applicant.status || applicant.currentStatus || 'active'}
-                    </span>
-                  </div>
+                )}
+                <div className="mt-2 flex items-center text-sm">
+                  <span className="font-medium">Status:</span>
+                  <span className={`ml-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeColor(applicant.status || applicant.currentStatus || 'active')}`}>
+                    {applicant.status || applicant.currentStatus || 'active'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -163,18 +172,21 @@ export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHead
             </dd>
           </div>
           
-          <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
-            <dt className="truncate text-sm font-medium text-gray-500">Recruited By</dt>
-            <dd className="mt-1 text-sm text-gray-900">
-              {agent ? (
-                <span className="font-medium text-indigo-600">{agent.agentName}</span>
-              ) : applicant.agentId ? (
-                applicant.agentId
-              ) : (
-                <span className="text-gray-400">Direct Hire</span>
-              )}
-            </dd>
-          </div>
+          {/* SECURITY: Hide agent info from HO Recruitment Officers */}
+          {!shouldHideAgentInfo && (
+            <div className="overflow-hidden rounded-lg bg-white px-4 py-5 shadow sm:p-6">
+              <dt className="truncate text-sm font-medium text-gray-500">Recruited By</dt>
+              <dd className="mt-1 text-sm text-gray-900">
+                {agent ? (
+                  <span className="font-medium text-indigo-600">{agent.agentName}</span>
+                ) : applicant.agentId ? (
+                  applicant.agentId
+                ) : (
+                  <span className="text-gray-400">Direct Hire</span>
+                )}
+              </dd>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -19,6 +19,8 @@ import { FinancialDashboard } from './pages/dashboard/FinancialDashboard';
 
 // Applicant Management
 import { ApplicantList } from './pages/applicants/ApplicantList';
+import { MyApplicants } from './pages/applicants/MyApplicants';
+import { AllHOApplicants } from './pages/applicants/AllHOApplicants';
 import { ApplicantProfile } from './pages/applicants/ApplicantProfile';
 import { ApplicantRegistration } from './pages/applicants/ApplicantRegistration';
 import { TransfersList } from './pages/applicants/TransfersList';
@@ -80,6 +82,7 @@ import { SharedReports } from './pages/reports/SharedReports';
 // Settings
 import { SystemSettings } from './pages/settings/SystemSettings';
 import { NotificationSettings } from './pages/settings/NotificationSettings';
+import { NotificationsList } from './pages/notifications/NotificationsList';
 import { RolePermissions } from './pages/settings/RolePermissions';
 import { BranchConfiguration } from './pages/settings/BranchConfiguration';
 import { ProfilePage } from './pages/settings/ProfilePage';
@@ -134,11 +137,37 @@ const App: React.FC = () => {
             }
           />
 
+          {/* My Applicants - HO Recruitment Officer Only (Assigned to them) */}
+          <Route
+            path="/my-applicants"
+            element={
+              <RoleGuard allowedRoles={['ho_recruitment_officer']}>
+                <Outlet />
+              </RoleGuard>
+            }
+          >
+            <Route index element={<MyApplicants />} />
+            <Route path=":id" element={<ApplicantProfile />} />
+          </Route>
+
+          {/* All HO Applicants - Shared pool for all HO Officers (Unassigned) */}
+          <Route
+            path="/ho-applicants/all"
+            element={
+              <RoleGuard allowedRoles={['ho_recruitment_officer']}>
+                <Outlet />
+              </RoleGuard>
+            }
+          >
+            <Route index element={<AllHOApplicants />} />
+            <Route path=":id" element={<ApplicantProfile />} />
+          </Route>
+
           {/* Applicant Management */}
           <Route
             path="/applicants"
             element={
-              <RoleGuard allowedRoles={['admin', 'president', 'ho_recruitment_officer', 'branch_manager']}>
+              <RoleGuard allowedRoles={['admin', 'president', 'branch_manager', 'ho_accountant']}>
                 <Outlet />
               </RoleGuard>
             }
@@ -252,6 +281,9 @@ const App: React.FC = () => {
 
           {/* Profile (accessible to all authenticated users) */}
           <Route path="/profile" element={<ProfilePage />} />
+          
+          {/* Notifications (accessible to all authenticated users) */}
+          <Route path="/notifications/all" element={<NotificationsList />} />
 
           {/* Settings */}
           <Route
@@ -274,6 +306,7 @@ const App: React.FC = () => {
             <Route index element={<ExpensesPage />} />
             <Route path="new" element={<ExpenseEntry />} />
             <Route path=":id" element={<ExpenseDetail />} />
+            <Route path=":id/edit" element={<ExpenseEntry />} />
             <Route path="budgets" element={<BudgetManagement />} />
           </Route>
 

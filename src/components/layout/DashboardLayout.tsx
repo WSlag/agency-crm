@@ -15,6 +15,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { NotificationBadge } from '../notifications/NotificationBadge';
+import { NotificationCenter } from '../notifications/NotificationCenter';
 
 export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -454,6 +455,28 @@ export const DashboardLayout = () => {
           </button>
           <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">
             {user?.displayName}
+          </div>
+          
+          {/* Mobile Notification Button */}
+          <div className="relative">
+            <button
+              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full"
+              aria-label={`${unreadCount} unread notifications`}
+            >
+              <BellIcon className="h-6 w-6" />
+              <NotificationBadge
+                count={unreadCount}
+                className="absolute -top-1 -right-1"
+              />
+            </button>
+            
+            {/* Notification Dropdown */}
+            {notificationsOpen && (
+              <div className="absolute right-0 mt-2 z-50">
+                <NotificationCenter />
+              </div>
+            )}
           </div>
         </div>
 

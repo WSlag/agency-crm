@@ -12,6 +12,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  addDoc,
   serverTimestamp,
   Timestamp,
   Query,
@@ -409,6 +410,10 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
 
+      // Get commission data first
+      const commissionDoc = await getDoc(doc(firestore, 'commissions', commissionId));
+      const commissionData = commissionDoc.data();
+
       await updateDoc(doc(firestore, 'commissions', commissionId), {
         status: 'rejected' as CommissionStatus,
         notes: reason,
@@ -426,6 +431,85 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
           reason,
         },
       });
+
+      // Send notifications
+      if (commissionData) {
+        try {
+          const notificationsRef = collection(firestore, 'notifications');
+          const recipients: string[] = [];
+
+          // Notify the agent
+          if (commissionData.agentId) {
+            // Get agent's user ID (agents collection has userId field)
+            const agentDoc = await getDoc(doc(firestore, 'agents', commissionData.agentId));
+            if (agentDoc.exists()) {
+              const agentData = agentDoc.data();
+              // Try to find user by email
+              const userQuery = query(
+                collection(firestore, 'users'),
+                where('email', '==', agentData.email)
+              );
+              const userSnapshot = await getDocs(userQuery);
+              userSnapshot.docs.forEach(doc => recipients.push(doc.id));
+            }
+          }
+
+          // Notify all admins
+          const adminQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'admin')
+          );
+          const adminSnapshot = await getDocs(adminQuery);
+          adminSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Notify branch manager if branchId exists
+          if (commissionData.branchId) {
+            const managerQuery = query(
+              collection(firestore, 'users'),
+              where('role', '==', 'branch_manager'),
+              where('branchId', '==', commissionData.branchId)
+            );
+            const managerSnapshot = await getDocs(managerQuery);
+            managerSnapshot.docs.forEach(doc => recipients.push(doc.id));
+          }
+
+          // Get applicant name
+          let applicantName = 'Unknown Applicant';
+          if (commissionData.applicantId) {
+            const applicantDoc = await getDoc(doc(firestore, 'applicants', commissionData.applicantId));
+            if (applicantDoc.exists()) {
+              applicantName = applicantDoc.data().fullName || applicantName;
+            }
+          }
+
+          // Create notifications
+          const uniqueRecipients = [...new Set(recipients)];
+          for (const recipientId of uniqueRecipients) {
+            await addDoc(notificationsRef, {
+              type: 'commission_rejected',
+              title: 'Commission Rejected',
+              body: `Commission for ${applicantName} has been rejected. Reason: ${reason}`,
+              priority: 'high',
+              status: 'unread',
+              recipientId: recipientId,
+              recipientEmail: '',
+              icon: '❌',
+              metadata: {
+                commissionId,
+                applicantName,
+                amount: commissionData.amount,
+                reason,
+                commissionType: commissionData.commissionType,
+              },
+              createdAt: Timestamp.now(),
+            });
+          }
+
+          console.log(`✅ Sent ${uniqueRecipients.length} notifications for commission rejection`);
+        } catch (notifError) {
+          console.error('Error sending commission rejection notifications:', notifError);
+        }
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to reject commission',
@@ -441,6 +525,10 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
+
+      // Get commission data first
+      const commissionDoc = await getDoc(doc(firestore, 'commissions', approval.commissionId));
+      const commissionData = commissionDoc.data();
 
       // Update commission status
       await updateDoc(doc(firestore, 'commissions', approval.commissionId), {
@@ -465,6 +553,80 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
         performedAt: timestamp,
         details: approval,
       });
+
+      // Send notifications
+      if (commissionData) {
+        try {
+          const notificationsRef = collection(firestore, 'notifications');
+          const recipients: string[] = [];
+
+          // Notify the agent
+          if (commissionData.agentId) {
+            const agentDoc = await getDoc(doc(firestore, 'agents', commissionData.agentId));
+            if (agentDoc.exists()) {
+              const agentData = agentDoc.data();
+              const userQuery = query(
+                collection(firestore, 'users'),
+                where('email', '==', agentData.email)
+              );
+              const userSnapshot = await getDocs(userQuery);
+              userSnapshot.docs.forEach(doc => recipients.push(doc.id));
+            }
+          }
+
+          // Notify HO Accountant
+          const accountantQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'ho_accountant')
+          );
+          const accountantSnapshot = await getDocs(accountantQuery);
+          accountantSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Notify all admins
+          const adminQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'admin')
+          );
+          const adminSnapshot = await getDocs(adminQuery);
+          adminSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Get applicant name
+          let applicantName = 'Unknown Applicant';
+          if (commissionData.applicantId) {
+            const applicantDoc = await getDoc(doc(firestore, 'applicants', commissionData.applicantId));
+            if (applicantDoc.exists()) {
+              applicantName = applicantDoc.data().fullName || applicantName;
+            }
+          }
+
+          // Create notifications
+          const uniqueRecipients = [...new Set(recipients)];
+          for (const recipientId of uniqueRecipients) {
+            await addDoc(notificationsRef, {
+              type: 'commission_approved',
+              title: 'Commission Approved',
+              body: `Commission of ₱${commissionData.amount?.toLocaleString() || '0'} has been approved for ${applicantName}`,
+              priority: 'high',
+              status: 'unread',
+              recipientId: recipientId,
+              recipientEmail: '',
+              icon: '✅',
+              metadata: {
+                commissionId: approval.commissionId,
+                applicantName,
+                amount: commissionData.amount,
+                commissionType: commissionData.commissionType,
+                approvedBy: approval.approvedBy,
+              },
+              createdAt: Timestamp.now(),
+            });
+          }
+
+          console.log(`✅ Sent ${uniqueRecipients.length} notifications for commission approval`);
+        } catch (notifError) {
+          console.error('Error sending commission approval notifications:', notifError);
+        }
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to approve commission',
@@ -480,6 +642,10 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       const timestamp = serverTimestamp();
+
+      // Get commission data first
+      const commissionDoc = await getDoc(doc(firestore, 'commissions', payment.commissionId));
+      const commissionData = commissionDoc.data();
 
       // Update commission status
       await updateDoc(doc(firestore, 'commissions', payment.commissionId), {
@@ -508,6 +674,81 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
         performedAt: timestamp,
         details: payment,
       });
+
+      // Send notifications
+      if (commissionData) {
+        try {
+          const notificationsRef = collection(firestore, 'notifications');
+          const recipients: string[] = [];
+
+          // Notify the agent
+          if (commissionData.agentId) {
+            const agentDoc = await getDoc(doc(firestore, 'agents', commissionData.agentId));
+            if (agentDoc.exists()) {
+              const agentData = agentDoc.data();
+              const userQuery = query(
+                collection(firestore, 'users'),
+                where('email', '==', agentData.email)
+              );
+              const userSnapshot = await getDocs(userQuery);
+              userSnapshot.docs.forEach(doc => recipients.push(doc.id));
+            }
+          }
+
+          // Notify HO Accountant
+          const accountantQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'ho_accountant')
+          );
+          const accountantSnapshot = await getDocs(accountantQuery);
+          accountantSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Notify all admins
+          const adminQuery = query(
+            collection(firestore, 'users'),
+            where('role', '==', 'admin')
+          );
+          const adminSnapshot = await getDocs(adminQuery);
+          adminSnapshot.docs.forEach(doc => recipients.push(doc.id));
+
+          // Get applicant name
+          let applicantName = 'Unknown Applicant';
+          if (commissionData.applicantId) {
+            const applicantDoc = await getDoc(doc(firestore, 'applicants', commissionData.applicantId));
+            if (applicantDoc.exists()) {
+              applicantName = applicantDoc.data().fullName || applicantName;
+            }
+          }
+
+          // Create notifications
+          const uniqueRecipients = [...new Set(recipients)];
+          for (const recipientId of uniqueRecipients) {
+            await addDoc(notificationsRef, {
+              type: 'commission_paid',
+              title: 'Commission Payment Processed',
+              body: `Full payment of ₱${payment.amount?.toLocaleString() || '0'} has been processed for ${applicantName}`,
+              priority: 'high',
+              status: 'unread',
+              recipientId: recipientId,
+              recipientEmail: '',
+              icon: '💰',
+              metadata: {
+                commissionId: payment.commissionId,
+                applicantName,
+                amount: payment.amount,
+                paymentType: 'full',
+                paymentReference: payment.paymentReference,
+                paidBy: payment.paidBy,
+              },
+              createdAt: Timestamp.now(),
+            });
+          }
+
+          console.log(`✅ Sent ${uniqueRecipients.length} notifications for commission payment`);
+        } catch (notifError) {
+          console.error('Error sending commission payment notifications:', notifError);
+        }
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to record payment',

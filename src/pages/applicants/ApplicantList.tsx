@@ -23,9 +23,18 @@ export const ApplicantList = () => {
     setSort,
     setPagination,
     fetchApplicants,
+    deleteApplicant,
   } = useApplicantStore();
 
-  const { branches, loading: branchesLoading, error: branchesError, fetchActiveBranches } = useBranchStore();
+  // SECURITY: Redirect HO Recruitment Officers to their dedicated page
+  useEffect(() => {
+    if (customClaims?.role === 'ho_recruitment_officer') {
+      console.warn('🔒 HO Officer redirected from All Applicants to My Applicants');
+      navigate('/my-applicants', { replace: true });
+    }
+  }, [customClaims, navigate]);
+
+  const { branches, loading: branchesLoading, error: branchesError, fetchBranches } = useBranchStore();
   const { agents, loading: agentsLoading, error: agentsError, fetchActiveAgents } = useAgentStore();
   const { officers, loading: officersLoading, error: officersError, fetchActiveOfficers } = useOfficerStore();
 
@@ -41,7 +50,7 @@ export const ApplicantList = () => {
           agentsResult,
           officersResult
         ] = await Promise.all([
-          fetchActiveBranches(),
+          fetchBranches(), // Changed from fetchActiveBranches to fetch ALL branches
           fetchActiveAgents(),
           fetchActiveOfficers()
         ]);
@@ -101,10 +110,18 @@ export const ApplicantList = () => {
   };
 
   // Transform branches data for filters
-  const branchOptions = branches?.map(branch => ({
-    id: branch.id,
-    branchName: branch.name
-  })) || [];
+  const branchOptions = branches
+    ?.map(branch => ({
+      id: branch.id,
+      branchName: branch.name
+    }))
+    // Remove duplicates based on branch ID
+    .filter((branch, index, self) => 
+      index === self.findIndex((b) => b.id === branch.id)
+    )
+    // Sort alphabetically by branch name
+    .sort((a, b) => a.branchName.localeCompare(b.branchName))
+    || [];
 
   // Transform agents data for filters
   // Branch Managers can only see agents from their own branch
@@ -119,11 +136,37 @@ export const ApplicantList = () => {
     })
     .map(agent => ({
       id: agent.id,
-      agentName: agent.agentName
-    })) || [];
+      agentName: agent.agentName || 'Unknown Agent'
+    }))
+    // Remove duplicates based on agent ID
+    .filter((agent, index, self) => 
+      index === self.findIndex((a) => a.id === agent.id)
+    )
+    // Sort alphabetically by agent name
+    .sort((a, b) => a.agentName.localeCompare(b.agentName))
+    || [];
 
   const isLoading = loading || branchesLoading || agentsLoading || officersLoading;
   const combinedError = error || branchesError || agentsError || officersError;
+
+  // Delete handler (Admin only)
+  const handleDelete = async (applicantId: string, applicantName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${applicantName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteApplicant(applicantId);
+      // Refresh the list after deletion
+      await fetchApplicants();
+    } catch (error) {
+      console.error('Error deleting applicant:', error);
+      alert('Failed to delete applicant. Please try again.');
+    }
+  };
+
+  // Check if current user is admin
+  const isAdmin = customClaims?.role === 'admin';
 
   // Stats for the top cards
   const stats = [
@@ -332,6 +375,8 @@ export const ApplicantList = () => {
                 applicants={applicants}
                 sort={sort}
                 onSortChange={handleSortChange}
+                isAdmin={isAdmin}
+                onDelete={handleDelete}
               />
 
               {/* Pagination with Gradient */}

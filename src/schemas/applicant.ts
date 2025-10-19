@@ -73,7 +73,7 @@ export const applicantRegistrationSchema = z.object({
   contactInfo: z.string().min(5, 'Contact information must be at least 5 characters'),
   email: z.string().email('Invalid email address'),
   agentId: z.string().nullable(),
-  branchId: z.string(),
+  branchId: z.string().min(1, 'Branch is required'),
   applicationType: z.enum(['with_agent', 'direct_hire']),
   
   // Personal Information
@@ -82,6 +82,8 @@ export const applicantRegistrationSchema = z.object({
   nationality: z.string().min(2, 'Nationality is required'),
   civilStatus: z.enum(['single', 'married', 'widowed', 'divorced']),
   gender: z.enum(['male', 'female', 'other']),
+  positionApplied: z.string().min(2, 'Position applied is required').optional(),
+  countryDestination: z.string().min(2, 'Country destination is required').optional(),
   address: addressSchema,
   
   // Job Preferences

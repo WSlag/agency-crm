@@ -13,6 +13,7 @@ import {
   UserPlusIcon,
   RectangleStackIcon,
   DocumentDuplicateIcon,
+  BellIcon,
 } from '@heroicons/react/24/outline';
 import type { NavigationItem } from '../types/navigation';
 
@@ -30,6 +31,12 @@ export const navigation: NavigationItem[] = [
     roles: ['admin', 'president', 'ho_accountant']
   },
   {
+    name: 'Notifications',
+    href: '/notifications/all',
+    icon: BellIcon,
+    roles: ['admin', 'president', 'ho_recruitment_officer', 'ho_accountant', 'branch_manager']
+  },
+  {
     name: 'Users',
     href: '/users',
     icon: UsersIcon,
@@ -45,13 +52,19 @@ export const navigation: NavigationItem[] = [
     name: 'Applicants',
     href: '/applicants',
     icon: DocumentTextIcon,
-    roles: ['admin', 'president', 'ho_recruitment_officer', 'branch_manager']
+    roles: ['admin', 'president', 'branch_manager']
+  },
+  {
+    name: 'My Applicants',
+    href: '/my-applicants',
+    icon: UserGroupIcon,
+    roles: ['ho_recruitment_officer']
   },
   {
     name: 'Officers',
     href: '/officers',
     icon: UserGroupIcon,
-    roles: ['admin', 'president', 'ho_recruitment_officer']
+    roles: ['admin', 'president']
   },
   {
     name: 'Expenses',

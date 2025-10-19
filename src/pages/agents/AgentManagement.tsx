@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAgentStore } from '../../stores/agentStore';
+import { useBranchStore } from '../../stores/branchStore';
 import {
   UsersIcon,
   MagnifyingGlassIcon,
@@ -19,17 +20,29 @@ import type { Agent } from '../../types/agent';
 export const AgentManagement = () => {
   const { customClaims } = useAuth();
   const { agents, loading, error, fetchAllAgents, fetchAgentsByBranch } = useAgentStore();
+  const { branches, fetchBranches } = useBranchStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all');
   const [branchFilter, setBranchFilter] = useState<string>('all');
 
   useEffect(() => {
+    // Fetch branches for branch name display
+    if (branches.length === 0) {
+      fetchBranches();
+    }
+    
     if (customClaims?.role === 'branch_manager' && customClaims?.branchId) {
       fetchAgentsByBranch(customClaims.branchId);
     } else {
       fetchAllAgents();
     }
   }, [customClaims]);
+
+  // Helper function to get branch name
+  const getBranchName = (branchId: string) => {
+    const branch = branches.find(b => b.id === branchId);
+    return branch?.name || branchId;
+  };
 
   const filteredAgents = agents.filter(agent => {
     const matchesSearch = searchTerm === '' ||
@@ -236,17 +249,17 @@ export const AgentManagement = () => {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center space-x-3">
                         <div className="h-12 w-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center text-white font-bold text-lg">
-                          {agent.agentName.charAt(0).toUpperCase()}
+                          {agent.agentName?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {agent.agentName}
+                            {agent.agentName || 'Unknown Agent'}
                           </h3>
-                          <p className="text-sm text-gray-500">{agent.email}</p>
+                          <p className="text-sm text-gray-500">{agent.email || 'No email'}</p>
                         </div>
                       </div>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(agent.status)}`}>
-                        {agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}
+                        {agent.status ? agent.status.charAt(0).toUpperCase() + agent.status.slice(1) : 'Unknown'}
                       </span>
                     </div>
 
@@ -254,7 +267,7 @@ export const AgentManagement = () => {
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center text-gray-600">
                         <BuildingOfficeIcon className="h-4 w-4 mr-2" />
-                        <span>Branch: {agent.branchId}</span>
+                        <span>Branch: {getBranchName(agent.branchId)}</span>
                       </div>
                       <div className="flex items-center text-gray-600">
                         <BanknotesIcon className="h-4 w-4 mr-2" />

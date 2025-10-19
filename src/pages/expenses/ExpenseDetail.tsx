@@ -136,7 +136,8 @@ export const ExpenseDetail: React.FC = () => {
   const branchName = branch?.name || selectedExpense?.branchId || 'N/A';
 
   const canVerify =
-    customClaims?.role === 'ho_accountant' &&
+    (customClaims?.role === 'admin' || 
+     (customClaims?.role === 'ho_accountant' && selectedExpense?.enteredBy !== user?.uid)) &&
     selectedExpense?.status === 'pending';
 
   const canApprove =

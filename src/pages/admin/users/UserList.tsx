@@ -3,6 +3,7 @@ import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/
 import { firestore } from '../../../config/firebase';
 import { User, UserRole } from '../../../types';
 import { Link } from 'react-router-dom';
+import { useBranchStore } from '../../../stores/branchStore';
 import { 
   SparklesIcon, 
   UserGroupIcon,
@@ -18,6 +19,7 @@ export const UserList = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { branches, fetchBranches } = useBranchStore();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -36,8 +38,20 @@ export const UserList = () => {
       }
     };
 
+    // Fetch branches for branch name display
+    if (branches.length === 0) {
+      fetchBranches();
+    }
+
     fetchUsers();
   }, []);
+
+  // Helper function to get branch name
+  const getBranchName = (branchId: string | null | undefined) => {
+    if (!branchId) return null;
+    const branch = branches.find(b => b.id === branchId);
+    return branch?.name || branchId;
+  };
 
   const handleStatusChange = async (userId: string, newStatus: 'active' | 'inactive') => {
     try {
@@ -85,7 +99,8 @@ export const UserList = () => {
     }
   };
 
-  const formatRoleName = (role: UserRole) => {
+  const formatRoleName = (role: UserRole | undefined) => {
+    if (!role) return 'Unknown';
     return role
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -238,17 +253,17 @@ export const UserList = () => {
                           <div className="h-10 w-10 flex-shrink-0">
                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                               <span className="text-white font-semibold text-sm">
-                                {user.displayName.charAt(0).toUpperCase()}
+                                {user.displayName?.charAt(0).toUpperCase() || '?'}
                               </span>
                             </div>
                           </div>
                           <div className="ml-4">
-                            <div className="font-semibold text-gray-900">{user.displayName}</div>
+                            <div className="font-semibold text-gray-900">{user.displayName || 'Unknown User'}</div>
                           </div>
                         </div>
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
-                        {user.email}
+                        {user.email || 'No email'}
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
@@ -259,7 +274,7 @@ export const UserList = () => {
                         {user.branchId ? (
                           <span className="flex items-center">
                             <BuildingOfficeIcon className="h-4 w-4 mr-1 text-gray-400" />
-                            {user.branchId}
+                            {getBranchName(user.branchId)}
                           </span>
                         ) : (
                           <span className="flex items-center">
@@ -269,7 +284,7 @@ export const UserList = () => {
                       </td>
                       <td className="whitespace-nowrap px-3 py-4 text-sm">
                         <select
-                          value={user.status}
+                          value={user.status || 'inactive'}
                           onChange={(e) => handleStatusChange(user.uid, e.target.value as 'active' | 'inactive')}
                           className={`rounded-lg border-2 px-3 py-1.5 text-xs font-medium focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
                             user.status === 'active'
