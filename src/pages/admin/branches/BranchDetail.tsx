@@ -22,6 +22,12 @@ export const BranchDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [managerCount, setManagerCount] = useState(0);
+  const [stageMetrics, setStageMetrics] = useState({
+    registrations: 0,
+    interviews: 0,
+    medical: 0,
+    transfer: 0
+  });
 
   useEffect(() => {
     const fetchBranchData = async () => {
@@ -64,6 +70,43 @@ export const BranchDetail = () => {
         })));
         
         setManagerCount(count);
+
+        // Fetch applicants and calculate stage metrics
+        const applicantsRef = collection(firestore, 'applicants');
+        const applicantsQuery = query(
+          applicantsRef,
+          where('branchId', '==', id)
+        );
+        
+        const applicantsSnapshot = await getDocs(applicantsQuery);
+        const stageCounts = {
+          registrations: 0,
+          interviews: 0,
+          medical: 0,
+          transfer: 0
+        };
+
+        applicantsSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          const stage = data.currentStage || data.currentStageEnum || 'registration';
+          
+          switch (stage) {
+            case 'registration':
+              stageCounts.registrations++;
+              break;
+            case 'interview':
+              stageCounts.interviews++;
+              break;
+            case 'medical':
+              stageCounts.medical++;
+              break;
+            case 'transfer':
+              stageCounts.transfer++;
+              break;
+          }
+        });
+
+        setStageMetrics(stageCounts);
       } catch (err) {
         console.error('BranchDetail: Error fetching data:', err);
         setError('Failed to fetch branch details');
@@ -312,38 +355,31 @@ export const BranchDetail = () => {
             </div>
             <div className="px-6 py-6">
               <dl className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-gray-500">
+                  <dt className="text-xs font-medium text-gray-600 uppercase">Registrations</dt>
+                  <dd className="mt-1 text-2xl font-bold text-gray-900">
+                    {stageMetrics.registrations}
+                  </dd>
+                </div>
+
                 <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
-                  <dt className="text-xs font-medium text-blue-600 uppercase">Applicants</dt>
+                  <dt className="text-xs font-medium text-blue-600 uppercase">Interviews</dt>
                   <dd className="mt-1 text-2xl font-bold text-blue-900">
-                    {branch.metrics?.applicantCount || 0}
-                  </dd>
-                </div>
-
-                <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-500">
-                  <dt className="text-xs font-medium text-green-600 uppercase">Active Transfers</dt>
-                  <dd className="mt-1 text-2xl font-bold text-green-900">
-                    {branch.metrics?.activeTransfers || 0}
-                  </dd>
-                </div>
-
-                <div className="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-500">
-                  <dt className="text-xs font-medium text-yellow-600 uppercase">Pending Docs</dt>
-                  <dd className="mt-1 text-2xl font-bold text-yellow-900">
-                    {branch.metrics?.pendingDocuments || 0}
+                    {stageMetrics.interviews}
                   </dd>
                 </div>
 
                 <div className="bg-purple-50 rounded-lg p-4 border-l-4 border-purple-500">
-                  <dt className="text-xs font-medium text-purple-600 uppercase">Placements</dt>
+                  <dt className="text-xs font-medium text-purple-600 uppercase">Medical</dt>
                   <dd className="mt-1 text-2xl font-bold text-purple-900">
-                    {branch.metrics?.completedPlacements || 0}
+                    {stageMetrics.medical}
                   </dd>
                 </div>
 
-                <div className="bg-indigo-50 rounded-lg p-4 border-l-4 border-indigo-500">
-                  <dt className="text-xs font-medium text-indigo-600 uppercase">Revenue</dt>
-                  <dd className="mt-1 text-2xl font-bold text-indigo-900">
-                    ₱{(branch.metrics?.revenue || 0).toLocaleString()}
+                <div className="bg-yellow-50 rounded-lg p-4 border-l-4 border-yellow-500">
+                  <dt className="text-xs font-medium text-yellow-600 uppercase">Transfer</dt>
+                  <dd className="mt-1 text-2xl font-bold text-yellow-900">
+                    {stageMetrics.transfer}
                   </dd>
                 </div>
               </dl>

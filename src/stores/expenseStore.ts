@@ -313,7 +313,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
           await addDoc(notificationsRef, {
             type: 'expense_created',
             title: 'New Expense Submitted',
-            body: `New ${data.category || 'expense'} expense of ₱${data.amount?.toLocaleString() || '0'} submitted${data.applicantId && data.applicantId.trim() !== '' ? ` for ${applicantName}` : ''}`,
+            body: `New ${data.category || 'expense'} expense of ₱${data.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} submitted${data.applicantId && data.applicantId.trim() !== '' ? ` for ${applicantName}` : ''}`,
             priority: 'medium',
             status: 'unread',
             recipientId: recipientId,
@@ -542,7 +542,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
             await addDoc(notificationsRef, {
               type: 'expense_verified',
               title: 'Expense Verified - Pending Approval',
-              body: `${expenseData.category} expense of ₱${expenseData.amount?.toLocaleString() || '0'} for ${applicantName} has been verified and needs approval`,
+              body: `${expenseData.category} expense of ₱${expenseData.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} for ${applicantName} has been verified and needs approval`,
               priority: 'medium',
               status: 'unread',
               recipientId: recipientId,
@@ -637,7 +637,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
             await addDoc(notificationsRef, {
               type: 'expense_rejected',
               title: 'Expense Rejected',
-              body: `${expenseData.category} expense of ₱${expenseData.amount?.toLocaleString() || '0'} for ${applicantName} has been rejected. Reason: ${reason}`,
+              body: `${expenseData.category} expense of ₱${expenseData.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} for ${applicantName} has been rejected. Reason: ${reason}`,
               priority: 'high',
               status: 'unread',
               recipientId: recipientId,
@@ -746,7 +746,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
             await addDoc(notificationsRef, {
               type: 'expense_approved',
               title: 'Expense Approved',
-              body: `${expenseData.category} expense of ₱${expenseData.amount?.toLocaleString() || '0'} for ${applicantName} has been approved`,
+              body: `${expenseData.category} expense of ₱${expenseData.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} for ${applicantName} has been approved`,
               priority: 'high',
               status: 'unread',
               recipientId: recipientId,

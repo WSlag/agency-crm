@@ -629,7 +629,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
             await addDoc(notificationsRef, {
               type: 'commission_approved',
               title: 'Commission Approved',
-              body: `Commission of ₱${commissionData.amount?.toLocaleString() || '0'} has been approved for ${applicantName}`,
+              body: `Commission of ₱${commissionData.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} has been approved for ${applicantName}`,
               priority: 'high',
               status: 'unread',
               recipientId: recipientId,
@@ -750,7 +750,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
             await addDoc(notificationsRef, {
               type: 'commission_paid',
               title: 'Commission Payment Processed',
-              body: `Full payment of ₱${payment.amount?.toLocaleString() || '0'} has been processed for ${applicantName}`,
+              body: `Full payment of ₱${payment.amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'} has been processed for ${applicantName}`,
               priority: 'high',
               status: 'unread',
               recipientId: recipientId,

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { doc, getDoc } from 'firebase/firestore';
+import { firestore } from '../../config/firebase';
 import { useAuthStore } from '../../stores/authStore';
 import { useCommissionStore } from '../../stores/commissionStore';
 import { useApplicantStore } from '../../stores/applicantStore';
@@ -34,12 +36,58 @@ export const CommissionDetailPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [requestedByName, setRequestedByName] = useState<string>('');
+  const [approvedByName, setApprovedByName] = useState<string>('');
 
   useEffect(() => {
     if (id) {
       loadCommission();
     }
   }, [id]);
+
+  // Fetch requested by user name
+  useEffect(() => {
+    const fetchRequestedByName = async () => {
+      if (commission?.requestedBy && commission.requestedBy !== 'system_auto_trigger') {
+        try {
+          const userDoc = await getDoc(doc(firestore, 'users', commission.requestedBy));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setRequestedByName(userData.displayName || userData.email || commission.requestedBy);
+          } else {
+            setRequestedByName(commission.requestedBy);
+          }
+        } catch (error) {
+          console.error('Error fetching requested by user:', error);
+          setRequestedByName(commission.requestedBy);
+        }
+      }
+    };
+
+    fetchRequestedByName();
+  }, [commission?.requestedBy]);
+
+  // Fetch approved by user name
+  useEffect(() => {
+    const fetchApprovedByName = async () => {
+      if (commission?.approvedBy) {
+        try {
+          const userDoc = await getDoc(doc(firestore, 'users', commission.approvedBy));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setApprovedByName(userData.displayName || userData.email || commission.approvedBy);
+          } else {
+            setApprovedByName(commission.approvedBy);
+          }
+        } catch (error) {
+          console.error('Error fetching approved by user:', error);
+          setApprovedByName(commission.approvedBy);
+        }
+      }
+    };
+
+    fetchApprovedByName();
+  }, [commission?.approvedBy]);
 
   const loadCommission = async () => {
     if (!id) return;
@@ -194,7 +242,7 @@ export const CommissionDetailPage = () => {
 
   const formatCurrency = (amount: number, _currency: string = 'PHP') => {
     // Always format as Philippine Peso
-    return `₱${amount.toLocaleString()}`;
+    return `₱${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatDate = (date: Date | undefined) => {
@@ -402,7 +450,7 @@ export const CommissionDetailPage = () => {
                           </p>
                           <div className="mt-2 flex items-center gap-2">
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                              ₱{selectedAgent.commissionAmount?.toLocaleString()} per applicant
+                              ₱{selectedAgent.commissionAmount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} per applicant
                             </span>
                           </div>
                         </>
@@ -447,7 +495,7 @@ export const CommissionDetailPage = () => {
                     <dd className="mt-1 text-sm font-semibold text-gray-900">
                       {commission.requestedBy === 'system_auto_trigger' 
                         ? '🤖 System (Auto-Triggered)' 
-                        : commission.requestedBy}
+                        : (requestedByName || commission.requestedBy)}
                     </dd>
                   </div>
                 )}
@@ -456,7 +504,7 @@ export const CommissionDetailPage = () => {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <dt className="text-sm font-medium text-gray-500">Approved By</dt>
                     <dd className="mt-1 text-sm font-semibold text-gray-900">
-                      {commission.approvedBy}
+                      {approvedByName || commission.approvedBy}
                     </dd>
                   </div>
                 )}

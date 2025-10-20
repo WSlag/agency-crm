@@ -136,7 +136,7 @@ export const TransferExpenseTimeline: React.FC<TransferExpenseTimelineProps> = (
           <div className="text-right">
             <p className="text-sm text-gray-500">Total Expenses</p>
             <p className="text-2xl font-bold text-gray-900">
-              ₱{totalExpenses.toLocaleString()}
+              ₱{totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
         )}

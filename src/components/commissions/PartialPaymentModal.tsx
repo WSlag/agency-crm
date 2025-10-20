@@ -42,7 +42,7 @@ export const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
     }
 
     if (paymentAmount > remaining) {
-      setError(`Payment amount cannot exceed remaining balance of ₱${remaining.toLocaleString()}`);
+      setError(`Payment amount cannot exceed remaining balance of ₱${remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
       return;
     }
 
@@ -124,20 +124,20 @@ export const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-gray-700">Total Amount:</span>
                       <span className="text-lg font-bold text-gray-900">
-                        ₱{commission.amount.toLocaleString()}
+                        ₱{commission.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-medium text-gray-700">Already Paid:</span>
                       <span className="text-lg font-semibold text-green-600">
-                        ₱{amountPaid.toLocaleString()}
+                        ₱{amountPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                     <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-bold text-gray-900">Remaining Balance:</span>
                       <span className="text-2xl font-bold text-indigo-600">
-                        ₱{remaining.toLocaleString()}
+                        ₱{remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>
@@ -175,7 +175,7 @@ export const PartialPaymentModal: React.FC<PartialPaymentModalProps> = ({
                         onClick={handlePayFull}
                         className="w-full px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 rounded-lg transition-all shadow-sm"
                       >
-                        Pay Full (₱{remaining.toLocaleString()})
+                        Pay Full (₱{remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                       </button>
                     </div>
                   </div>

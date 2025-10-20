@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCommissionStore } from '../../stores/commissionStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -15,7 +15,8 @@ import {
   EyeIcon,
   PencilIcon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 
 export const CommissionsPage = () => {
@@ -36,6 +37,28 @@ export const CommissionsPage = () => {
 
   const [commissionsWithNames, setCommissionsWithNames] = useState<any[]>([]);
   const [loadingNames, setLoadingNames] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Enhanced search with names included
+  const filteredCommissions = useMemo(() => {
+    if (!commissionsWithNames || !searchQuery.trim()) return commissionsWithNames;
+    
+    const query = searchQuery.toLowerCase().trim();
+    
+    return commissionsWithNames.filter(commission => {
+      // Search across multiple fields including names
+      const matchesAmount = commission.amount?.toString().includes(query);
+      const matchesAgentName = commission.agentName?.toLowerCase().includes(query);
+      const matchesApplicantName = commission.applicantName?.toLowerCase().includes(query);
+      const matchesType = COMMISSION_CONFIG[commission.commissionType]?.name.toLowerCase().includes(query);
+      const matchesStatus = commission.status?.toLowerCase().includes(query);
+      const matchesNotes = commission.notes?.toLowerCase().includes(query);
+      const matchesPaymentReference = commission.paymentReference?.toLowerCase().includes(query);
+      
+      return matchesAmount || matchesAgentName || matchesApplicantName || 
+             matchesType || matchesStatus || matchesNotes || matchesPaymentReference;
+    });
+  }, [commissionsWithNames, searchQuery]);
 
   // Auto-filter by branch for Branch Managers on mount
   useEffect(() => {
@@ -139,7 +162,7 @@ export const CommissionsPage = () => {
 
   const formatCurrency = (amount: number, _currency: string = 'PHP') => {
     // Always format as Philippine Peso
-    return `₱${amount.toLocaleString()}`;
+    return `₱${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatDate = (date: Date) => {
@@ -186,35 +209,35 @@ export const CommissionsPage = () => {
     );
   };
 
-  // Calculate stats
+  // Calculate stats using filtered commissions
   const stats = [
     {
       name: 'Total Commissions',
-      value: commissions?.length || 0,
+      value: filteredCommissions?.length || 0,
       color: 'from-blue-500 to-blue-600',
       icon: BanknotesIcon,
     },
     {
       name: 'Pending',
-      value: commissions?.filter((c) => c.status === 'pending').length || 0,
+      value: filteredCommissions?.filter((c) => c.status === 'pending').length || 0,
       color: 'from-yellow-500 to-yellow-600',
       icon: ClockIcon,
     },
     {
       name: 'Approved',
-      value: commissions?.filter((c) => c.status === 'approved' || c.status === 'paid').length || 0,
+      value: filteredCommissions?.filter((c) => c.status === 'approved' || c.status === 'paid').length || 0,
       color: 'from-green-500 to-green-600',
       icon: CheckCircleIcon,
     },
     {
       name: 'Rejected',
-      value: commissions?.filter((c) => c.status === 'rejected').length || 0,
+      value: filteredCommissions?.filter((c) => c.status === 'rejected').length || 0,
       color: 'from-red-500 to-red-600',
       icon: XCircleIcon,
     },
   ];
 
-  const totalAmount = commissions?.reduce((sum, commission) => {
+  const totalAmount = filteredCommissions?.reduce((sum, commission) => {
     if (commission.status === 'approved' || commission.status === 'paid' || commission.status === 'partially_paid') {
       return sum + (commission.amount || 0);
     }
@@ -302,7 +325,7 @@ export const CommissionsPage = () => {
                 <div>
                   <p className="text-sm font-medium text-indigo-100">Total Approved Amount</p>
                   <p className="mt-1 text-3xl font-bold text-white">
-                    ₱{totalAmount.toLocaleString()}
+                    ₱{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </p>
                 </div>
                 <BanknotesIcon className="h-12 w-12 text-white/40" />
@@ -314,6 +337,49 @@ export const CommissionsPage = () => {
 
       <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
         <div className="space-y-6">
+          {/* Search Bar */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-4">
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="block w-full rounded-xl border-2 border-gray-300 pl-11 pr-4 py-3.5 text-gray-900 placeholder:text-gray-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 transition-all sm:text-sm sm:leading-6"
+                placeholder="🔍 Search by agent name, applicant name, amount, payment reference, notes, or status..."
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Clear search"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  Found <span className="font-semibold text-indigo-600">{filteredCommissions?.length || 0}</span> commission(s) matching "<span className="font-medium text-gray-900">{searchQuery}</span>"
+                </p>
+                {loadingNames && (
+                  <span className="text-xs text-gray-500 flex items-center">
+                    <svg className="animate-spin h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading names...
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Horizontal Filters */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -414,7 +480,7 @@ export const CommissionsPage = () => {
               <>
                 {/* Mobile Card View - Show on screens < 768px */}
                 <div className="md:hidden p-4 space-y-3">
-                  {(loadingNames ? commissions : commissionsWithNames).map((commission) => (
+                  {(loadingNames ? commissions : filteredCommissions).map((commission) => (
                     <div
                       key={commission.id}
                       className="bg-white rounded-xl border-2 border-gray-200 p-4 hover:border-indigo-300 hover:shadow-lg transition-all duration-200"
@@ -488,7 +554,7 @@ export const CommissionsPage = () => {
                       </div>
                     </div>
                   ))}
-                  {!commissions?.length && !loading && (
+                  {!filteredCommissions?.length && !loading && (
                     <div className="text-center py-16 text-gray-500">
                       <BanknotesIcon className="mx-auto h-12 w-12 text-gray-400" />
                       <p className="mt-4 text-lg font-medium text-gray-900">No commissions found</p>
@@ -554,7 +620,7 @@ export const CommissionsPage = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {(loadingNames ? commissions : commissionsWithNames).map((commission) => (
+                      {(loadingNames ? commissions : filteredCommissions).map((commission) => (
                         <tr
                           key={commission.id}
                           className="hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200 group"
@@ -623,7 +689,7 @@ export const CommissionsPage = () => {
                           </td>
                         </tr>
                       ))}
-                      {!commissions?.length && !loading && (
+                      {!filteredCommissions?.length && !loading && (
                         <tr>
                           <td colSpan={7} className="px-3 py-16 text-center text-gray-500">
                             <BanknotesIcon className="mx-auto h-12 w-12 text-gray-400" />

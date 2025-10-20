@@ -231,7 +231,7 @@ export const JobDetail = () => {
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">Salary Range</h3>
                       <p className="mt-1 text-sm text-gray-900">
-                        {selectedJob.salaryRange.currency} {selectedJob.salaryRange.min.toLocaleString()} - {selectedJob.salaryRange.max.toLocaleString()}
+                        {selectedJob.salaryRange.currency} {selectedJob.salaryRange.min.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} - {selectedJob.salaryRange.max.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </p>
                     </div>
                     <div>

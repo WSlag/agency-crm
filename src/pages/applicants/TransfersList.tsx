@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, getDoc } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
 import { 
   ArrowsRightLeftIcon,
@@ -11,17 +11,25 @@ import {
   XCircleIcon,
   SparklesIcon,
   BuildingOfficeIcon,
-  UserIcon,
-  PlusIcon
+  UserIcon
 } from '@heroicons/react/24/outline';
 import type { ApplicantTransfer } from '../../types/applicant';
 
 type TransferStatus = 'pending' | 'approved' | 'rejected' | 'completed';
 type FilterTab = 'all' | 'pending' | 'approved' | 'rejected' | 'completed';
 
+interface EnrichedTransfer extends ApplicantTransfer {
+  applicantName: string;
+  fromBranchName: string;
+  toBranchName: string;
+  requestedByName: string;
+  approvedByName: string | null;
+  assignedOfficerName: string | null;
+}
+
 export const TransfersList = () => {
-  const { customClaims } = useAuth();
-  const [transfers, setTransfers] = useState<ApplicantTransfer[]>([]);
+  const { customClaims, user } = useAuth();
+  const [transfers, setTransfers] = useState<EnrichedTransfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -30,28 +38,109 @@ export const TransfersList = () => {
     fetchTransfers();
   }, [activeTab, customClaims]);
 
+  const enrichTransfersWithDetails = async (transfers: ApplicantTransfer[]): Promise<EnrichedTransfer[]> => {
+    // Collect unique IDs
+    const applicantIds = [...new Set(transfers.map(t => t.applicantId))];
+    const branchIds = [...new Set([...transfers.map(t => t.fromBranchId), ...transfers.map(t => t.toBranchId)])];
+    const userIds = [...new Set([
+      ...transfers.map(t => t.requestedBy),
+      ...transfers.filter(t => t.approvedBy).map(t => t.approvedBy!),
+      ...transfers.filter(t => t.assignedOfficerId).map(t => t.assignedOfficerId!)
+    ])];
+
+    // Fetch all data in parallel
+    const [applicantsMap, branchesMap, usersMap] = await Promise.all([
+      // Fetch applicants
+      (async () => {
+        const map = new Map<string, string>();
+        await Promise.all(applicantIds.map(async (id) => {
+          try {
+            const docSnap = await getDoc(doc(firestore, 'applicants', id));
+            if (docSnap.exists()) {
+              map.set(id, docSnap.data().fullName || 'Unknown Applicant');
+            } else {
+              map.set(id, 'Unknown Applicant');
+            }
+          } catch {
+            map.set(id, 'Unknown Applicant');
+          }
+        }));
+        return map;
+      })(),
+      // Fetch branches
+      (async () => {
+        const map = new Map<string, string>();
+        await Promise.all(branchIds.map(async (id) => {
+          try {
+            const docSnap = await getDoc(doc(firestore, 'branches', id));
+            if (docSnap.exists()) {
+              map.set(id, docSnap.data().name || 'Unknown Branch');
+            } else {
+              map.set(id, 'Unknown Branch');
+            }
+          } catch {
+            map.set(id, 'Unknown Branch');
+          }
+        }));
+        return map;
+      })(),
+      // Fetch users
+      (async () => {
+        const map = new Map<string, string>();
+        await Promise.all(userIds.map(async (id) => {
+          try {
+            const docSnap = await getDoc(doc(firestore, 'users', id));
+            if (docSnap.exists()) {
+              const userData = docSnap.data();
+              map.set(id, userData.displayName || userData.name || userData.email || 'Unknown User');
+            } else {
+              map.set(id, 'Unknown User');
+            }
+          } catch {
+            map.set(id, 'Unknown User');
+          }
+        }));
+        return map;
+      })()
+    ]);
+
+    // Enrich transfers with names
+    return transfers.map(transfer => ({
+      ...transfer,
+      applicantName: applicantsMap.get(transfer.applicantId) || 'Unknown Applicant',
+      fromBranchName: branchesMap.get(transfer.fromBranchId) || 'Unknown Branch',
+      toBranchName: branchesMap.get(transfer.toBranchId) || 'Unknown Branch',
+      requestedByName: usersMap.get(transfer.requestedBy) || 'Unknown User',
+      approvedByName: transfer.approvedBy ? (usersMap.get(transfer.approvedBy) || 'Unknown User') : null,
+      assignedOfficerName: transfer.assignedOfficerId ? (usersMap.get(transfer.assignedOfficerId) || 'Unknown User') : null
+    }));
+  };
+
   const fetchTransfers = async () => {
     try {
       setLoading(true);
-      let q = query(collection(firestore, 'transfers'), orderBy('requestedDate', 'desc'));
-
-      // Apply status filter
-      if (activeTab !== 'all') {
-        q = query(
-          collection(firestore, 'transfers'),
-          where('transferStatus', '==', activeTab),
-          orderBy('requestedDate', 'desc')
-        );
-      }
+      
+      // Build query constraints array
+      const constraints: any[] = [];
 
       // Role-based filtering
       if (customClaims?.role === 'branch_manager' && customClaims?.branchId) {
-        q = query(
-          collection(firestore, 'transfers'),
-          where('fromBranchId', '==', customClaims.branchId),
-          orderBy('requestedDate', 'desc')
-        );
+        constraints.push(where('fromBranchId', '==', customClaims.branchId));
+      } else if (customClaims?.role === 'ho_recruitment_officer' && user?.uid) {
+        constraints.push(where('assignedOfficerId', '==', user.uid));
       }
+      // Admin and President see all (no filter)
+
+      // Apply status filter
+      if (activeTab !== 'all') {
+        constraints.push(where('transferStatus', '==', activeTab));
+      }
+
+      // Add ordering
+      constraints.push(orderBy('requestedDate', 'desc'));
+
+      // Build the query with all constraints
+      const q = query(collection(firestore, 'transfers'), ...constraints);
 
       const snapshot = await getDocs(q);
       const transfersData = snapshot.docs.map(doc => {
@@ -69,11 +158,14 @@ export const TransfersList = () => {
           requestedDate: data.requestedDate?.toDate ? data.requestedDate.toDate() : new Date(data.requestedDate),
           approvedDate: data.approvedDate?.toDate ? data.approvedDate.toDate() : data.approvedDate ? new Date(data.approvedDate) : null,
           completedDate: data.completedDate?.toDate ? data.completedDate.toDate() : data.completedDate ? new Date(data.completedDate) : null,
-          notes: data.notes || ''
+          notes: data.notes || '',
+          rejectionReason: data.rejectionReason || undefined
         };
       }) as ApplicantTransfer[];
 
-      setTransfers(transfersData);
+      // Enrich transfers with names
+      const enrichedTransfers = await enrichTransfersWithDetails(transfersData);
+      setTransfers(enrichedTransfers);
     } catch (error) {
       console.error('Error fetching transfers:', error);
     } finally {
@@ -83,10 +175,13 @@ export const TransfersList = () => {
 
   const filteredTransfers = transfers.filter(transfer =>
     searchTerm === '' ||
-    transfer.applicantId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transfer.applicantName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     transfer.transferReason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transfer.fromBranchId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transfer.toBranchId.toLowerCase().includes(searchTerm.toLowerCase())
+    transfer.fromBranchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transfer.toBranchName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transfer.requestedByName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (transfer.approvedByName && transfer.approvedByName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (transfer.assignedOfficerName && transfer.assignedOfficerName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getStatusIcon = (status: TransferStatus) => {
@@ -116,6 +211,7 @@ export const TransfersList = () => {
     { id: 'all' as FilterTab, name: 'All Transfers', count: transfers.length },
     { id: 'pending' as FilterTab, name: 'Pending', count: transfers.filter(t => t.transferStatus === 'pending').length },
     { id: 'approved' as FilterTab, name: 'Approved', count: transfers.filter(t => t.transferStatus === 'approved').length },
+    { id: 'rejected' as FilterTab, name: 'Rejected', count: transfers.filter(t => t.transferStatus === 'rejected').length },
     { id: 'completed' as FilterTab, name: 'Completed', count: transfers.filter(t => t.transferStatus === 'completed').length },
   ];
 
@@ -127,22 +223,12 @@ export const TransfersList = () => {
           <div className="sm:flex sm:items-center sm:justify-between">
             <div className="sm:flex-auto">
               <div className="flex items-center space-x-3">
-                <SparklesIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">Transfer Management</h1>
+                <ArrowsRightLeftIcon className="h-8 w-8 text-white" />
+                <h1 className="text-3xl font-bold text-white">Transfer History</h1>
               </div>
               <p className="mt-2 text-indigo-100">
-                View and manage applicant transfers across branches
+                View transfer history across your accessible transfers
               </p>
-            </div>
-            {/* Quick Actions */}
-            <div className="mt-4 sm:mt-0 flex space-x-3">
-              <Link
-                to="/applicants"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all duration-200"
-              >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                Request Transfer
-              </Link>
             </div>
           </div>
         </div>
@@ -209,85 +295,102 @@ export const TransfersList = () => {
                   <ArrowsRightLeftIcon className="mx-auto h-12 w-12 text-gray-400" />
                   <h3 className="mt-2 text-sm font-medium text-gray-900">No transfers found</h3>
                   <p className="mt-1 text-sm text-gray-500">
-                    {activeTab === 'all' 
-                      ? 'No transfer requests have been made yet.'
+                    {searchTerm 
+                      ? `No transfers match your search "${searchTerm}"`
+                      : activeTab === 'all'
+                      ? 'No transfer history available.'
                       : `No ${activeTab} transfers found.`
                     }
                   </p>
-                  {activeTab === 'all' && (
-                    <div className="mt-6">
-                      <p className="text-sm text-gray-600 mb-4">
-                        To request a transfer, select an applicant from All Applicants
-                      </p>
-                      <Link
-                        to="/applicants"
-                        className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                      >
-                        <UserIcon className="h-5 w-5 mr-2" />
-                        View All Applicants
-                      </Link>
-                    </div>
-                  )}
                 </div>
               ) : (
                 filteredTransfers.map((transfer) => (
-                  <Link
+                  <div
                     key={transfer.id}
-                    to={`/applicants/${transfer.applicantId}/transfer`}
-                    className="block hover:bg-gray-50 transition-colors duration-150"
+                    className="px-6 py-4 hover:bg-gray-50 transition-colors duration-150"
                   >
-                    <div className="px-6 py-4">
+                    <div className="space-y-3">
+                      {/* Top Row: Applicant Name (Linked) + Status Badge */}
                       <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-3">
-                            {getStatusIcon(transfer.transferStatus)}
-                            <div>
-                              <div className="flex items-center space-x-2">
-                                <UserIcon className="h-4 w-4 text-gray-400" />
-                                <p className="text-sm font-medium text-gray-900 truncate">
-                                  Applicant ID: {transfer.applicantId}
-                                </p>
-                              </div>
-                              <p className="text-sm text-gray-500 truncate mt-1">
-                                {transfer.transferReason}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
-                            <div className="flex items-center space-x-1">
-                              <BuildingOfficeIcon className="h-4 w-4" />
-                              <span>From: {transfer.fromBranchId}</span>
-                            </div>
-                            <span>→</span>
-                            <div className="flex items-center space-x-1">
-                              <BuildingOfficeIcon className="h-4 w-4" />
-                              <span>To: {transfer.toBranchId}</span>
-                            </div>
-                            <span>•</span>
-                            <span>
-                              Requested: {transfer.requestedDate.toLocaleDateString()}
-                            </span>
-                            {transfer.approvedDate && (
-                              <>
-                                <span>•</span>
-                                <span>
-                                  Approved: {transfer.approvedDate.toLocaleDateString()}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                        <div className="ml-4 flex-shrink-0">
-                          <span className={`
-                            inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border
-                            ${getStatusBadge(transfer.transferStatus)}
-                          `}>
-                            {transfer.transferStatus.charAt(0).toUpperCase() + transfer.transferStatus.slice(1)}
+                        <Link
+                          to={`/applicants/${transfer.applicantId}`}
+                          className="flex items-center space-x-2 flex-1 min-w-0 group"
+                        >
+                          <UserIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                          <span className="text-base font-semibold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">
+                            {transfer.applicantName}
                           </span>
-                        </div>
+                        </Link>
+                        <span className={`
+                          ml-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0
+                          ${getStatusBadge(transfer.transferStatus)}
+                        `}>
+                          {transfer.transferStatus.charAt(0).toUpperCase() + transfer.transferStatus.slice(1)}
+                        </span>
                       </div>
+
+                      {/* Transfer Reason */}
+                      <div className="flex items-start space-x-2">
+                        <span className="text-sm text-gray-600 italic">
+                          "{transfer.transferReason}"
+                        </span>
+                      </div>
+
+                      {/* Branch Transfer Info */}
+                      <div className="flex items-center space-x-2 text-sm text-gray-700">
+                        <BuildingOfficeIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <span className="font-medium">{transfer.fromBranchName}</span>
+                        <span className="text-gray-400">→</span>
+                        <span className="font-medium">{transfer.toBranchName}</span>
+                      </div>
+
+                      {/* Requested By & Date */}
+                      <div className="flex items-center space-x-2 text-xs text-gray-500">
+                        <span>Requested by <span className="font-medium text-gray-700">{transfer.requestedByName}</span> on {transfer.requestedDate.toLocaleDateString()}</span>
+                      </div>
+
+                      {/* Approved/Rejected Info */}
+                      {transfer.transferStatus === 'approved' && transfer.approvedByName && (
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                          <div className="flex items-center space-x-1">
+                            <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                            <span>Approved by <span className="font-medium text-gray-700">{transfer.approvedByName}</span></span>
+                            {transfer.approvedDate && <span>on {transfer.approvedDate.toLocaleDateString()}</span>}
+                          </div>
+                          {transfer.assignedOfficerName && (
+                            <>
+                              <span>•</span>
+                              <span>Assigned to <span className="font-medium text-gray-700">{transfer.assignedOfficerName}</span></span>
+                            </>
+                          )}
+                        </div>
+                      )}
+
+                      {transfer.transferStatus === 'rejected' && (
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-1 text-xs text-gray-500">
+                            <XCircleIcon className="h-4 w-4 text-red-500" />
+                            <span>Rejected by <span className="font-medium text-gray-700">{transfer.approvedByName || 'Unknown'}</span></span>
+                            {transfer.approvedDate && <span>on {transfer.approvedDate.toLocaleDateString()}</span>}
+                          </div>
+                          {transfer.rejectionReason && (
+                            <div className="ml-5">
+                              <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                                Reason: {transfer.rejectionReason}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {transfer.transferStatus === 'completed' && transfer.completedDate && (
+                        <div className="flex items-center space-x-1 text-xs text-gray-500">
+                          <CheckCircleIcon className="h-4 w-4 text-blue-500" />
+                          <span>Completed on {transfer.completedDate.toLocaleDateString()}</span>
+                        </div>
+                      )}
                     </div>
-                  </Link>
+                  </div>
                 ))
               )}
             </div>

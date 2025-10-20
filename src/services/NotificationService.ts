@@ -16,7 +16,8 @@ export interface NotificationConfig {
 
 export interface Notification {
   id?: string;
-  userId: string;
+  recipientId: string;
+  userId?: string; // Deprecated, use recipientId
   title: string;
   message: string;
   type: NotificationType;
@@ -190,7 +191,7 @@ class NotificationService {
   async getUnreadNotifications(userId: string): Promise<Notification[]> {
     const q = query(
       collection(firestore, 'notifications'),
-      where('userId', '==', userId),
+      where('recipientId', '==', userId),
       where('read', '==', false)
     );
 
@@ -211,7 +212,7 @@ class NotificationService {
   async markAllAsRead(userId: string) {
     const q = query(
       collection(firestore, 'notifications'),
-      where('userId', '==', userId),
+      where('recipientId', '==', userId),
       where('read', '==', false)
     );
 

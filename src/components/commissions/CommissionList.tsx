@@ -63,7 +63,9 @@ const CommissionList: React.FC<CommissionListProps> = ({
   const formatAmount = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-PH', {
       style: 'currency',
-      currency: currency
+      currency: currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 

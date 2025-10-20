@@ -103,7 +103,7 @@ export const CommissionApproval: React.FC<CommissionApprovalProps> = ({
             <div>
               <p className="text-xs text-gray-500">Amount</p>
               <p className="text-lg font-bold text-indigo-600">
-                ₱{commission.amount.toLocaleString()}
+                ₱{commission.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
             <div>

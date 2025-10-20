@@ -68,7 +68,7 @@ class StageService {
       return (
         stage === ApplicantStage.TRANSFER ||
         stage === ApplicantStage.PROCESSING ||
-        stage === ApplicantStage.DEPLOYMENT ||
+        stage === ApplicantStage.SELECTED ||
         stage === ApplicantStage.DEPLOYED
       );
     }
@@ -189,6 +189,26 @@ class StageService {
   }
   
   /**
+   * Check if employer details are complete (required for SELECTED stage)
+   */
+  async areEmployerDetailsComplete(applicantId: string): Promise<boolean> {
+    const applicantRef = doc(firestore, 'applicants', applicantId);
+    const applicantSnap = await getDoc(applicantRef);
+    
+    if (!applicantSnap.exists()) return false;
+    
+    const applicant = applicantSnap.data();
+    const employer = applicant.employerDetails;
+    
+    return !!(
+      employer?.fraName &&
+      employer?.employerName &&
+      employer?.employerAddress &&
+      employer?.employerContactNumber
+    );
+  }
+  
+  /**
    * Request stage advancement (creates pending approval)
    */
   async requestStageAdvancement(
@@ -214,6 +234,19 @@ class StageService {
       );
     }
     
+    // Check employer details for SELECTED stage
+    if (transition.fromStage === ApplicantStage.SELECTED) {
+      const employerDetailsComplete = await this.areEmployerDetailsComplete(
+        transition.applicantId
+      );
+      
+      if (!employerDetailsComplete) {
+        throw new Error(
+          'Employer details are incomplete. Please fill in all employer information (FRA Name, Employer Name, Address, and Contact Number) before advancing.'
+        );
+      }
+    }
+    
     // Get applicant
     const applicantRef = doc(firestore, 'applicants', transition.applicantId);
     const applicantSnap = await getDoc(applicantRef);
@@ -235,6 +268,7 @@ class StageService {
     const stageHistoryRef = collection(firestore, 'stage_history');
     const historyDoc = await addDoc(stageHistoryRef, {
       applicantId: transition.applicantId,
+      branchId: applicant.branchId, // Add branchId for filtering
       fromStage: transition.fromStage,
       toStage: transition.toStage,
       changedBy: user.uid,

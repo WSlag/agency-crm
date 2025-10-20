@@ -32,7 +32,7 @@ const STAGE_ORDER: ApplicantStage[] = [
   ApplicantStage.MEDICAL,
   ApplicantStage.TRANSFER,
   ApplicantStage.PROCESSING,
-  ApplicantStage.DEPLOYMENT,
+  ApplicantStage.SELECTED,
   ApplicantStage.DEPLOYED,
 ];
 

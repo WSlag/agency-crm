@@ -5,7 +5,7 @@ export enum ApplicantStage {
   MEDICAL = 'medical',
   TRANSFER = 'transfer',
   PROCESSING = 'processing',
-  DEPLOYMENT = 'deployment',
+  SELECTED = 'selected',
   DEPLOYED = 'deployed'
 }
 
@@ -21,7 +21,7 @@ export enum ApplicantStatus {
 }
 
 // Legacy type alias for backward compatibility
-export type ApplicantStageLegacy = 'interview' | 'medical' | 'processing' | 'deployment' | 'deployed';
+export type ApplicantStageLegacy = 'interview' | 'medical' | 'processing' | 'selected' | 'deployed';
 export type ApplicationType = 'with_agent' | 'direct_hire';
 
 // Document Type Enum
@@ -73,6 +73,7 @@ export interface ApplicantTransfer {
   approvedDate: Date | null;
   completedDate: Date | null;
   notes: string;
+  rejectionReason?: string;
 }
 
 export interface Applicant {
@@ -187,6 +188,16 @@ export interface Applicant {
     contactNumber: string;
     address: string;
   };
+  
+  // Employer Details (Selected Stage) - Visible only to assigned HO Officer, Admin, President
+  employerDetails?: {
+    fraName: string | null;           // Foreign Recruitment Agency
+    employerName: string | null;
+    employerAddress: string | null;
+    employerContactNumber: string | null;
+    addedBy: string | null;           // User ID who added these details
+    addedAt: Date | null;
+  };
 }
 
 export interface ApplicantFilter {
@@ -269,6 +280,7 @@ export interface StageApproval {
 export interface StageHistory {
   id: string;
   applicantId: string;
+  branchId: string;
   fromStage: ApplicantStage | null;
   toStage: ApplicantStage;
   changedBy: string;

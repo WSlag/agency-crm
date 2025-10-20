@@ -5,10 +5,18 @@ import { useAuthStore } from '../../stores/authStore';
 import { SparklesIcon, BanknotesIcon, EyeIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/20/solid';
 
-export const ExpenseList = () => {
+interface ExpenseListProps {
+  expenses?: any[];
+  loadingNames?: boolean;
+}
+
+export const ExpenseList: React.FC<ExpenseListProps> = ({ 
+  expenses: propExpenses, 
+  loadingNames 
+}) => {
   const { user } = useAuthStore();
   const {
-    expenses,
+    expenses: storeExpenses,
     loading,
     error,
     filter,
@@ -18,6 +26,9 @@ export const ExpenseList = () => {
     setSort,
     setPagination,
   } = useExpenseStore();
+  
+  // Use prop expenses if provided (for search with names), otherwise use store expenses
+  const expenses = propExpenses || storeExpenses;
 
   const handleFilterChange = (key: keyof typeof filter, value: any) => {
     const newFilters = { ...filter };
@@ -39,6 +50,8 @@ export const ExpenseList = () => {
     return new Intl.NumberFormat('en-PH', {
       style: 'currency',
       currency: currency || 'PHP',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 

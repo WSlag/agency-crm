@@ -54,10 +54,26 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       const q = query(agentsRef, orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
       
+      // Fetch all commissions to calculate total commissions per agent
+      const commissionsRef = collection(firestore, 'commissions');
+      const commissionsSnapshot = await getDocs(query(commissionsRef, where('status', 'in', ['paid', 'partially_paid'])));
+      
+      // Calculate total commissions per agent
+      const agentCommissions: Record<string, number> = {};
+      commissionsSnapshot.docs.forEach(doc => {
+        const commissionData = doc.data();
+        const agentId = commissionData.agentId;
+        const amountPaid = commissionData.amountPaid || 0;
+        if (agentId) {
+          agentCommissions[agentId] = (agentCommissions[agentId] || 0) + amountPaid;
+        }
+      });
+      
       const agents = snapshot.docs.map(doc => {
         const data = doc.data();
+        const agentId = doc.id;
         return {
-          id: doc.id,
+          id: agentId,
           agentName: data.agentName || data.name || '',
           email: data.email || '',
           contactNumber: data.contactNumber || data.phone || '',
@@ -70,7 +86,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           status: data.status || 'active',
           totalApplicants: data.totalApplicants || data.applicantsCount || 0,
           deployedApplicants: data.deployedApplicants || 0,
-          totalCommissions: data.totalCommissions || data.totalCommission || 0,
+          totalCommissions: agentCommissions[agentId] || 0, // Calculate from commissions collection
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
         } as Agent;
@@ -96,10 +112,26 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       const q = query(agentsRef, where('status', '==', 'active'), orderBy('agentName'));
       const snapshot = await getDocs(q);
       
+      // Fetch all commissions to calculate total commissions per agent
+      const commissionsRef = collection(firestore, 'commissions');
+      const commissionsSnapshot = await getDocs(query(commissionsRef, where('status', 'in', ['paid', 'partially_paid'])));
+      
+      // Calculate total commissions per agent
+      const agentCommissions: Record<string, number> = {};
+      commissionsSnapshot.docs.forEach(doc => {
+        const commissionData = doc.data();
+        const agentId = commissionData.agentId;
+        const amountPaid = commissionData.amountPaid || 0;
+        if (agentId) {
+          agentCommissions[agentId] = (agentCommissions[agentId] || 0) + amountPaid;
+        }
+      });
+      
       const agents = snapshot.docs.map(doc => {
         const data = doc.data();
+        const agentId = doc.id;
         return {
-          id: doc.id,
+          id: agentId,
           agentName: data.agentName || data.name || '',
           email: data.email || '',
           contactNumber: data.contactNumber || data.phone || '',
@@ -112,7 +144,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           status: data.status || 'active',
           totalApplicants: data.totalApplicants || data.applicantsCount || 0,
           deployedApplicants: data.deployedApplicants || 0,
-          totalCommissions: data.totalCommissions || data.totalCommission || 0,
+          totalCommissions: agentCommissions[agentId] || 0, // Calculate from commissions collection
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
         } as Agent;
@@ -141,6 +173,23 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         throw new Error('Agent not found');
       }
       
+      // Fetch commissions for this specific agent to calculate total
+      const commissionsRef = collection(firestore, 'commissions');
+      const commissionsSnapshot = await getDocs(
+        query(
+          commissionsRef,
+          where('agentId', '==', id),
+          where('status', 'in', ['paid', 'partially_paid'])
+        )
+      );
+      
+      // Calculate total commissions for this agent
+      let totalCommissions = 0;
+      commissionsSnapshot.docs.forEach(doc => {
+        const commissionData = doc.data();
+        totalCommissions += commissionData.amountPaid || 0;
+      });
+      
       const data = agentSnap.data();
       const agent: Agent = {
         id: agentSnap.id,
@@ -156,7 +205,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
         status: data.status || 'active',
         totalApplicants: data.totalApplicants || data.applicantsCount || 0,
         deployedApplicants: data.deployedApplicants || 0,
-        totalCommissions: data.totalCommissions || data.totalCommission || 0,
+        totalCommissions: totalCommissions, // Calculate from commissions collection
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
       };
@@ -178,10 +227,26 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       const q = query(agentsRef, where('branchId', '==', branchId), orderBy('agentName'));
       const snapshot = await getDocs(q);
       
+      // Fetch all commissions to calculate total commissions per agent
+      const commissionsRef = collection(firestore, 'commissions');
+      const commissionsSnapshot = await getDocs(query(commissionsRef, where('status', 'in', ['paid', 'partially_paid'])));
+      
+      // Calculate total commissions per agent
+      const agentCommissions: Record<string, number> = {};
+      commissionsSnapshot.docs.forEach(doc => {
+        const commissionData = doc.data();
+        const agentId = commissionData.agentId;
+        const amountPaid = commissionData.amountPaid || 0;
+        if (agentId) {
+          agentCommissions[agentId] = (agentCommissions[agentId] || 0) + amountPaid;
+        }
+      });
+      
       const agents = snapshot.docs.map(doc => {
         const data = doc.data();
+        const agentId = doc.id;
         return {
-          id: doc.id,
+          id: agentId,
           agentName: data.agentName || data.name || '',
           email: data.email || '',
           contactNumber: data.contactNumber || data.phone || '',
@@ -194,7 +259,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
           status: data.status || 'active',
           totalApplicants: data.totalApplicants || data.applicantsCount || 0,
           deployedApplicants: data.deployedApplicants || 0,
-          totalCommissions: data.totalCommissions || data.totalCommission || 0,
+          totalCommissions: agentCommissions[agentId] || 0, // Calculate from commissions collection
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
         } as Agent;

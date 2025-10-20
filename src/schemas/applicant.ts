@@ -140,14 +140,14 @@ export const documentUploadSchema = z.object({
     'pdos',
     'plane_ticket'
   ]),
-  documentStage: z.enum(['interview', 'medical', 'processing', 'deployment', 'deployed']),
+  documentStage: z.enum(['interview', 'medical', 'processing', 'selected', 'deployed']),
   file: z.instanceof(File),
 });
 
 // Pipeline update schema
 export const pipelineUpdateSchema = z.object({
   applicantId: z.string(),
-  stage: z.enum(['interview', 'medical', 'processing', 'deployment', 'deployed']),
+  stage: z.enum(['interview', 'medical', 'processing', 'selected', 'deployed']),
   notes: z.string().optional(),
 });
 

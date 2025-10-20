@@ -4,11 +4,19 @@ import { DashboardSkeleton } from '../../components/dashboard/DashboardSkeleton'
 import { DashboardError } from '../../components/dashboard/DashboardError';
 import { PendingApprovals } from '../../components/applicants/PendingApprovals';
 import { BarChart } from '../../components/dashboard/BarChart';
-import { PieChart } from '../../components/dashboard/PieChart';
 import { QuickStats } from '../../components/dashboard/EnhancedDashboard';
+import { MetricCard } from '../../components/dashboard/MetricCard';
+import { AlertsWidget } from '../../components/dashboard/AlertsWidget';
+import { AgentLeaderboard } from '../../components/dashboard/AgentLeaderboard';
+import { BranchComparison } from '../../components/dashboard/BranchComparison';
+import { TrendsChart } from '../../components/dashboard/TrendsChart';
+import { QuickActionsHub } from '../../components/dashboard/QuickActionsHub';
+import { PipelineFlow } from '../../components/dashboard/PipelineFlow';
+import { FinancialOverview } from '../../components/dashboard/FinancialOverview';
+import { ActivityFeed } from '../../components/dashboard/ActivityFeed';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, orderBy, limit, getDocs, onSnapshot, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, limit, getDocs, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
 import {
   SparklesIcon,
@@ -44,7 +52,7 @@ const getTimeBasedGreeting = () => {
 };
 
 // Performance Insights Widget
-const PerformanceInsights: React.FC<{ role: string }> = ({ role }) => {
+const PerformanceInsights: React.FC<{ role: string }> = () => {
   const insights = [
     {
       icon: TrophyIcon,
@@ -968,26 +976,63 @@ const AdminDashboard = () => {
   
   if (isLoading) return <DashboardSkeleton />;
   if (error) return <DashboardError error={error} />;
+
+  // Transform breakdowns data for PipelineFlow
+  const pipelineStages = breakdowns?.applicantsByStage ? breakdowns.applicantsByStage.map((stage, index) => {
+    const stageColors = [
+      'from-blue-500 to-blue-600',
+      'from-purple-500 to-purple-600',
+      'from-orange-500 to-orange-600',
+      'from-teal-500 to-teal-600',
+      'from-green-500 to-green-600',
+      'from-pink-500 to-pink-600'
+    ];
+    const stageIcons = ['📝', '🏥', '🔄', '⚙️', '✅', '✈️'];
+    
+    return {
+      id: stage.label.toLowerCase(),
+      name: stage.label,
+      count: typeof stage.value === 'number' ? stage.value : 0,
+      color: stageColors[index % stageColors.length],
+      icon: stageIcons[index % stageIcons.length]
+    };
+  }) : [];
   
   return (
-    <div className="space-y-6">
-      {/* Grid Layout for Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Bar Chart for Stages */}
-        {breakdowns?.applicantsByStage && breakdowns.applicantsByStage.length > 0 && (
-          <BarChart 
-            title="Recruitment Pipeline Stages"
-            data={breakdowns.applicantsByStage}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Top Section: Alerts & Leaderboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <AlertsWidget />
+        <AgentLeaderboard />
+      </div>
+
+      {/* Pipeline Visualization */}
+      <PipelineFlow stages={pipelineStages} />
+
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {metrics.map((metric, index) => (
+          <MetricCard
+            key={index}
+            {...metric}
+            colorScheme={['blue', 'purple', 'orange', 'green'][index % 4] as any}
           />
-        )}
-        
-        {/* Bar Chart for Statuses */}
-        {breakdowns?.applicantsByStatus && breakdowns.applicantsByStatus.length > 0 && (
-          <BarChart 
-            title="Applicants By Status"
-            data={breakdowns.applicantsByStatus}
-          />
-        )}
+        ))}
+      </div>
+
+      {/* Branch Comparison & Trends */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <BranchComparison />
+        <TrendsChart title="Applicant Registration Trends" color="indigo" />
+      </div>
+
+      {/* Financial Overview */}
+      <FinancialOverview />
+
+      {/* Quick Actions & Activity Feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <QuickActionsHub />
+        <ActivityFeed />
       </div>
     </div>
   );
@@ -999,17 +1044,63 @@ const BranchManagerDashboard = ({ branchId }: { branchId: string | null }) => {
   if (isLoading) return <DashboardSkeleton />;
   if (error) return <DashboardError error={error} />;
   
+  // Transform pipeline data
+  const pipelineStages = breakdowns?.applicantsByStage ? breakdowns.applicantsByStage.map((stage, index) => {
+    const stageColors = [
+      'from-blue-500 to-blue-600',
+      'from-purple-500 to-purple-600',
+      'from-orange-500 to-orange-600',
+      'from-teal-500 to-teal-600',
+      'from-green-500 to-green-600',
+      'from-pink-500 to-pink-600'
+    ];
+    const stageIcons = ['📝', '🏥', '🔄', '⚙️', '✅', '✈️'];
+    
+    return {
+      id: stage.label.toLowerCase(),
+      name: stage.label,
+      count: typeof stage.value === 'number' ? stage.value : 0,
+      color: stageColors[index % stageColors.length],
+      icon: stageIcons[index % stageIcons.length]
+    };
+  }) : [];
+  
   return (
-    <div className="space-y-6">
-      <QuickStats metrics={metrics} />
-      
-      {/* Bar Chart for Applicants by Status */}
-      {breakdowns?.applicantsByStatus && breakdowns.applicantsByStatus.length > 0 && (
-        <BarChart 
-          title="Branch Applicants By Status"
-          data={breakdowns.applicantsByStatus}
-        />
-      )}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Top Section: Alerts & Agent Leaderboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <AlertsWidget branchId={branchId || undefined} />
+        <AgentLeaderboard branchId={branchId || undefined} />
+      </div>
+
+      {/* Pipeline Visualization */}
+      <PipelineFlow stages={pipelineStages} />
+
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {metrics.map((metric, index) => (
+          <MetricCard
+            key={index}
+            {...metric}
+            colorScheme={['blue', 'purple', 'orange', 'green'][index % 4] as any}
+          />
+        ))}
+      </div>
+
+      {/* Goal Progress & Trends */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <GoalProgressWidget role="branch_manager" branchId={branchId} />
+        <TrendsChart title="Branch Applicant Trends" color="indigo" branchId={branchId || undefined} />
+      </div>
+
+      {/* Financial Overview */}
+      <FinancialOverview branchId={branchId || undefined} />
+
+      {/* Quick Actions & Activity Feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <QuickActionsHub role="branch_manager" />
+        <ActivityFeed branchId={branchId || undefined} />
+      </div>
     </div>
   );
 };

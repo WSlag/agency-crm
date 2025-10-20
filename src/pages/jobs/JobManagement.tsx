@@ -261,7 +261,7 @@ export const JobManagement = () => {
                       <div className="flex items-center text-gray-600">
                         <BanknotesIcon className="h-4 w-4 mr-2" />
                         <span>
-                          {job.salaryRange.currency} {job.salaryRange.min.toLocaleString()} - {job.salaryRange.max.toLocaleString()}
+                          {job.salaryRange.currency} {job.salaryRange.min.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} - {job.salaryRange.max.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       <div className="flex items-center text-gray-600">

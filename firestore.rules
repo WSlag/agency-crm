@@ -480,8 +480,14 @@ service cloud.firestore {
     // ==========================================
     
     match /stage_history/{historyId} {
-      // Anyone authenticated can read stage history
-      allow read: if isAuthenticated();
+      // Read: Admins, President, HO Officers can read all; Branch Managers only their branch
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        isHORecruitmentOfficer() ||
+        isHOAccountant() ||
+        (isBranchManager() && belongsToBranch(resource.data.branchId))
+      );
       
       // Create: Users who can manage applicants at that stage
       allow create: if isAuthenticated() && (
@@ -495,7 +501,7 @@ service cloud.firestore {
       // Update: Only for approvals by authorized users
       allow update: if isAuthenticated() && (
         isAdmin() ||
-        (isPresident() && resource.data.toStage in ['transfer', 'processing', 'deployment', 'deployed']) ||
+        (isPresident() && resource.data.toStage in ['transfer', 'processing', 'selected', 'deployed']) ||
         (isBranchManager() && resource.data.toStage == 'registration') ||
         (isHORecruitmentOfficer() && resource.data.toStage in ['interview', 'medical'])
       ) && resource.data.status == 'pending';

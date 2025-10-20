@@ -23,7 +23,7 @@ const stages: ApplicantStage[] = [
   'interview',
   'medical',
   'processing',
-  'deployment',
+  'selected',
   'deployed',
 ];
 

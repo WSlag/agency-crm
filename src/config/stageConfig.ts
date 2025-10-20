@@ -35,21 +35,25 @@ const PROCESSING_DOCUMENTS: DocumentRequirement[] = [
   {
     type: DocumentType.TESDA_CERT,
     required: true, // At least one of these is required
-    alternatives: [DocumentType.OWWA, DocumentType.EMPLOYMENT_CONTRACT],
-    description: 'TESDA Certificate OR OWWA OR Employment Contract'
+    alternatives: [DocumentType.OWWA],
+    description: 'TESDA Certificate OR OWWA'
   }
 ];
 
-const DEPLOYMENT_DOCUMENTS: DocumentRequirement[] = [
+const SELECTED_DOCUMENTS: DocumentRequirement[] = [
+  {
+    type: DocumentType.EMPLOYMENT_CONTRACT,
+    required: true,
+    description: 'Employment Contract (Required)'
+  }
+];
+
+const DEPLOYED_DOCUMENTS: DocumentRequirement[] = [
   {
     type: DocumentType.PDOS,
     required: true,
-    description: 'PDOS Certificate (Required)'
-  },
-  {
-    type: DocumentType.PLANE_TICKET,
-    required: true,
-    description: 'Plane Ticket (Required)'
+    alternatives: [DocumentType.PLANE_TICKET],
+    description: 'PDOS OR Plane Ticket'
   }
 ];
 
@@ -95,19 +99,19 @@ export const STAGE_CONFIGURATION: Record<ApplicantStage, StageRequirement> = {
     autoAdvance: false
   },
   
-  [ApplicantStage.DEPLOYMENT]: {
-    stage: ApplicantStage.DEPLOYMENT,
-    documents: DEPLOYMENT_DOCUMENTS,
+  [ApplicantStage.SELECTED]: {
+    stage: ApplicantStage.SELECTED,
+    documents: SELECTED_DOCUMENTS,
     approvers: ['admin', 'president'], // Admin/President approve (HO Officer removed)
     autoAdvance: false
   },
   
   [ApplicantStage.DEPLOYED]: {
     stage: ApplicantStage.DEPLOYED,
-    documents: [],
+    documents: DEPLOYED_DOCUMENTS,
     approvers: ['admin', 'president'], // Admin/President approve (HO Officer removed)
     commissionTrigger: 'deployed',
-    autoAdvance: true // Terminal stage
+    autoAdvance: false // Requires document verification
   }
 };
 
@@ -121,8 +125,8 @@ export const VALID_STAGE_TRANSITIONS: Record<ApplicantStage, ApplicantStage[]> =
   [ApplicantStage.INTERVIEW]: [ApplicantStage.MEDICAL],
   [ApplicantStage.MEDICAL]: [ApplicantStage.TRANSFER],
   [ApplicantStage.TRANSFER]: [ApplicantStage.PROCESSING],
-  [ApplicantStage.PROCESSING]: [ApplicantStage.DEPLOYMENT],
-  [ApplicantStage.DEPLOYMENT]: [ApplicantStage.DEPLOYED],
+  [ApplicantStage.PROCESSING]: [ApplicantStage.SELECTED],
+  [ApplicantStage.SELECTED]: [ApplicantStage.DEPLOYED],
   [ApplicantStage.DEPLOYED]: [] // Terminal stage - no further transitions
 };
 
@@ -142,7 +146,7 @@ export const BRANCH_STAGES: ApplicantStage[] = [
  */
 export const HEAD_OFFICE_STAGES: ApplicantStage[] = [
   ApplicantStage.PROCESSING,
-  ApplicantStage.DEPLOYMENT,
+  ApplicantStage.SELECTED,
   ApplicantStage.DEPLOYED
 ];
 
@@ -169,7 +173,7 @@ export const STAGE_LABELS: Record<ApplicantStage, string> = {
   [ApplicantStage.MEDICAL]: 'Medical',
   [ApplicantStage.TRANSFER]: 'Transfer to HO',
   [ApplicantStage.PROCESSING]: 'Processing',
-  [ApplicantStage.DEPLOYMENT]: 'Deployment',
+  [ApplicantStage.SELECTED]: 'Selected',
   [ApplicantStage.DEPLOYED]: 'Deployed'
 };
 
@@ -181,8 +185,8 @@ export const STAGE_DESCRIPTIONS: Record<ApplicantStage, string> = {
   [ApplicantStage.INTERVIEW]: 'Interview stage with identification document verification',
   [ApplicantStage.MEDICAL]: 'Medical examination and certificate verification',
   [ApplicantStage.TRANSFER]: 'Transfer from Branch to Head Office (1st commission trigger)',
-  [ApplicantStage.PROCESSING]: 'Processing stage with certificates and contract verification',
-  [ApplicantStage.DEPLOYMENT]: 'Final deployment preparation with PDOS and plane ticket',
+  [ApplicantStage.PROCESSING]: 'Processing stage with certificates verification',
+  [ApplicantStage.SELECTED]: 'Applicant selected by employer - employment contract and employer details required',
   [ApplicantStage.DEPLOYED]: 'Successfully deployed (2nd commission trigger)'
 };
 
@@ -195,7 +199,7 @@ export const STAGE_COLORS: Record<ApplicantStage, string> = {
   [ApplicantStage.MEDICAL]: 'bg-purple-100 text-purple-800',
   [ApplicantStage.TRANSFER]: 'bg-yellow-100 text-yellow-800',
   [ApplicantStage.PROCESSING]: 'bg-orange-100 text-orange-800',
-  [ApplicantStage.DEPLOYMENT]: 'bg-indigo-100 text-indigo-800',
+  [ApplicantStage.SELECTED]: 'bg-indigo-100 text-indigo-800',
   [ApplicantStage.DEPLOYED]: 'bg-green-100 text-green-800'
 };
 
@@ -261,7 +265,7 @@ export function getAllStagesInOrder(): ApplicantStage[] {
     ApplicantStage.MEDICAL,
     ApplicantStage.TRANSFER,
     ApplicantStage.PROCESSING,
-    ApplicantStage.DEPLOYMENT,
+    ApplicantStage.SELECTED,
     ApplicantStage.DEPLOYED
   ];
 }

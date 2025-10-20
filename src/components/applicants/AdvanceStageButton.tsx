@@ -102,7 +102,7 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
     // - Registration → Interview
     // - Interview → Medical
     // - Medical → Transfer (to HO)
-    // But CANNOT request HO stages (Transfer → Processing, Processing → Deployment, etc.)
+    // But CANNOT request HO stages (Transfer → Processing, Processing → Selected, etc.)
     
     const isBranchStageTransition = BRANCH_STAGES.includes(currentStage);
     const isTransferRequest = currentStage === ApplicantStage.MEDICAL && nextStage === TRANSITION_STAGE;
@@ -127,8 +127,8 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
   if (customClaims?.role === 'ho_recruitment_officer') {
     // HO Officer can request:
     // - Transfer → Processing
-    // - Processing → Deployment
-    // - Deployment → Deployed
+    // - Processing → Selected
+    // - Selected → Deployed
     // But CANNOT request branch stages (they're managed by Branch Manager)
     
     const isHOStageOrTransition = currentStage === TRANSITION_STAGE || HEAD_OFFICE_STAGES.includes(currentStage);
@@ -137,7 +137,7 @@ export const AdvanceStageButton: React.FC<AdvanceStageButtonProps> = ({
       console.log('[AdvanceStageButton] HO Officer cannot request branch stage advancement:', {
         currentStage,
         nextStage,
-        reason: 'HO Officers can only manage HO stages (Transfer, Processing, Deployment, Deployed)'
+        reason: 'HO Officers can only manage HO stages (Transfer, Processing, Selected, Deployed)'
       });
       return null;
     }

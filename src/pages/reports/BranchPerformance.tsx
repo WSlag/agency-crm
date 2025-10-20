@@ -159,7 +159,7 @@ export const BranchPerformance: React.FC = () => {
                 <span>Total Revenue</span>
               </dt>
               <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
-                ${totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                ₱{totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </dd>
               <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 opacity-20 blur-2xl"></div>
             </div>
@@ -237,7 +237,7 @@ export const BranchPerformance: React.FC = () => {
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
-                      ${metrics.revenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      ₱{metrics.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

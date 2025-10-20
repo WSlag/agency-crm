@@ -103,7 +103,7 @@ export const ExpensePayment: React.FC<ExpensePaymentProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700">Expense Amount:</span>
             <span className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              ₱{expense.amount.toLocaleString()}
+              ₱{expense.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
           <div className="flex justify-between items-center">

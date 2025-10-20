@@ -43,7 +43,7 @@ const STAGE_MAP: Record<string, ApplicantStage> = {
   'medical': ApplicantStage.MEDICAL,
   'transfer': ApplicantStage.TRANSFER,
   'processing': ApplicantStage.PROCESSING,
-  'deployment': ApplicantStage.DEPLOYMENT,
+  'selected': ApplicantStage.SELECTED,
   'deployed': ApplicantStage.DEPLOYED
 };
 

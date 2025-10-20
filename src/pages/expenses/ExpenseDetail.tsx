@@ -39,6 +39,7 @@ export const ExpenseDetail: React.FC = () => {
   const [showPayment, setShowPayment] = React.useState(false);
   const [verifierName, setVerifierName] = React.useState<string>('');
   const [approverName, setApproverName] = React.useState<string>('');
+  const [paidByName, setPaidByName] = React.useState<string>('');
   const [verificationDetails, setVerificationDetails] = React.useState<ExpenseVerificationType | null>(null);
   const [approvalDetails, setApprovalDetails] = React.useState<ExpenseApprovalType | null>(null);
 
@@ -128,6 +129,28 @@ export const ExpenseDetail: React.FC = () => {
 
     fetchApproverData();
   }, [selectedExpense?.approvedBy, id]);
+
+  // Fetch paid by user name
+  React.useEffect(() => {
+    const fetchPaidByData = async () => {
+      if (selectedExpense?.paidBy) {
+        try {
+          const userDoc = await getDoc(doc(firestore, 'users', selectedExpense.paidBy));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setPaidByName(userData.displayName || userData.email || selectedExpense.paidBy);
+          } else {
+            setPaidByName(selectedExpense.paidBy);
+          }
+        } catch (error) {
+          console.error('Error fetching paid by user:', error);
+          setPaidByName(selectedExpense.paidBy);
+        }
+      }
+    };
+
+    fetchPaidByData();
+  }, [selectedExpense?.paidBy]);
 
   // Look up applicant name
   const applicant = applicants?.find(a => a.id === selectedExpense?.applicantId);
@@ -289,9 +312,11 @@ export const ExpenseDetail: React.FC = () => {
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500 mb-1">Amount</dt>
                 <dd className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                  {new Intl.NumberFormat('en-US', {
+                  {new Intl.NumberFormat('en-PH', {
                     style: 'currency',
                     currency: selectedExpense.currency,
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
                   }).format(selectedExpense.amount)}
                 </dd>
               </div>
@@ -530,7 +555,7 @@ export const ExpenseDetail: React.FC = () => {
                 <div className="sm:col-span-1">
                   <dt className="text-sm font-medium text-gray-500 mb-1">Paid By</dt>
                   <dd className="text-sm font-medium text-gray-900">
-                    {selectedExpense.paidBy}
+                    {paidByName || selectedExpense.paidBy}
                   </dd>
                 </div>
                 <div className="sm:col-span-1">

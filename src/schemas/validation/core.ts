@@ -52,7 +52,7 @@ export const applicantSchema = z.object({
   fullName: baseSchemas.name,
   email: baseSchemas.email,
   phone: baseSchemas.phone,
-  currentStage: z.enum(['interview', 'medical', 'processing', 'deployment', 'deployed']),
+  currentStage: z.enum(['interview', 'medical', 'processing', 'selected', 'deployed']),
   branchId: z.string(),
   agentId: z.string().optional(),
   status: baseSchemas.status,

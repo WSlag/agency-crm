@@ -178,7 +178,7 @@ export const AgentPerformance: React.FC = () => {
                 <span>Total Commission</span>
               </dt>
               <dd className="mt-1 text-3xl font-semibold tracking-tight text-white">
-                ${totalCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                ₱{totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </dd>
               <div className="absolute -right-4 -bottom-4 h-24 w-24 rounded-full bg-gradient-to-br from-green-500 to-green-600 opacity-20 blur-2xl"></div>
             </div>
@@ -248,7 +248,7 @@ export const AgentPerformance: React.FC = () => {
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
-                      ${metrics.commissionEarned.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      ₱{metrics.commissionEarned.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
                       {metrics.averageProcessingTime.toFixed(1)} days

@@ -214,7 +214,7 @@ export const BranchDashboard: React.FC = () => {
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Monthly Commissions</dt>
                     <dd className="text-lg font-medium text-gray-900">
-                      ${stats?.monthlyCommissions.toLocaleString()}
+                      ₱{stats?.monthlyCommissions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </dd>
                   </dl>
                 </div>

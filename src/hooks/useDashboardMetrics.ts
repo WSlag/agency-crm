@@ -75,7 +75,7 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
             const medicalCount = applicantsByStage['medical'] || 0;
             const transferCount = applicantsByStage['transfer'] || 0;
             const processingCount = applicantsByStage['processing'] || 0;
-            const deploymentCount = applicantsByStage['deployment'] || 0;
+            const selectedCount = applicantsByStage['selected'] || 0;
             const deployedCount = applicantsByStage['deployed'] || 0;
 
             // Calculate specific status counts using only valid applicants
@@ -112,23 +112,23 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
                 ...calculateTrend(processingCount, Math.floor(processingCount * 1.05))
               },
               {
-                label: 'Deployment',
-                value: deploymentCount + deployedCount,
+                label: 'Selected',
+                value: selectedCount + deployedCount,
                 type: 'number',
-                trendData: generateTrendData(deploymentCount + deployedCount),
-                ...calculateTrend(deploymentCount + deployedCount, Math.floor((deploymentCount + deployedCount) * 0.92))
+                trendData: generateTrendData(selectedCount + deployedCount),
+                ...calculateTrend(selectedCount + deployedCount, Math.floor((selectedCount + deployedCount) * 0.92))
               }
             ]);
 
             // Set breakdowns for specific statuses
             setBreakdowns({
               applicantsByStage: [
-                { label: 'Registration', value: registrationCount, type: 'number' as const },
                 { label: 'Interview', value: interviewCount, type: 'number' as const },
                 { label: 'Medical', value: medicalCount, type: 'number' as const },
                 { label: 'Transfer', value: transferCount, type: 'number' as const },
                 { label: 'Processing', value: processingCount, type: 'number' as const },
-                { label: 'Deployment', value: deploymentCount + deployedCount, type: 'number' as const },
+                { label: 'Selected', value: selectedCount, type: 'number' as const },
+                { label: 'Deployed', value: deployedCount, type: 'number' as const },
               ],
               applicantsByStatus: [
                 { label: 'Active', value: activeCount, type: 'number' as const },
@@ -185,7 +185,7 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
                 label: 'Pending Expenses',
                 value: pendingExpenses,
                 type: 'number',
-                description: `₱${totalExpenseAmount.toLocaleString()} total`,
+                description: `₱${totalExpenseAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total`,
                 ...calculateTrend(pendingExpenses, Math.floor(pendingExpenses * 1.15))
               },
               {
@@ -289,7 +289,7 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
                 label: 'Pending Expenses',
                 value: pendingExpenses,
                 type: 'number',
-                description: `₱${pendingExpenseAmount.toLocaleString()}`,
+                description: `₱${pendingExpenseAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                 ...calculateTrend(pendingExpenses, Math.floor(pendingExpenses * 1.12))
               },
               {
@@ -302,13 +302,13 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
                 label: 'Pending Commissions',
                 value: pendingCommissions,
                 type: 'number',
-                description: `₱${pendingCommissionAmount.toLocaleString()} to verify`
+                description: `₱${pendingCommissionAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to verify`
               },
               {
                 label: 'Verified Commissions',
                 value: verifiedCommissions,
                 type: 'number',
-                description: `₱${verifiedCommissionAmount.toLocaleString()} awaiting approval`
+                description: `₱${verifiedCommissionAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} awaiting approval`
               },
               {
                 label: 'Paid Commissions',

@@ -57,7 +57,9 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, format })
       case 'currency':
         return new Intl.NumberFormat('en-PH', {
           style: 'currency',
-          currency: 'PHP'
+          currency: 'PHP',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
         }).format(val);
       case 'percentage':
         return `${(val * 100).toFixed(1)}%`;

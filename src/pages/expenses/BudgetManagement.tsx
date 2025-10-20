@@ -101,7 +101,7 @@ export const BudgetManagement = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-500">Total Allocated</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      ₱{stats.totalAllocated.toLocaleString()}
+                      ₱{stats.totalAllocated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   </div>
                   <BanknotesIcon className="h-12 w-12 text-green-600" />
@@ -113,7 +113,7 @@ export const BudgetManagement = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-500">Total Spent</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      ₱{stats.totalSpent.toLocaleString()}
+                      ₱{stats.totalSpent.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   </div>
                   <BanknotesIcon className="h-12 w-12 text-orange-600" />
@@ -125,7 +125,7 @@ export const BudgetManagement = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-500">Remaining</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      ₱{stats.totalRemaining.toLocaleString()}
+                      ₱{stats.totalRemaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
                   </div>
                   <BanknotesIcon className="h-12 w-12 text-blue-600" />
@@ -182,19 +182,19 @@ export const BudgetManagement = () => {
                             <div>
                               <p className="text-xs text-gray-500">Allocated</p>
                               <p className="text-sm font-semibold text-gray-900">
-                                {budget.currency} {budget.allocatedAmount.toLocaleString()}
+                                {budget.currency} {budget.allocatedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Spent</p>
                               <p className="text-sm font-semibold text-orange-600">
-                                {budget.currency} {budget.spentAmount.toLocaleString()}
+                                {budget.currency} {budget.spentAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500">Remaining</p>
                               <p className="text-sm font-semibold text-green-600">
-                                {budget.currency} {budget.remainingAmount.toLocaleString()}
+                                {budget.currency} {budget.remainingAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
                             </div>
                           </div>

@@ -160,7 +160,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         employerName: data.employerName || '',
         country: data.country || '',
         location: data.location || '',
-        salaryRange: data.salaryRange || { min: 0, max: 0, currency: 'USD' },
+        salaryRange: data.salaryRange || { min: 0, max: 0, currency: 'PHP' },
         jobType: data.jobType || 'full-time',
         requirements: data.requirements || [],
         description: data.description || '',

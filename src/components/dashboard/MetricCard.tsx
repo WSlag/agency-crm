@@ -16,7 +16,9 @@ const formatMetricValue = (value: string | number, type: 'number' | 'currency' |
     case 'currency':
       return new Intl.NumberFormat('en-PH', {
         style: 'currency',
-        currency: 'PHP'
+        currency: 'PHP',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
       }).format(value);
     case 'percentage':
       return `${value}%`;

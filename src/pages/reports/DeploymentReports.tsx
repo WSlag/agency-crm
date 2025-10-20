@@ -274,7 +274,7 @@ export const DeploymentReports = () => {
             </div>
             <div className="bg-cyan-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Avg. Salary</div>
-              <div className="text-white text-2xl font-bold mt-1">${(stats.avgSalary / 1000).toFixed(0)}k</div>
+              <div className="text-white text-2xl font-bold mt-1">₱{(stats.avgSalary / 1000).toFixed(2)}k</div>
             </div>
             <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Avg. Contract</div>

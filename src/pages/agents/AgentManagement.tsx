@@ -157,7 +157,7 @@ export const AgentManagement = () => {
             <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg px-3 py-3 sm:px-4 sm:py-4 col-span-2 lg:col-span-1">
               <div className="text-white text-xs sm:text-sm font-medium">Total Commissions</div>
               <div className="text-white text-xl sm:text-2xl font-bold mt-1">
-                ₱{stats.totalCommissions.toLocaleString()}
+                ₱{stats.totalCommissions.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
           </div>
@@ -308,7 +308,7 @@ export const AgentManagement = () => {
                         </div>
                         <div className="flex items-center text-gray-600">
                           <BanknotesIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                          <span>Commission Amount: ₱{agent.commissionAmount.toLocaleString()}</span>
+                          <span>Commission Amount: ₱{agent.commissionAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex items-center text-gray-600">
                           <UserGroupIcon className="h-4 w-4 mr-2 flex-shrink-0" />
@@ -327,7 +327,7 @@ export const AgentManagement = () => {
                         <div>
                           <div className="text-xs text-gray-500">Total Earnings</div>
                           <div className="text-base sm:text-lg font-semibold text-teal-600 mt-0.5">
-                            ₱{(agent.totalCommissions || 0).toLocaleString()}
+                            ₱{(agent.totalCommissions || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </div>
                         </div>
                       </div>

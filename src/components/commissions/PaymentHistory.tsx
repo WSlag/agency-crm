@@ -191,9 +191,9 @@ export const PaymentHistory: React.FC<PaymentHistoryProps> = ({ commission }) =>
             </div>
           </div>
           <div className="mt-3 flex justify-between text-xs font-medium text-indigo-700">
-            <span>₱0</span>
+            <span>₱0.00</span>
             <span className="text-indigo-900 font-bold">
-              ₱{amountPaid.toLocaleString()} / ₱{commission.amount.toLocaleString()}
+              ₱{amountPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ₱{commission.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>

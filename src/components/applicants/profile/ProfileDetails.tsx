@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tab } from '@headlessui/react';
-import { Applicant } from '../../../types/applicant';
+import { Applicant, ApplicantStage } from '../../../types/applicant';
 import { CommunicationHistory } from '../CommunicationHistory';
 import { DocumentsTab } from './DocumentsTab';
+import { EmployerDetails } from './EmployerDetails';
 
 interface ProfileDetailsProps {
   applicant: Applicant;
@@ -13,12 +14,18 @@ export const ProfileDetails = ({ applicant }: ProfileDetailsProps) => {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   
+  // Only show Employer Details tab if at SELECTED stage or beyond
+  const showEmployerTab = 
+    applicant.currentStageEnum === ApplicantStage.SELECTED || 
+    applicant.currentStageEnum === ApplicantStage.DEPLOYED;
+  
   const tabs = [
     { name: 'Personal Info', key: 'personal', content: <PersonalInfo applicant={applicant} /> },
     { name: 'Job Preferences', key: 'job', content: <JobPreferences applicant={applicant} /> },
     { name: 'Education & Experience', key: 'education', content: <EducationExperience applicant={applicant} /> },
     { name: 'Medical Info', key: 'medical', content: <MedicalInfo applicant={applicant} /> },
     { name: 'Emergency Contact', key: 'emergency', content: <EmergencyContact applicant={applicant} /> },
+    ...(showEmployerTab ? [{ name: 'Employer Details', key: 'employer', content: <EmployerDetails applicant={applicant} /> }] : []),
     { name: 'Documents', key: 'documents', content: <DocumentsTab applicant={applicant} /> },
     { name: 'Communications', key: 'communications', content: <CommunicationHistory applicantId={applicant.id} /> },
   ];
