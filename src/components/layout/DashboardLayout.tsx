@@ -279,19 +279,22 @@ export const DashboardLayout = () => {
           {/* User Profile Section */}
           {!collapsed && (
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 hover:bg-white/15 transition-colors">
-              <div className="flex items-center space-x-3">
+              <Link 
+                to="/profile"
+                className="flex items-center space-x-3 group cursor-pointer"
+              >
                 <div className="flex-shrink-0">
-                  <UserCircleIcon className="h-10 w-10 text-white" />
+                  <UserCircleIcon className="h-10 w-10 text-white group-hover:text-indigo-200 transition-colors" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">
+                  <p className="text-sm font-medium text-white truncate group-hover:text-indigo-100 transition-colors">
                     {user?.displayName || 'User'}
                   </p>
-                  <p className="text-xs text-indigo-200 truncate">
+                  <p className="text-xs text-indigo-200 truncate group-hover:text-indigo-100 transition-colors">
                     {customClaims?.role?.replace('_', ' ').toUpperCase()}
                   </p>
                 </div>
-              </div>
+              </Link>
               
               {/* Notifications Button */}
               <button
@@ -309,7 +312,13 @@ export const DashboardLayout = () => {
           
           {collapsed && (
             <div className="flex flex-col items-center space-y-3">
-              <UserCircleIcon className="h-8 w-8 text-white" />
+              <Link 
+                to="/profile"
+                className="p-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
+                title="My Profile"
+              >
+                <UserCircleIcon className="h-8 w-8 text-white" />
+              </Link>
               <button
                 onClick={() => setNotificationsOpen(!notificationsOpen)}
                 className="relative p-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
@@ -456,6 +465,15 @@ export const DashboardLayout = () => {
           <div className="flex-1 text-sm font-semibold leading-6 text-gray-900">
             {user?.displayName}
           </div>
+          
+          {/* Mobile Profile Button */}
+          <Link
+            to="/profile"
+            className="p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full"
+            aria-label="My Profile"
+          >
+            <UserCircleIcon className="h-6 w-6" />
+          </Link>
           
           {/* Mobile Notification Button */}
           <div className="relative">

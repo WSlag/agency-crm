@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
 import { OfficerDashboard } from '../../components/officers/OfficerDashboard';
@@ -11,7 +12,8 @@ import {
   ChartBarIcon,
   CheckCircleIcon,
   ClockIcon,
-  TrophyIcon
+  TrophyIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 
 // Interface for officer statistics
@@ -346,6 +348,15 @@ export const OfficerManagement = () => {
                         </span>
                       </div>
                     </div>
+
+                    {/* View Button */}
+                    <Link
+                      to={`/my-applicants?officer=${officer.uid}`}
+                      className="w-full inline-flex items-center justify-center px-4 py-2.5 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+                    >
+                      <EyeIcon className="h-4 w-4 mr-2" />
+                      View Assigned Applicants ({stats.totalApplicants})
+                    </Link>
                   </div>
                 );
               })}
@@ -392,6 +403,12 @@ export const OfficerManagement = () => {
                       className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
                     >
                       Status
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider"
+                    >
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -458,6 +475,15 @@ export const OfficerManagement = () => {
                           >
                             {officer.status}
                           </span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          <Link
+                            to={`/my-applicants?officer=${officer.uid}`}
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-all duration-200"
+                          >
+                            <EyeIcon className="h-4 w-4 mr-1" />
+                            View
+                          </Link>
                         </td>
                       </tr>
                     );

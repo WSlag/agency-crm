@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAgentStore } from '../../stores/agentStore';
 import { useBranchStore } from '../../stores/branchStore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { firestore } from '../../config/firebase';
 import {
   UsersIcon,
   MagnifyingGlassIcon,
@@ -24,6 +26,7 @@ export const AgentManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'suspended'>('all');
   const [branchFilter, setBranchFilter] = useState<string>('all');
+  const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     // Fetch branches for branch name display
@@ -37,6 +40,34 @@ export const AgentManagement = () => {
       fetchAllAgents();
     }
   }, [customClaims]);
+
+  // Fetch applicant counts for each agent
+  useEffect(() => {
+    const fetchApplicantCounts = async () => {
+      if (agents.length === 0) return;
+      
+      const counts: Record<string, number> = {};
+      
+      try {
+        // Fetch all applicants and group by agentId
+        const applicantsRef = collection(firestore, 'applicants');
+        const snapshot = await getDocs(applicantsRef);
+        
+        snapshot.docs.forEach(doc => {
+          const agentId = doc.data().agentId;
+          if (agentId) {
+            counts[agentId] = (counts[agentId] || 0) + 1;
+          }
+        });
+        
+        setApplicantCounts(counts);
+      } catch (error) {
+        console.error('Error fetching applicant counts:', error);
+      }
+    };
+    
+    fetchApplicantCounts();
+  }, [agents]);
 
   // Helper function to get branch name
   const getBranchName = (branchId: string) => {
@@ -61,7 +92,7 @@ export const AgentManagement = () => {
     active: agents.filter(a => a.status === 'active').length,
     inactive: agents.filter(a => a.status === 'inactive').length,
     totalCommissions: agents.reduce((sum, a) => sum + (a.totalCommissions || 0), 0),
-    totalApplicants: agents.reduce((sum, a) => sum + (a.totalApplicants || 0), 0),
+    totalApplicants: Object.values(applicantCounts).reduce((sum, count) => sum + count, 0),
   };
 
   const getStatusColor = (status: Agent['status']) => {
@@ -126,7 +157,7 @@ export const AgentManagement = () => {
             <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg px-3 py-3 sm:px-4 sm:py-4 col-span-2 lg:col-span-1">
               <div className="text-white text-xs sm:text-sm font-medium">Total Commissions</div>
               <div className="text-white text-xl sm:text-2xl font-bold mt-1">
-                ${stats.totalCommissions.toLocaleString()}
+                ₱{stats.totalCommissions.toLocaleString()}
               </div>
             </div>
           </div>
@@ -242,63 +273,67 @@ export const AgentManagement = () => {
               </div>
             ) : (
               filteredAgents.map((agent) => (
-                <Link
+                <div
                   key={agent.id}
-                  to={`/agents/${agent.id}`}
-                  className="bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-teal-300 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                  className="bg-white rounded-xl shadow-sm border-2 border-gray-200 hover:border-teal-300 hover:shadow-lg transition-all duration-200 overflow-hidden relative"
                 >
-                  <div className="p-4 sm:p-6">
-                    {/* Agent Header - Mobile Optimized */}
-                    <div className="flex items-start justify-between mb-3 sm:mb-4">
-                      <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
-                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0">
-                          {agent.agentName?.charAt(0).toUpperCase() || '?'}
+                  <Link
+                    to={`/agents/${agent.id}`}
+                    className="block"
+                  >
+                    <div className="p-4 sm:p-6">
+                      {/* Agent Header - Mobile Optimized */}
+                      <div className="flex items-start justify-between mb-3 sm:mb-4">
+                        <div className="flex items-center space-x-2 sm:space-x-3 flex-1 min-w-0">
+                          <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center text-white font-bold text-base sm:text-lg flex-shrink-0">
+                            {agent.agentName?.charAt(0).toUpperCase() || '?'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                              {agent.agentName || 'Unknown Agent'}
+                            </h3>
+                            <p className="text-xs sm:text-sm text-gray-500 truncate">{agent.email || 'No email'}</p>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                            {agent.agentName || 'Unknown Agent'}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-gray-500 truncate">{agent.email || 'No email'}</p>
-                        </div>
+                        <span className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(agent.status)} flex-shrink-0 ml-2`}>
+                          {agent.status ? agent.status.charAt(0).toUpperCase() + agent.status.slice(1) : 'Unknown'}
+                        </span>
                       </div>
-                      <span className={`inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(agent.status)} flex-shrink-0 ml-2`}>
-                        {agent.status ? agent.status.charAt(0).toUpperCase() + agent.status.slice(1) : 'Unknown'}
-                      </span>
-                    </div>
 
-                    {/* Agent Details - Mobile Optimized */}
-                    <div className="space-y-2 text-xs sm:text-sm">
-                      <div className="flex items-center text-gray-600">
-                        <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span className="truncate">Branch: {getBranchName(agent.branchId)}</span>
+                      {/* Agent Details - Mobile Optimized */}
+                      <div className="space-y-2 text-xs sm:text-sm">
+                        <div className="flex items-center text-gray-600">
+                          <BuildingOfficeIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span className="truncate">Branch: {getBranchName(agent.branchId)}</span>
+                        </div>
+                        <div className="flex items-center text-gray-600">
+                          <BanknotesIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span>Commission Amount: ₱{agent.commissionAmount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center text-gray-600">
+                          <UserGroupIcon className="h-4 w-4 mr-2 flex-shrink-0" />
+                          <span>Applicants: {applicantCounts[agent.id] || 0}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center text-gray-600">
-                        <BanknotesIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span>Commission Amount: ₱{agent.commissionAmount.toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <UserGroupIcon className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span>Applicants: {agent.totalApplicants || 0}</span>
-                      </div>
-                    </div>
 
-                    {/* Stats - Mobile Optimized */}
-                    <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 grid grid-cols-2 gap-3 sm:gap-4">
-                      <div>
-                        <div className="text-xs text-gray-500">Deployed</div>
-                        <div className="text-base sm:text-lg font-semibold text-gray-900 mt-0.5">
-                          {agent.deployedApplicants || 0}
+                      {/* Stats - Mobile Optimized */}
+                      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100 grid grid-cols-2 gap-3 sm:gap-4">
+                        <div>
+                          <div className="text-xs text-gray-500">Deployed</div>
+                          <div className="text-base sm:text-lg font-semibold text-gray-900 mt-0.5">
+                            {agent.deployedApplicants || 0}
+                          </div>
                         </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-gray-500">Total Earnings</div>
-                        <div className="text-base sm:text-lg font-semibold text-teal-600 mt-0.5">
-                          ${(agent.totalCommissions || 0).toLocaleString()}
+                        <div>
+                          <div className="text-xs text-gray-500">Total Earnings</div>
+                          <div className="text-base sm:text-lg font-semibold text-teal-600 mt-0.5">
+                            ₱{(agent.totalCommissions || 0).toLocaleString()}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                </div>
               ))
             )}
           </div>

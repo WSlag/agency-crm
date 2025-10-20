@@ -214,7 +214,7 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
       }
 
       const snapshot = await getDocs(q);
-      const commissions = snapshot.docs.map((doc) => {
+      let commissions = snapshot.docs.map((doc) => {
         const data = doc.data();
         
         // Log any commissions with missing required fields
@@ -235,6 +235,30 @@ export const useCommissionStore = create<CommissionState>((set, get) => ({
           updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : null,
         };
       }) as Commission[];
+
+      // Sort by status priority: pending → verified → approved → partially_paid → rejected → paid
+      const statusPriority: Record<string, number> = {
+        'pending': 1,
+        'verified': 2,
+        'approved': 3,
+        'partially_paid': 4,
+        'rejected': 5,
+        'paid': 6,
+      };
+
+      commissions.sort((a, b) => {
+        const priorityA = statusPriority[a.status] || 99;
+        const priorityB = statusPriority[b.status] || 99;
+        
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB; // Sort by status priority first
+        }
+        
+        // If same status, sort by createdAt (newest first)
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
 
       set({ commissions, loading: false });
     } catch (error) {

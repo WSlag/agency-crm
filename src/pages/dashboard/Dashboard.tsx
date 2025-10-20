@@ -8,7 +8,7 @@ import { PieChart } from '../../components/dashboard/PieChart';
 import { QuickStats } from '../../components/dashboard/EnhancedDashboard';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, query, where, orderBy, limit, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, limit, getDocs, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
 import {
   SparklesIcon,
@@ -189,87 +189,353 @@ const TodaysAgenda: React.FC = () => {
 };
 
 // Goal Progress Widget
-const GoalProgressWidget: React.FC<{ role: string }> = ({ role }) => {
-  const goals = [
-    { label: 'Monthly Target', progress: 75, color: 'bg-blue-500', target: 100 },
-    { label: 'Applications', progress: 60, color: 'bg-green-500', target: 80 },
-    { label: 'Approvals', progress: 85, color: 'bg-purple-500', target: 90 },
-  ];
+const GoalProgressWidget: React.FC<{ role: string; branchId?: string | null }> = ({ role, branchId }) => {
+  const [goals, setGoals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [overallProgress, setOverallProgress] = useState(0);
+
+  useEffect(() => {
+    fetchGoalsData();
+  }, [role, branchId]);
+
+  const fetchGoalsData = async () => {
+    try {
+      setLoading(true);
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+
+      if (role === 'branch_manager' && branchId) {
+        // Branch Manager: Show their branch's progress
+        await loadBranchGoals(branchId, currentMonth, currentYear);
+      } else if (role === 'admin' || role === 'president') {
+        // Admin/President: Show aggregated progress across all branches
+        await loadAggregatedGoals(currentMonth, currentYear);
+      } else {
+        setGoals([]);
+      }
+    } catch (error) {
+      console.error('Error fetching goals:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadBranchGoals = async (branchId: string, month: number, year: number) => {
+    // Get target for this branch
+    const targetDoc = await getDoc(doc(firestore, 'branch_targets', `${branchId}_${year}_${month}`));
+    
+    if (!targetDoc.exists()) {
+      setGoals([]);
+      setOverallProgress(0);
+      return;
+    }
+
+    const target = targetDoc.data().targets;
+
+    // Get actual performance data for this branch
+    const applicantsQuery = query(
+      collection(firestore, 'applicants'),
+      where('branchId', '==', branchId)
+    );
+    const applicantsSnapshot = await getDocs(applicantsQuery);
+    const actualApplicants = applicantsSnapshot.size;
+
+    // Count applicants in medical stage
+    const medicalQuery = query(
+      collection(firestore, 'applicants'),
+      where('branchId', '==', branchId),
+      where('currentStage', '==', 'medical')
+    );
+    const medicalSnapshot = await getDocs(medicalQuery);
+    const actualMedical = medicalSnapshot.size;
+
+    // Count applicants in transfer stage
+    const transferQuery = query(
+      collection(firestore, 'applicants'),
+      where('branchId', '==', branchId),
+      where('currentStage', '==', 'transfer')
+    );
+    const transferSnapshot = await getDocs(transferQuery);
+    const actualTransfer = transferSnapshot.size;
+
+    // Count deployed applicants
+    const deployedQuery = query(
+      collection(firestore, 'applicants'),
+      where('branchId', '==', branchId),
+      where('currentStage', '==', 'deployed')
+    );
+    const deployedSnapshot = await getDocs(deployedQuery);
+    const actualDeployed = deployedSnapshot.size;
+
+    // Calculate progress percentages
+    const goalsData = [
+      {
+        label: 'Applicants',
+        progress: target.applicants > 0 ? Math.min((actualApplicants / target.applicants) * 100, 100) : 0,
+        color: 'bg-blue-500',
+        actual: actualApplicants,
+        target: target.applicants,
+        icon: '📝'
+      },
+      {
+        label: 'Medical',
+        progress: target.medical > 0 ? Math.min((actualMedical / target.medical) * 100, 100) : 0,
+        color: 'bg-green-500',
+        actual: actualMedical,
+        target: target.medical,
+        icon: '🏥'
+      },
+      {
+        label: 'Transfer to HO',
+        progress: target.transferToHO > 0 ? Math.min((actualTransfer / target.transferToHO) * 100, 100) : 0,
+        color: 'bg-orange-500',
+        actual: actualTransfer,
+        target: target.transferToHO,
+        icon: '🔄'
+      },
+      {
+        label: 'Deployed',
+        progress: target.deployed > 0 ? Math.min((actualDeployed / target.deployed) * 100, 100) : 0,
+        color: 'bg-purple-500',
+        actual: actualDeployed,
+        target: target.deployed,
+        icon: '✈️'
+      },
+    ];
+
+    setGoals(goalsData);
+    
+    // Calculate overall progress
+    const avgProgress = goalsData.reduce((sum, g) => sum + g.progress, 0) / goalsData.length;
+    setOverallProgress(Math.round(avgProgress));
+  };
+
+  const loadAggregatedGoals = async (month: number, year: number) => {
+    // Get all branch targets for this month/year
+    const targetsQuery = query(collection(firestore, 'branch_targets'));
+    const targetsSnapshot = await getDocs(targetsQuery);
+    
+    let totalTargetApplicants = 0;
+    let totalTargetMedical = 0;
+    let totalTargetTransfer = 0;
+    let totalTargetDeployed = 0;
+
+    // Sum up targets from all branches for the current month/year
+    targetsSnapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.year === year && data.month === month) {
+        totalTargetApplicants += data.targets?.applicants || 0;
+        totalTargetMedical += data.targets?.medical || 0;
+        totalTargetTransfer += data.targets?.transferToHO || 0;
+        totalTargetDeployed += data.targets?.deployed || 0;
+      }
+    });
+
+    // If no targets set, show empty state
+    if (totalTargetApplicants === 0 && totalTargetMedical === 0 && totalTargetTransfer === 0 && totalTargetDeployed === 0) {
+      setGoals([]);
+      setOverallProgress(0);
+      return;
+    }
+
+    // Get actual performance across all branches
+    const allApplicantsSnapshot = await getDocs(collection(firestore, 'applicants'));
+    const actualApplicants = allApplicantsSnapshot.size;
+
+    const medicalQuery = query(
+      collection(firestore, 'applicants'),
+      where('currentStage', '==', 'medical')
+    );
+    const medicalSnapshot = await getDocs(medicalQuery);
+    const actualMedical = medicalSnapshot.size;
+
+    const transferQuery = query(
+      collection(firestore, 'applicants'),
+      where('currentStage', '==', 'transfer')
+    );
+    const transferSnapshot = await getDocs(transferQuery);
+    const actualTransfer = transferSnapshot.size;
+
+    const deployedQuery = query(
+      collection(firestore, 'applicants'),
+      where('currentStage', '==', 'deployed')
+    );
+    const deployedSnapshot = await getDocs(deployedQuery);
+    const actualDeployed = deployedSnapshot.size;
+
+    // Calculate progress
+    const goalsData = [
+      {
+        label: 'Total Applicants',
+        progress: totalTargetApplicants > 0 ? Math.min((actualApplicants / totalTargetApplicants) * 100, 100) : 0,
+        color: 'bg-blue-500',
+        actual: actualApplicants,
+        target: totalTargetApplicants,
+        icon: '📝'
+      },
+      {
+        label: 'Total Medical',
+        progress: totalTargetMedical > 0 ? Math.min((actualMedical / totalTargetMedical) * 100, 100) : 0,
+        color: 'bg-green-500',
+        actual: actualMedical,
+        target: totalTargetMedical,
+        icon: '🏥'
+      },
+      {
+        label: 'Total Transfer',
+        progress: totalTargetTransfer > 0 ? Math.min((actualTransfer / totalTargetTransfer) * 100, 100) : 0,
+        color: 'bg-orange-500',
+        actual: actualTransfer,
+        target: totalTargetTransfer,
+        icon: '🔄'
+      },
+      {
+        label: 'Total Deployed',
+        progress: totalTargetDeployed > 0 ? Math.min((actualDeployed / totalTargetDeployed) * 100, 100) : 0,
+        color: 'bg-purple-500',
+        actual: actualDeployed,
+        target: totalTargetDeployed,
+        icon: '✈️'
+      },
+    ];
+
+    setGoals(goalsData);
+    
+    const avgProgress = goalsData.reduce((sum, g) => sum + g.progress, 0) / goalsData.length;
+    setOverallProgress(Math.round(avgProgress));
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg border-2 border-purple-200 p-4">
+        <div className="animate-pulse space-y-3">
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+          <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="h-10 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg border-2 border-purple-200 p-4">
       <div className="flex items-center space-x-2 mb-3">
         <BoltIcon className="h-4 w-4 text-purple-600" />
         <h3 className="text-sm font-semibold text-gray-900">Goal Progress</h3>
+        <span className="text-xs text-gray-500">
+          {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+        </span>
       </div>
       
-      <div className="space-y-3">
-        {goals.map((goal, index) => (
-          <div key={index} className="space-y-1">
+      {goals.length === 0 ? (
+        <div className="text-center py-6">
+          <TrophyIcon className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+          <p className="text-sm text-gray-500 font-medium">No targets set for this period</p>
+          <p className="text-xs text-gray-400 mt-1">Contact admin to set monthly targets</p>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {goals.map((goal, index) => (
+              <div key={index} className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm">{goal.icon}</span>
+                    <span className="text-xs font-medium text-gray-700">{goal.label}</span>
+                  </div>
+                  <span className="text-xs font-bold text-gray-900">
+                    {goal.actual}/{goal.target} ({Math.round(goal.progress)}%)
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className={`${goal.color} h-full rounded-full transition-all duration-500 ease-out relative`}
+                    style={{ width: `${goal.progress}%` }}
+                  >
+                    <div className="absolute inset-0 bg-white opacity-30 animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-4 pt-3 border-t border-purple-200">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-gray-700">{goal.label}</span>
-              <span className="text-xs font-bold text-gray-900">{goal.progress}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-              <div
-                className={`${goal.color} h-full rounded-full transition-all duration-500 ease-out relative`}
-                style={{ width: `${goal.progress}%` }}
-              >
-                <div className="absolute inset-0 bg-white opacity-30 animate-pulse" />
+              <span className="text-xs font-medium text-gray-600">Overall Progress</span>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-bold text-purple-600">{overallProgress}%</span>
+                {overallProgress >= 75 ? (
+                  <span className="text-green-500">🎉</span>
+                ) : overallProgress >= 50 ? (
+                  <span className="text-yellow-500">💪</span>
+                ) : (
+                  <span className="text-orange-500">📈</span>
+                )}
               </div>
             </div>
           </div>
-        ))}
-      </div>
-      
-      <div className="mt-4 pt-3 border-t border-purple-200">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-gray-600">Overall Progress</span>
-          <span className="text-sm font-bold text-purple-600">73%</span>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };
 
-// Stage Distribution Widget - Shows pipeline distribution
+// Financial Distribution Widget - Shows Expenses and Commissions distribution
 const StageDistributionWidget: React.FC<{ branchId?: string | null }> = ({ branchId }) => {
-  const [stageData, setStageData] = useState<any[]>([]);
+  const [financialData, setFinancialData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStageData = async () => {
+    const fetchFinancialData = async () => {
       try {
-        const applicantsRef = collection(firestore, 'applicants');
-        // Filter by branch if branchId is provided (for Branch Managers)
-        const applicantsQuery = branchId
-          ? query(applicantsRef, where('branchId', '==', branchId))
-          : applicantsRef;
-        const snapshot = await getDocs(applicantsQuery);
+        const expensesRef = collection(firestore, 'expenses');
+        const commissionsRef = collection(firestore, 'commissions');
         
-        const stageCounts = snapshot.docs.reduce((acc, doc) => {
-          const stage = doc.data().currentStage || 'registration';
-          acc[stage] = (acc[stage] || 0) + 1;
+        // Filter by branch if branchId is provided (for Branch Managers)
+        const expensesQuery = branchId
+          ? query(expensesRef, where('branchId', '==', branchId))
+          : expensesRef;
+        const commissionsQuery = branchId
+          ? query(commissionsRef, where('branchId', '==', branchId))
+          : commissionsRef;
+          
+        const [expensesSnapshot, commissionsSnapshot] = await Promise.all([
+          getDocs(expensesQuery),
+          getDocs(commissionsQuery)
+        ]);
+        
+        // Group expenses by status
+        const expensesByStatus = expensesSnapshot.docs.reduce((acc, doc) => {
+          const status = doc.data().status || 'pending';
+          acc[status] = (acc[status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        // Group commissions by status
+        const commissionsByStatus = commissionsSnapshot.docs.reduce((acc, doc) => {
+          const status = doc.data().status || 'pending';
+          acc[status] = (acc[status] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
 
         const data = [
-          { stage: 'Registration', count: stageCounts['registration'] || 0, color: 'bg-gray-500' },
-          { stage: 'Interview', count: stageCounts['interview'] || 0, color: 'bg-blue-500' },
-          { stage: 'Medical', count: stageCounts['medical'] || 0, color: 'bg-green-500' },
-          { stage: 'Processing', count: stageCounts['processing'] || 0, color: 'bg-purple-500' },
-          { stage: 'Deployment', count: stageCounts['deployment'] || 0, color: 'bg-orange-500' },
-          { stage: 'Deployed', count: stageCounts['deployed'] || 0, color: 'bg-teal-500' },
+          { stage: 'Pending Expenses', count: expensesByStatus['pending'] || 0, color: 'bg-orange-500' },
+          { stage: 'Approved Expenses', count: expensesByStatus['approved'] || 0, color: 'bg-green-500' },
+          { stage: 'Rejected Expenses', count: expensesByStatus['rejected'] || 0, color: 'bg-red-500' },
+          { stage: 'Pending Commissions', count: commissionsByStatus['pending'] || 0, color: 'bg-yellow-500' },
+          { stage: 'Paid Commissions', count: commissionsByStatus['paid'] || 0, color: 'bg-blue-500' },
+          { stage: 'Rejected Commissions', count: commissionsByStatus['rejected'] || 0, color: 'bg-pink-500' },
         ];
 
-        setStageData(data.filter(d => d.count > 0));
+        setFinancialData(data.filter(d => d.count > 0));
       } catch (error) {
-        console.error('Error fetching stage data:', error);
+        console.error('Error fetching financial data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchStageData();
+    fetchFinancialData();
   }, [branchId]);
 
   if (loading) {
@@ -284,22 +550,22 @@ const StageDistributionWidget: React.FC<{ branchId?: string | null }> = ({ branc
     );
   }
 
-  const total = stageData.reduce((sum, item) => sum + item.count, 0);
+  const total = financialData.reduce((sum, item) => sum + item.count, 0);
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
       <div className="flex items-center space-x-2 mb-3">
-        <ChartBarIcon className="h-4 w-4 text-indigo-600" />
+        <BanknotesIcon className="h-4 w-4 text-indigo-600" />
         <h3 className="text-sm font-semibold text-gray-900">Pipeline Distribution</h3>
       </div>
       
       <div className="mb-3 text-center">
         <p className="text-2xl font-bold text-indigo-600">{total}</p>
-        <p className="text-xs text-gray-500">Total in Pipeline</p>
+        <p className="text-xs text-gray-500">Total Items</p>
       </div>
 
       <div className="space-y-2">
-        {stageData.map((item, index) => {
+        {financialData.map((item, index) => {
           const percentage = total > 0 ? (item.count / total) * 100 : 0;
           return (
             <div key={index} className="group cursor-pointer">
@@ -467,19 +733,37 @@ const PendingTasksWidget: React.FC<{ role: string; userId: string; branchId?: st
 
       // Listen to pending commissions
       if (role === 'ho_accountant' || role === 'admin' || role === 'president' || role === 'branch_manager') {
-        // Branch Managers only see commissions from their branch
-        const commissionsQuery = role === 'branch_manager' && branchId
-          ? query(
-              collection(firestore, 'commissions'),
-              where('status', '==', 'pending'),
-              where('branchId', '==', branchId),
-              limit(100)
-            )
-          : query(
-              collection(firestore, 'commissions'),
-              where('status', '==', 'pending'),
-              limit(100)
-            );
+        // Different roles see different commission statuses:
+        // - HO Accountant: "pending" (needs verification)
+        // - Admin/President: "verified" (needs approval)
+        // - Branch Manager: "pending" (their requests awaiting verification)
+        
+        let commissionsQuery;
+        
+        if (role === 'admin' || role === 'president') {
+          // Admin/President see VERIFIED commissions that need approval
+          commissionsQuery = query(
+            collection(firestore, 'commissions'),
+            where('status', '==', 'verified'),
+            limit(100)
+          );
+        } else if (role === 'branch_manager' && branchId) {
+          // Branch Managers see PENDING commissions from their branch
+          commissionsQuery = query(
+            collection(firestore, 'commissions'),
+            where('status', '==', 'pending'),
+            where('branchId', '==', branchId),
+            limit(100)
+          );
+        } else {
+          // HO Accountant sees PENDING commissions that need verification
+          commissionsQuery = query(
+            collection(firestore, 'commissions'),
+            where('status', '==', 'pending'),
+            limit(100)
+          );
+        }
+        
         const unsubCommissions = onSnapshot(
           commissionsQuery,
           (snapshot) => {
@@ -594,7 +878,7 @@ const PendingTasksWidget: React.FC<{ role: string; userId: string; branchId?: st
       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-lg border-2 border-green-200 p-4">
         <div className="text-center">
           <CheckCircleIcon className="h-8 w-8 text-green-600 mx-auto mb-2" />
-          <h3 className="text-sm font-semibold text-gray-900 mb-1">All Caught Up!</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-1">You're All Set!</h3>
           <p className="text-xs text-gray-600">No pending tasks</p>
         </div>
       </div>
@@ -877,7 +1161,10 @@ export const Dashboard = () => {
             {/* Left Section - Performance & Goals (8 columns) */}
             <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
               <PerformanceInsights role={customClaims?.role || ''} />
-              <GoalProgressWidget role={customClaims?.role || ''} />
+              <GoalProgressWidget 
+                role={customClaims?.role || ''} 
+                branchId={customClaims?.role === 'branch_manager' ? customClaims.branchId : null}
+              />
             </div>
 
             {/* Right Section - Quick Actions & Tools (4 columns) */}

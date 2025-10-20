@@ -253,7 +253,7 @@ export const PendingApprovals: React.FC<PendingApprovalsProps> = ({
           <CheckCircleIcon className="w-16 h-16 text-green-500 mx-auto mb-4 animate-pulse" />
           <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-ping" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">All Caught Up!</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-2">You're All Set!</h3>
         <p className="text-gray-600 mb-4">No pending approvals at the moment</p>
         <div className="inline-flex items-center space-x-2 text-sm text-green-700 bg-green-100 px-4 py-2 rounded-full">
           <span>✨</span>

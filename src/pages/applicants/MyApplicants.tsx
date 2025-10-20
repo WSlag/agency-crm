@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ApplicantTable } from '../../components/applicants/list/ApplicantTable';
 import { useApplicantStore } from '../../stores/applicantStore';
 import { useBranchStore } from '../../stores/branchStore';
@@ -7,16 +7,22 @@ import { useOfficerStore } from '../../stores/officerStore';
 import { useAuth } from '../../contexts/AuthContext';
 import { ApplicantFilter, ApplicantSort } from '../../types/applicant';
 import { UserGroupIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { firestore } from '../../config/firebase';
 
 /**
  * MyApplicants - HO Recruitment Officer dedicated page
  * Shows ONLY applicants assigned to the logged-in officer
  * Security: Enforces assignedRecruitmentOfficerId filter
+ * Admin/Manager View: Can view any officer's applicants via ?officer=uid query param
  */
 export const MyApplicants = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, customClaims } = useAuth();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [officerName, setOfficerName] = useState<string>('');
+  const [currentOfficerId, setCurrentOfficerId] = useState<string | null>(null);
   
   const {
     applicants,
@@ -29,29 +35,43 @@ export const MyApplicants = () => {
     setSort,
     setPagination,
     fetchApplicants,
-    deleteApplicant,
   } = useApplicantStore();
 
   const { branches, loading: branchesLoading, fetchBranches } = useBranchStore();
   const { officers, loading: officersLoading, fetchActiveOfficers } = useOfficerStore();
 
-  // SECURITY: Redirect if not HO Recruitment Officer
+  // Get officer ID from query parameter (for admin view)
+  const officerIdParam = searchParams.get('officer');
+  const isAdminView = (customClaims?.role === 'admin' || customClaims?.role === 'president') && officerIdParam;
+
+  // SECURITY: Redirect if not authorized
   useEffect(() => {
-    if (customClaims?.role && customClaims.role !== 'ho_recruitment_officer') {
-      console.warn('Unauthorized access to My Applicants - redirecting');
-      navigate('/dashboard');
+    if (customClaims?.role) {
+      const isAuthorized = 
+        customClaims.role === 'ho_recruitment_officer' || 
+        customClaims.role === 'admin' || 
+        customClaims.role === 'president';
+      
+      if (!isAuthorized) {
+        console.warn('Unauthorized access to My Applicants - redirecting');
+        navigate('/dashboard');
+      }
     }
   }, [customClaims, navigate]);
 
   // Load initial data and enforce security filter
   useEffect(() => {
     const loadData = async () => {
-      if (!user || !customClaims || customClaims.role !== 'ho_recruitment_officer') {
+      if (!user || !customClaims) {
         return;
       }
 
       try {
-        console.log('🔒 [MyApplicants] Loading assigned applicants for officer:', user.uid);
+        // Determine which officer's applicants to show
+        const targetOfficerId = isAdminView ? officerIdParam : user.uid;
+        
+        console.log('🔒 [MyApplicants] Loading assigned applicants for officer:', targetOfficerId);
+        console.log('📋 [MyApplicants] Is admin view:', isAdminView);
         
         // Load reference data
         await Promise.all([
@@ -59,13 +79,31 @@ export const MyApplicants = () => {
           fetchActiveOfficers()
         ]);
 
-        // SECURITY: Always filter by assigned officer ID
+        // Fetch officer name if viewing another officer's applicants
+        if (isAdminView && officerIdParam) {
+          try {
+            const officersQuery = query(
+              collection(firestore, 'users'),
+              where('role', '==', 'ho_recruitment_officer')
+            );
+            const snapshot = await getDocs(officersQuery);
+            const officer = snapshot.docs.find(doc => doc.id === officerIdParam);
+            if (officer) {
+              setOfficerName(officer.data().displayName || officer.data().email || 'Unknown Officer');
+            }
+          } catch (err) {
+            console.error('Error fetching officer name:', err);
+          }
+        }
+
+        // SECURITY: Filter by assigned officer ID
         const secureFilter: ApplicantFilter = {
-          assignedOfficerId: user.uid, // Only show MY assigned applicants
+          assignedOfficerId: targetOfficerId, // Show assigned applicants for target officer
         };
         
         console.log('🔒 [MyApplicants] Applying security filter:', secureFilter);
         setFilter(secureFilter);
+        setCurrentOfficerId(targetOfficerId);
         setIsInitialized(true);
         
         // Fetch applicants with security filter
@@ -76,11 +114,16 @@ export const MyApplicants = () => {
       }
     };
 
-    if (!isInitialized) {
+    // Determine which officer we should be viewing
+    const targetOfficerId = isAdminView ? officerIdParam : user?.uid;
+    
+    // Load data if not initialized OR if the officer ID has changed
+    if (!isInitialized || currentOfficerId !== targetOfficerId) {
+      console.log('🔄 [MyApplicants] Loading data for officer:', targetOfficerId);
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, customClaims, isInitialized]);
+  }, [user, customClaims, officerIdParam]);
 
   // Fetch applicants when filters or sort change
   useEffect(() => {
@@ -107,8 +150,9 @@ export const MyApplicants = () => {
     }
     
     // SECURITY: Always keep assignedOfficerId filter
-    if (user?.uid) {
-      newFilters.assignedOfficerId = user.uid;
+    const targetOfficerId = isAdminView ? officerIdParam : user?.uid;
+    if (targetOfficerId) {
+      newFilters.assignedOfficerId = targetOfficerId;
     }
     
     console.log('🔒 [MyApplicants] New filters (with security):', newFilters);
@@ -129,18 +173,6 @@ export const MyApplicants = () => {
     // HO Officers should not edit applicants
     console.warn('🔒 HO Officers cannot edit applicants');
     alert('You do not have permission to edit applicants.');
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this applicant?')) {
-      try {
-        await deleteApplicant(id);
-        await fetchApplicants();
-      } catch (error) {
-        console.error('Failed to delete applicant:', error);
-        alert('Failed to delete applicant. Please try again.');
-      }
-    }
   };
 
   // Show loading state
@@ -179,9 +211,13 @@ export const MyApplicants = () => {
               <UserGroupIcon className="h-6 w-6 text-indigo-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">My Assigned Applicants</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isAdminView ? `${officerName}'s Assigned Applicants` : 'My Assigned Applicants'}
+              </h1>
               <p className="text-sm text-gray-500 mt-1">
-                Applicants assigned to you for recruitment processing
+                {isAdminView 
+                  ? `Viewing applicants assigned to ${officerName}` 
+                  : 'Applicants assigned to you for recruitment processing'}
               </p>
             </div>
           </div>
@@ -197,8 +233,7 @@ export const MyApplicants = () => {
         applicants={applicants}
         sort={sort}
         onSortChange={handleSortChange}
-        isAdmin={false}
-        onDelete={handleDelete}
+        isAdmin={false} // Disable delete button to prevent accidental deletions
         basePath="/my-applicants" // Use dedicated HO Officer route
       />
     </div>

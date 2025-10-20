@@ -122,6 +122,15 @@ service cloud.firestore {
     }
     
     // ==========================================
+    // BRANCH TARGETS COLLECTION
+    // ==========================================
+    
+    match /branch_targets/{targetId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isPresident();
+    }
+    
+    // ==========================================
     // AGENTS COLLECTION
     // ==========================================
     

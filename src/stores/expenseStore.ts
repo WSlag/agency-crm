@@ -126,7 +126,7 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
       }
 
       const snapshot = await getDocs(q);
-      const expenses = snapshot.docs.map((doc) => {
+      let expenses = snapshot.docs.map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -139,6 +139,28 @@ export const useExpenseStore = create<ExpenseState>((set, get) => ({
           updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
         };
       }) as Expense[];
+
+      // Sort by status priority: pending → verified → approved → rejected
+      const statusPriority: Record<string, number> = {
+        'pending': 1,
+        'verified': 2,
+        'approved': 3,
+        'rejected': 4,
+      };
+
+      expenses.sort((a, b) => {
+        const priorityA = statusPriority[a.status] || 99;
+        const priorityB = statusPriority[b.status] || 99;
+        
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB; // Sort by status priority first
+        }
+        
+        // If same status, sort by createdAt (newest first)
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
+      });
 
       set({ expenses, loading: false });
     } catch (error) {

@@ -8,6 +8,7 @@ import { CommissionService } from '../../services/commissionService';
 import { Commission, COMMISSION_CONFIG } from '../../types/commission';
 import { PartialPaymentModal } from '../../components/commissions/PartialPaymentModal';
 import { PaymentHistory } from '../../components/commissions/PaymentHistory';
+import { CommissionApproval } from '../../components/commissions/CommissionApproval';
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -32,6 +33,7 @@ export const CommissionDetailPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -71,19 +73,8 @@ export const CommissionDetailPage = () => {
     }
   };
 
-  const handleApprove = async () => {
-    if (!commission || !user) return;
-    
-    try {
-      setActionLoading(true);
-      await CommissionService.approveCommission(commission.id, user.uid);
-      await loadCommission();
-    } catch (err) {
-      console.error('Error approving commission:', err);
-      alert('Failed to approve commission');
-    } finally {
-      setActionLoading(false);
-    }
+  const handleApprove = () => {
+    setShowApprovalModal(true);
   };
 
   const handleReject = async () => {
@@ -160,7 +151,8 @@ export const CommissionDetailPage = () => {
       return false;
     }
     
-    const paymentRoles = ['admin', 'president', 'ho_accountant'];
+    // Only HO Accountant can record payments
+    const paymentRoles = ['ho_accountant'];
     const userRole = customClaims.role || '';
     
     // Allow payment for approved, partially_paid, OR pending auto-triggered commissions
@@ -618,6 +610,22 @@ export const CommissionDetailPage = () => {
         commission={commission}
         onPayment={handleRecordPartialPayment}
       />
+
+      {/* Approval Modal */}
+      {showApprovalModal && commission && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full border-2 border-gray-200">
+            <CommissionApproval
+              commission={commission}
+              onClose={() => setShowApprovalModal(false)}
+              onSuccess={() => {
+                setShowApprovalModal(false);
+                loadCommission();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

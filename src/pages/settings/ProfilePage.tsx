@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 import { firestore } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -13,6 +14,7 @@ import {
   ShieldCheckIcon,
   ArrowLeftIcon,
   CheckCircleIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 
 const profileUpdateSchema = z.object({
@@ -30,17 +32,19 @@ export const ProfilePage: React.FC = () => {
   const { user, customClaims } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<ProfileUpdateData>({
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
-      displayName: user?.displayName || '',
+      displayName: '',
       preferences: {
         theme: 'light',
         notifications: true,
@@ -48,6 +52,48 @@ export const ProfilePage: React.FC = () => {
       },
     },
   });
+
+  // Load user data from Firestore on component mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (!user) return;
+
+      try {
+        setLoadingData(true);
+        const userRef = doc(firestore, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          reset({
+            displayName: userData.displayName || user.displayName || '',
+            preferences: {
+              theme: userData.preferences?.theme || 'light',
+              notifications: userData.preferences?.notifications ?? true,
+              language: userData.preferences?.language || 'en',
+            },
+          });
+        } else {
+          // If document doesn't exist, use auth data
+          reset({
+            displayName: user.displayName || '',
+            preferences: {
+              theme: 'light',
+              notifications: true,
+              language: 'en',
+            },
+          });
+        }
+      } catch (err) {
+        console.error('Error loading user data:', err);
+        setError('Failed to load profile data');
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadUserData();
+  }, [user, reset]);
 
   const onSubmit = async (data: ProfileUpdateData) => {
     if (!user) return;
@@ -57,6 +103,12 @@ export const ProfilePage: React.FC = () => {
       setError(null);
       setSuccess(false);
 
+      // Update Firebase Auth displayName
+      await updateProfile(user, {
+        displayName: data.displayName,
+      });
+
+      // Update Firestore user document
       const userRef = doc(firestore, 'users', user.uid);
       await updateDoc(userRef, {
         displayName: data.displayName,
@@ -65,13 +117,71 @@ export const ProfilePage: React.FC = () => {
       });
 
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => {
+        setSuccess(false);
+        // Reload the page to refresh the auth context with new displayName
+        window.location.reload();
+      }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
       setLoading(false);
     }
   };
+
+  // Show loading skeleton while fetching data
+  if (loadingData) {
+    return (
+      <div className="min-h-full">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-2xl">
+          <div className="px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all duration-200 border border-white/20"
+              >
+                <ArrowLeftIcon className="h-6 w-6 text-white" />
+              </button>
+              <div className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20">
+                  <UserCircleIcon className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-white flex items-center">
+                    My Profile
+                    <SparklesIcon className="ml-3 h-8 w-8 text-yellow-300 animate-pulse" />
+                  </h1>
+                  <p className="text-indigo-100 mt-1">Loading your profile...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading Skeleton */}
+        <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="space-y-4">
+                <div className="h-12 bg-gray-200 rounded"></div>
+                <div className="h-12 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="space-y-4">
+                <div className="h-12 bg-gray-200 rounded"></div>
+                <div className="h-12 bg-gray-200 rounded"></div>
+                <div className="h-12 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full">

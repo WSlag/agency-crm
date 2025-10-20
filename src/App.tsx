@@ -85,6 +85,7 @@ import { NotificationSettings } from './pages/settings/NotificationSettings';
 import { NotificationsList } from './pages/notifications/NotificationsList';
 import { RolePermissions } from './pages/settings/RolePermissions';
 import { BranchConfiguration } from './pages/settings/BranchConfiguration';
+import { BranchTargets } from './pages/settings/BranchTargets';
 import { ProfilePage } from './pages/settings/ProfilePage';
 
 import { AuthProvider } from './contexts/AuthContext';
@@ -137,11 +138,11 @@ const App: React.FC = () => {
             }
           />
 
-          {/* My Applicants - HO Recruitment Officer Only (Assigned to them) */}
+          {/* My Applicants - HO Recruitment Officer (Assigned to them) + Admin/President View */}
           <Route
             path="/my-applicants"
             element={
-              <RoleGuard allowedRoles={['ho_recruitment_officer']}>
+              <RoleGuard allowedRoles={['ho_recruitment_officer', 'admin', 'president']}>
                 <Outlet />
               </RoleGuard>
             }
@@ -286,19 +287,31 @@ const App: React.FC = () => {
           <Route path="/notifications/all" element={<NotificationsList />} />
 
           {/* Settings */}
-          <Route
-            path="/settings"
-            element={
-              <RoleGuard allowedRoles={['admin']}>
-                <Outlet />
-              </RoleGuard>
-            }
-          >
-            <Route index element={<Navigate to="/settings/system" replace />} />
-            <Route path="system" element={<SystemSettings />} />
-            <Route path="notifications" element={<NotificationSettings />} />
-            <Route path="roles" element={<RolePermissions />} />
-            <Route path="branches" element={<BranchConfiguration />} />
+          <Route path="/settings">
+            {/* Admin-only settings */}
+            <Route
+              element={
+                <RoleGuard allowedRoles={['admin']}>
+                  <Outlet />
+                </RoleGuard>
+              }
+            >
+              <Route index element={<Navigate to="/settings/system" replace />} />
+              <Route path="system" element={<SystemSettings />} />
+              <Route path="notifications" element={<NotificationSettings />} />
+              <Route path="roles" element={<RolePermissions />} />
+              <Route path="branches" element={<BranchConfiguration />} />
+            </Route>
+            
+            {/* Branch Targets - Admin and President */}
+            <Route
+              path="branch-targets"
+              element={
+                <RoleGuard allowedRoles={['admin', 'president']}>
+                  <BranchTargets />
+                </RoleGuard>
+              }
+            />
           </Route>
 
           {/* Expenses Routes */}

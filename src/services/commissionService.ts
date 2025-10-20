@@ -153,12 +153,18 @@ export class CommissionService {
   ): Promise<void> {
     try {
       const docRef = doc(firestore, this.COLLECTION, commissionId);
-      await updateDoc(docRef, {
+      const updateData: any = {
         status,
         verifiedBy,
         verifiedAt: Timestamp.now(),
-        notes
-      });
+      };
+      
+      // Only include notes if provided
+      if (notes !== undefined && notes !== null && notes !== '') {
+        updateData.notes = notes;
+      }
+      
+      await updateDoc(docRef, updateData);
     } catch (error) {
       console.error('Error verifying commission:', error);
       throw error;
@@ -175,12 +181,18 @@ export class CommissionService {
   ): Promise<void> {
     try {
       const docRef = doc(firestore, this.COLLECTION, commissionId);
-      await updateDoc(docRef, {
+      const updateData: any = {
         status: 'approved',
         approvedBy,
         approvedAt: Timestamp.now(),
-        notes
-      });
+      };
+      
+      // Only include notes if provided
+      if (notes !== undefined && notes !== null && notes !== '') {
+        updateData.notes = notes;
+      }
+      
+      await updateDoc(docRef, updateData);
     } catch (error) {
       console.error('Error approving commission:', error);
       throw error;

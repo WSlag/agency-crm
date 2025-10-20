@@ -14,6 +14,9 @@ import {
   RectangleStackIcon,
   DocumentDuplicateIcon,
   BellIcon,
+  TrophyIcon,
+  SparklesIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import type { NavigationItem } from '../types/navigation';
 
@@ -85,9 +88,41 @@ export const navigation: NavigationItem[] = [
     roles: ['admin', 'president', 'ho_accountant']
   },
   {
+    name: 'Branch Targets',
+    href: '/settings/branch-targets',
+    icon: TrophyIcon,
+    roles: ['admin', 'president']
+  },
+  {
     name: 'Settings',
     href: '/settings',
     icon: Cog6ToothIcon,
-    roles: ['admin']
+    roles: ['admin'],
+    children: [
+      {
+        name: 'System Settings',
+        href: '/settings/system',
+        icon: SparklesIcon,
+        roles: ['admin']
+      },
+      {
+        name: 'Notifications',
+        href: '/settings/notifications',
+        icon: BellIcon,
+        roles: ['admin']
+      },
+      {
+        name: 'Role Permissions',
+        href: '/settings/roles',
+        icon: ShieldCheckIcon,
+        roles: ['admin']
+      },
+      {
+        name: 'Branch Config',
+        href: '/settings/branches',
+        icon: BuildingOfficeIcon,
+        roles: ['admin']
+      }
+    ]
   }
 ];

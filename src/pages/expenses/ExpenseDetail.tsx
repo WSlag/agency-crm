@@ -9,6 +9,7 @@ import { useBranchStore } from '../../stores/branchStore';
 import { EXPENSE_CONFIG, type ExpenseVerification as ExpenseVerificationType, type ExpenseApproval as ExpenseApprovalType } from '../../types/expense';
 import { ExpenseVerification } from '../../components/expenses/ExpenseVerification';
 import { ExpenseApproval } from '../../components/expenses/ExpenseApproval';
+import { ExpensePayment } from '../../components/expenses/ExpensePayment';
 import {
   SparklesIcon,
   ArrowLeftIcon,
@@ -35,6 +36,7 @@ export const ExpenseDetail: React.FC = () => {
 
   const [showVerification, setShowVerification] = React.useState(false);
   const [showApproval, setShowApproval] = React.useState(false);
+  const [showPayment, setShowPayment] = React.useState(false);
   const [verifierName, setVerifierName] = React.useState<string>('');
   const [approverName, setApproverName] = React.useState<string>('');
   const [verificationDetails, setVerificationDetails] = React.useState<ExpenseVerificationType | null>(null);
@@ -144,6 +146,10 @@ export const ExpenseDetail: React.FC = () => {
     (customClaims?.role === 'admin' || customClaims?.role === 'president') &&
     selectedExpense?.status === 'verified';
 
+  const canRecordPayment =
+    customClaims?.role === 'ho_accountant' &&
+    selectedExpense?.status === 'approved';
+
   const canDelete =
     selectedExpense?.enteredBy === user?.uid &&
     selectedExpense?.status === 'pending';
@@ -240,6 +246,15 @@ export const ExpenseDetail: React.FC = () => {
                   >
                     <CheckCircleIcon className="h-5 w-5 mr-2" />
                     Approve Expense
+                  </button>
+                )}
+                {canRecordPayment && (
+                  <button
+                    onClick={() => setShowPayment(true)}
+                    className="inline-flex items-center px-6 py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white font-medium hover:bg-white/30 transition-all transform hover:scale-105 shadow-lg"
+                  >
+                    <BanknotesIcon className="h-5 w-5 mr-2" />
+                    Record Payment
                   </button>
                 )}
                 {canDelete && (
@@ -555,6 +570,22 @@ export const ExpenseDetail: React.FC = () => {
               expense={selectedExpense}
               onClose={() => {
                 setShowApproval(false);
+                // Refresh expense data to show updated status
+                if (id) fetchExpenseById(id);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPayment && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full border-2 border-gray-200">
+            <ExpensePayment
+              expense={selectedExpense}
+              onClose={() => {
+                setShowPayment(false);
                 // Refresh expense data to show updated status
                 if (id) fetchExpenseById(id);
               }}

@@ -70,26 +70,23 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
               return acc;
             }, {} as Record<string, number>);
 
+            const registrationCount = applicantsByStage['registration'] || 0;
             const interviewCount = applicantsByStage['interview'] || 0;
             const medicalCount = applicantsByStage['medical'] || 0;
+            const transferCount = applicantsByStage['transfer'] || 0;
             const processingCount = applicantsByStage['processing'] || 0;
             const deploymentCount = applicantsByStage['deployment'] || 0;
             const deployedCount = applicantsByStage['deployed'] || 0;
 
             // Calculate specific status counts using only valid applicants
-            // Note: Pending Approval applicants are a subset of Active applicants
-            const pendingApprovalCount = validApplicants.filter(doc => {
-              const data = doc.data();
-              return data.requiresApproval === true && !data.approvedBy;
-            }).length;
-            
-            // Active count excludes pending approval to avoid double-counting
-            // (Pending approval applicants are active but waiting for stage advancement)
             const activeCount = validApplicants.filter(doc => {
               const data = doc.data();
-              return data.status === 'active' && !(data.requiresApproval === true && !data.approvedBy);
+              return data.status === 'active';
             }).length;
             
+            const inactiveCount = validApplicants.filter(doc => doc.data().status === 'inactive').length;
+            const rejectedCount = validApplicants.filter(doc => doc.data().status === 'rejected').length;
+            const onHoldCount = validApplicants.filter(doc => doc.data().status === 'on_hold').length;
             const withdrawnCount = validApplicants.filter(doc => doc.data().status === 'withdrawn').length;
             
             setMetrics([
@@ -126,17 +123,21 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
             // Set breakdowns for specific statuses
             setBreakdowns({
               applicantsByStage: [
+                { label: 'Registration', value: registrationCount, type: 'number' as const },
                 { label: 'Interview', value: interviewCount, type: 'number' as const },
                 { label: 'Medical', value: medicalCount, type: 'number' as const },
+                { label: 'Transfer', value: transferCount, type: 'number' as const },
                 { label: 'Processing', value: processingCount, type: 'number' as const },
                 { label: 'Deployment', value: deploymentCount + deployedCount, type: 'number' as const },
-              ].filter(item => item.value > 0),
+              ],
               applicantsByStatus: [
                 { label: 'Active', value: activeCount, type: 'number' as const },
-                { label: 'Pending Approval', value: pendingApprovalCount, type: 'number' as const },
-                { label: 'Withdrawn', value: withdrawnCount, type: 'number' as const },
+                { label: 'Inactive', value: inactiveCount, type: 'number' as const },
+                { label: 'Rejected', value: rejectedCount, type: 'number' as const },
+                { label: 'On Hold', value: onHoldCount, type: 'number' as const },
                 { label: 'Deployed', value: deployedCount, type: 'number' as const },
-              ].filter(item => item.value > 0)
+                { label: 'Withdrawn', value: withdrawnCount, type: 'number' as const },
+              ]
             });
             break;
           }
@@ -195,19 +196,21 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
               }
             ]);
 
-            // Breakdown by applicant status
-            const applicantsByStatus = allApplicants.docs.reduce((acc, doc) => {
-              const status = doc.data().status || 'pending';
-              acc[status] = (acc[status] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>);
+            // Breakdown by applicant status - show only specific statuses
+            const activeCount = allApplicants.docs.filter(doc => doc.data().status === 'active').length;
+            const inactiveCount = allApplicants.docs.filter(doc => doc.data().status === 'inactive').length;
+            const onHoldCount = allApplicants.docs.filter(doc => doc.data().status === 'on_hold').length;
+            const deployedCount = allApplicants.docs.filter(doc => doc.data().status === 'deployed').length;
+            const withdrawnCount = allApplicants.docs.filter(doc => doc.data().status === 'withdrawn').length;
 
             setBreakdowns({
-              applicantsByStatus: Object.entries(applicantsByStatus).map(([status, count]) => ({
-                label: status.replace('_', ' ').toUpperCase(),
-                value: count,
-                type: 'number'
-              }))
+              applicantsByStatus: [
+                { label: 'Active', value: activeCount, type: 'number' as const },
+                { label: 'Inactive', value: inactiveCount, type: 'number' as const },
+                { label: 'On Hold', value: onHoldCount, type: 'number' as const },
+                { label: 'Deployed', value: deployedCount, type: 'number' as const },
+                { label: 'Withdrawn', value: withdrawnCount, type: 'number' as const },
+              ]
             });
             break;
           }
@@ -267,6 +270,11 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
             const pendingCommissionAmount = allCommissions.docs
               .filter(doc => doc.data().status === 'pending')
               .reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
+            
+            const verifiedCommissions = allCommissions.docs.filter(doc => doc.data().status === 'verified').length;
+            const verifiedCommissionAmount = allCommissions.docs
+              .filter(doc => doc.data().status === 'verified')
+              .reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
 
             const approvedExpenseAmount = allExpenses.docs
               .filter(doc => doc.data().status === 'approved')
@@ -294,7 +302,13 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
                 label: 'Pending Commissions',
                 value: pendingCommissions,
                 type: 'number',
-                description: `₱${pendingCommissionAmount.toLocaleString()}`
+                description: `₱${pendingCommissionAmount.toLocaleString()} to verify`
+              },
+              {
+                label: 'Verified Commissions',
+                value: verifiedCommissions,
+                type: 'number',
+                description: `₱${verifiedCommissionAmount.toLocaleString()} awaiting approval`
               },
               {
                 label: 'Paid Commissions',
