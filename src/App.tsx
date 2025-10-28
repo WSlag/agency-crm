@@ -88,6 +88,14 @@ import { BranchConfiguration } from './pages/settings/BranchConfiguration';
 import { BranchTargets } from './pages/settings/BranchTargets';
 import { ProfilePage } from './pages/settings/ProfilePage';
 
+// Public Employer Portal
+import { EmployerPortal } from './pages/public/EmployerPortal';
+
+// Admin Resume Management
+import { ResumeManagement } from './pages/admin/ResumeManagement';
+import { AgencyInfoSettings } from './pages/admin/AgencyInfoSettings';
+import { EmployerInquiries } from './pages/admin/EmployerInquiries';
+
 import { AuthProvider } from './contexts/AuthContext';
 
 const App: React.FC = () => {
@@ -118,6 +126,9 @@ const App: React.FC = () => {
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+
+        {/* Public Employer Portal - No authentication required */}
+        <Route path="/employer-portal" element={<EmployerPortal />} />
 
         {/* Protected Routes */}
         <Route
@@ -383,6 +394,32 @@ const App: React.FC = () => {
             <Route path="officer-performance" element={<OfficerPerformance />} />
             <Route path="deployment" element={<DeploymentReports />} />
           </Route>
+
+          {/* Admin Resume Management Routes */}
+          <Route
+            path="/admin/resume-management"
+            element={
+              <RoleGuard allowedRoles={['admin']}>
+                <ResumeManagement />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/agency-info"
+            element={
+              <RoleGuard allowedRoles={['admin']}>
+                <AgencyInfoSettings />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/employer-inquiries"
+            element={
+              <RoleGuard allowedRoles={['admin']}>
+                <EmployerInquiries />
+              </RoleGuard>
+            }
+          />
         </Route>
 
         {/* Fallback Route */}

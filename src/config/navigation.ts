@@ -124,5 +124,23 @@ export const navigation: NavigationItem[] = [
         roles: ['admin']
       }
     ]
+  },
+  {
+    name: 'Resume Portal',
+    href: '/admin/resume-management',
+    icon: DocumentDuplicateIcon,
+    roles: ['admin']
+  },
+  {
+    name: 'Agency Info',
+    href: '/admin/agency-info',
+    icon: BuildingOfficeIcon,
+    roles: ['admin']
+  },
+  {
+    name: 'Employer Inquiries',
+    href: '/admin/employer-inquiries',
+    icon: ClipboardDocumentListIcon,
+    roles: ['admin']
   }
 ];

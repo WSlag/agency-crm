@@ -147,10 +147,14 @@ service cloud.firestore {
     // ==========================================
     
     match /applicants/{applicantId} {
-      allow read: if isAuthenticated();
-      allow create: if isAdmin() || 
+      // Allow public read for resume-visible applicants with passed medical
+      allow read: if isAuthenticated() ||
+        (resource.data.resumeVisible == true &&
+         resource.data.medicalStatus.examination.result == 'passed' &&
+         resource.data.status == 'active');
+      allow create: if isAdmin() ||
         (isBranchManager() && belongsToBranch(request.resource.data.branchId));
-      allow update: if isAdmin() || 
+      allow update: if isAdmin() ||
         (isBranchManager() && belongsToBranch(resource.data.branchId)) ||
         isHORecruitmentOfficer();
       allow delete: if isAdmin();
@@ -511,9 +515,34 @@ service cloud.firestore {
     }
     
     // ==========================================
+    // AGENCY INFO COLLECTION (Public Employer Portal)
+    // ==========================================
+
+    match /agency_info/{infoId} {
+      // Allow public read for employer portal
+      allow read: if true;
+      // Only admins can write
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // EMPLOYER INQUIRIES COLLECTION (Public Employer Portal)
+    // ==========================================
+
+    match /employer_inquiries/{inquiryId} {
+      // Admins can read all inquiries
+      allow read: if isAdmin();
+      // Anyone can create inquiries (public employers)
+      allow create: if true;
+      // Only admins can update/delete inquiries
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
     // CATCH-ALL RULE (restricted)
     // ==========================================
-    
+
     match /{collection}/{document=**} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();

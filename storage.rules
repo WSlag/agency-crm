@@ -186,10 +186,40 @@ service firebase.storage {
     // ==========================================
     // PUBLIC ASSETS
     // ==========================================
-    
+
     match /public/{document=**} {
       allow read: if true;
       allow write: if isAdmin() && isValidFileSize(10);
+    }
+
+    // ==========================================
+    // AGENCY INFO (Employer Portal)
+    // ==========================================
+
+    match /agency/{fileName} {
+      // Public read for agency logo/assets
+      allow read: if true;
+      // Only admins can upload/update
+      allow write: if isAuthenticated() &&
+        isAdmin() &&
+        isValidFileSize(5) &&
+        isValidImageType();
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // RESUME PHOTOS (Employer Portal)
+    // ==========================================
+
+    match /resumes/{applicantId}/{fileName} {
+      // Public read for visible resumes
+      allow read: if true;
+      // Admins can upload resume photos
+      allow write: if isAuthenticated() &&
+        isAdmin() &&
+        isValidFileSize(5) &&
+        isValidImageType();
+      allow delete: if isAdmin();
     }
     
     // ==========================================

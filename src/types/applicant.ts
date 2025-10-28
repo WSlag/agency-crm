@@ -198,6 +198,12 @@ export interface Applicant {
     addedBy: string | null;           // User ID who added these details
     addedAt: Date | null;
   };
+
+  // Resume Visibility (Public Employer Portal)
+  resumeVisible?: boolean;           // If true, resume is visible on public employer portal
+  photoUrl?: string;                 // 2x2 ID photo URL
+  fullBodyPhotoUrl?: string;         // Full body photo URL
+  passportCopyUrl?: string;          // Passport copy document URL
 }
 
 export interface ApplicantFilter {
