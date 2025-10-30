@@ -95,6 +95,7 @@ import { EmployerPortal } from './pages/public/EmployerPortal';
 import { ResumeManagement } from './pages/admin/ResumeManagement';
 import { AgencyInfoSettings } from './pages/admin/AgencyInfoSettings';
 import { EmployerInquiries } from './pages/admin/EmployerInquiries';
+import { AddSampleData } from './pages/admin/AddSampleData';
 
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -128,7 +129,10 @@ const App: React.FC = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Public Employer Portal - No authentication required */}
-        <Route path="/employer-portal" element={<EmployerPortal />} />
+        <Route path="/" element={<EmployerPortal />} />
+
+        {/* Redirect old employer-portal URL to new root */}
+        <Route path="/employer-portal" element={<Navigate to="/" replace />} />
 
         {/* Protected Routes */}
         <Route
@@ -139,7 +143,7 @@ const App: React.FC = () => {
           }
         >
           {/* Dashboard */}
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route
             path="/financial-dashboard"
             element={
@@ -420,10 +424,18 @@ const App: React.FC = () => {
               </RoleGuard>
             }
           />
+          <Route
+            path="/admin/add-sample-data"
+            element={
+              <RoleGuard allowedRoles={['admin']}>
+                <AddSampleData />
+              </RoleGuard>
+            }
+          />
         </Route>
 
         {/* Fallback Route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AuthProvider>
   );

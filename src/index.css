@@ -9,6 +9,11 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* iOS safe area support for notched devices */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 /* Custom animations for dashboard */
@@ -40,16 +45,28 @@ body {
   animation: shimmer 2s infinite;
 }
 
+/* Respect user's motion preferences for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Smooth hover effects */
 @layer utilities {
   .hover-lift {
     @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl;
   }
-  
+
   .glass-effect {
     @apply bg-white/80 backdrop-blur-md border border-white/50;
   }
-  
+
   .gradient-border {
     background: linear-gradient(white, white) padding-box,
       linear-gradient(to right, #667eea, #764ba2) border-box;

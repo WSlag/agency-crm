@@ -25,7 +25,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
           <li>
             <div>
               <Link
-                to="/"
+                to="/dashboard"
                 className="text-gray-400 hover:text-gray-500"
                 aria-label="Home"
               >

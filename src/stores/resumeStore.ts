@@ -200,6 +200,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       skills: resume.skills,
       certifications: resume.certifications,
       languages: resume.languages,
+      photoUrl: resume.photoUrl,
       createdAt: resume.createdAt,
       medicalStatus: {
         examination: {

@@ -99,41 +99,45 @@ const CommissionList: React.FC<CommissionListProps> = ({
         {commissions.map((commission) => (
           <li
             key={commission.id}
-            className="hover:bg-gray-50 cursor-pointer"
+            className="hover:bg-gray-50 cursor-pointer transition-colors duration-150"
             onClick={() => onCommissionClick?.(commission)}
           >
             <div className="px-4 py-4 sm:px-6">
-              <div className="flex items-center justify-between">
-                <div className="truncate">
-                  <div className="flex text-sm">
-                    <p className="font-medium text-primary-600 truncate">
+              {/* Mobile-Optimized Layout */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                {/* Amount and Date Section */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
+                    <p className="text-lg sm:text-base font-semibold text-primary-600 truncate">
                       {formatAmount(commission.amount, commission.currency)}
                     </p>
-                    <p className="ml-1 flex-shrink-0 font-normal text-gray-500">
+                    <p className="text-sm font-normal text-gray-500 flex-shrink-0">
                       {new Date(commission.requestedAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="mt-2 flex">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <p>Requested by: {commission.requestedBy}</p>
-                    </div>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">
+                      <span className="font-medium">Requested by:</span> {commission.requestedBy}
+                    </p>
                   </div>
+                  {commission.notes && (
+                    <div className="mt-2 text-sm text-gray-500 line-clamp-2">
+                      {commission.notes}
+                    </div>
+                  )}
                 </div>
-                <div className="ml-2 flex flex-shrink-0">
+
+                {/* Status Badge */}
+                <div className="flex-shrink-0 self-start sm:self-center">
                   <span
-                    className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${getStatusColor(
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold leading-5 ${getStatusColor(
                       commission.status
                     )}`}
                   >
-                    {commission.status}
+                    {commission.status.charAt(0).toUpperCase() + commission.status.slice(1)}
                   </span>
                 </div>
               </div>
-              {commission.notes && (
-                <div className="mt-2 text-sm text-gray-500">
-                  {commission.notes}
-                </div>
-              )}
             </div>
           </li>
         ))}

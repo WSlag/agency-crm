@@ -23,7 +23,7 @@ import type { NavigationItem } from '../types/navigation';
 export const navigation: NavigationItem[] = [
   {
     name: 'Dashboard',
-    href: '/',
+    href: '/dashboard',
     icon: HomeIcon,
     roles: ['admin', 'president', 'ho_recruitment_officer', 'ho_accountant', 'branch_manager']
   },
