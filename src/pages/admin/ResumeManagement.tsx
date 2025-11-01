@@ -145,24 +145,24 @@ export const ResumeManagement: React.FC = () => {
   );
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Resume Management</h1>
-        <p className="text-gray-600">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Resume Management</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           Manage which applicants are visible on the public employer portal
         </p>
       </div>
 
       {/* Search */}
-      <div className="mb-6">
+      <div className="mb-4 sm:mb-6">
         <div className="relative max-w-md">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by name..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <svg
             className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
@@ -181,12 +181,12 @@ export const ResumeManagement: React.FC = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-blue-100 rounded-lg p-3">
+            <div className="flex-shrink-0 bg-blue-100 rounded-lg p-2 sm:p-3">
               <svg
-                className="h-6 w-6 text-blue-600"
+                className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -199,18 +199,18 @@ export const ResumeManagement: React.FC = () => {
                 />
               </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Qualified</p>
-              <p className="text-2xl font-bold text-gray-900">{applicants.length}</p>
+            <div className="ml-3 sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Qualified</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{applicants.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-green-100 rounded-lg p-3">
+            <div className="flex-shrink-0 bg-green-100 rounded-lg p-2 sm:p-3">
               <svg
-                className="h-6 w-6 text-green-600"
+                className="h-5 w-5 sm:h-6 sm:w-6 text-green-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -223,20 +223,20 @@ export const ResumeManagement: React.FC = () => {
                 />
               </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Visible on Portal</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="ml-3 sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Visible on Portal</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">
                 {applicants.filter((a) => a.resumeVisible).length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6">
           <div className="flex items-center">
-            <div className="flex-shrink-0 bg-gray-100 rounded-lg p-3">
+            <div className="flex-shrink-0 bg-gray-100 rounded-lg p-2 sm:p-3">
               <svg
-                className="h-6 w-6 text-gray-600"
+                className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -249,9 +249,9 @@ export const ResumeManagement: React.FC = () => {
                 />
               </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Hidden</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="ml-3 sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Hidden</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">
                 {applicants.filter((a) => !a.resumeVisible).length}
               </p>
             </div>
@@ -274,19 +274,19 @@ export const ResumeManagement: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Applicant
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Position
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Photos
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Visible
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -294,18 +294,18 @@ export const ResumeManagement: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredApplicants.map((applicant) => (
                   <tr key={applicant.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {applicant.photoUrl ? (
                           <img
                             src={applicant.photoUrl}
                             alt={applicant.fullName}
-                            className="h-10 w-10 rounded-full object-cover"
+                            className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-300 flex items-center justify-center">
                             <svg
-                              className="h-6 w-6 text-gray-500"
+                              className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500"
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -317,31 +317,31 @@ export const ResumeManagement: React.FC = () => {
                             </svg>
                           </div>
                         )}
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                        <div className="ml-2 sm:ml-4">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900">
                             {applicant.fullName}
                           </div>
-                          <div className="text-sm text-gray-500">{applicant.email}</div>
+                          <div className="text-[10px] sm:text-sm text-gray-500 truncate max-w-[120px] sm:max-w-none">{applicant.email}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-900">
                         {applicant.positionApplied || 'N/A'}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-[10px] sm:text-sm text-gray-500">
                         {applicant.countryDestination || 'N/A'}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-2">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="space-y-1 sm:space-y-2">
                         {/* 2x2 Photo Upload */}
-                        <div className="flex items-center space-x-2">
-                          <label className="text-xs text-gray-600 w-20">2x2 Photo:</label>
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <label className="text-[10px] sm:text-xs text-gray-600 w-16 sm:w-20">2x2 Photo:</label>
                           {applicant.photoUrl ? (
-                            <span className="text-xs text-green-600">✓ Uploaded</span>
+                            <span className="text-[10px] sm:text-xs text-green-600">✓ Uploaded</span>
                           ) : (
-                            <label className="cursor-pointer text-xs text-blue-600 hover:text-blue-800">
+                            <label className="cursor-pointer text-[10px] sm:text-xs text-blue-600 hover:text-blue-800">
                               Upload
                               <input
                                 type="file"
@@ -358,12 +358,12 @@ export const ResumeManagement: React.FC = () => {
                         </div>
 
                         {/* Full Body Photo Upload */}
-                        <div className="flex items-center space-x-2">
-                          <label className="text-xs text-gray-600 w-20">Full Body:</label>
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <label className="text-[10px] sm:text-xs text-gray-600 w-16 sm:w-20">Full Body:</label>
                           {applicant.fullBodyPhotoUrl ? (
-                            <span className="text-xs text-green-600">✓ Uploaded</span>
+                            <span className="text-[10px] sm:text-xs text-green-600">✓ Uploaded</span>
                           ) : (
-                            <label className="cursor-pointer text-xs text-blue-600 hover:text-blue-800">
+                            <label className="cursor-pointer text-[10px] sm:text-xs text-blue-600 hover:text-blue-800">
                               Upload
                               <input
                                 type="file"
@@ -381,12 +381,12 @@ export const ResumeManagement: React.FC = () => {
                         </div>
 
                         {/* Passport Copy Upload */}
-                        <div className="flex items-center space-x-2">
-                          <label className="text-xs text-gray-600 w-20">Passport:</label>
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <label className="text-[10px] sm:text-xs text-gray-600 w-16 sm:w-20">Passport:</label>
                           {applicant.passportCopyUrl ? (
-                            <span className="text-xs text-green-600">✓ Uploaded</span>
+                            <span className="text-[10px] sm:text-xs text-green-600">✓ Uploaded</span>
                           ) : (
-                            <label className="cursor-pointer text-xs text-blue-600 hover:text-blue-800">
+                            <label className="cursor-pointer text-[10px] sm:text-xs text-blue-600 hover:text-blue-800">
                               Upload
                               <input
                                 type="file"
@@ -404,23 +404,23 @@ export const ResumeManagement: React.FC = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <button
                         onClick={() =>
                           handleToggleVisibility(applicant.id, applicant.resumeVisible || false)
                         }
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        className={`relative inline-flex h-5 w-9 sm:h-6 sm:w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                           applicant.resumeVisible ? 'bg-blue-600' : 'bg-gray-200'
                         }`}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                            applicant.resumeVisible ? 'translate-x-5' : 'translate-x-0'
+                          className={`pointer-events-none inline-block h-4 w-4 sm:h-5 sm:w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                            applicant.resumeVisible ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
                           }`}
                         />
                       </button>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm">
                       <a
                         href={`/applicants/${applicant.id}`}
                         target="_blank"

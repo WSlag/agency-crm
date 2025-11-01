@@ -288,21 +288,21 @@ export const ResumeManagementEnhanced: React.FC = () => {
   const needsPhotosCount = applicants.filter((a) => getMissingPhotos(a).length > 0).length;
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Resume Management</h1>
-        <p className="text-gray-600">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Resume Management</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           Review and approve applicants for the public employer portal
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="mb-4 sm:mb-6 border-b border-gray-200 overflow-x-auto">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 min-w-max">
           <button
             onClick={() => setActiveTab('pending')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+            className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
               activeTab === 'pending'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -310,7 +310,7 @@ export const ResumeManagementEnhanced: React.FC = () => {
           >
             Pending Approval
             {pendingCount > 0 && (
-              <span className="ml-2 bg-blue-100 text-blue-600 py-0.5 px-2 rounded-full text-xs">
+              <span className="ml-1 sm:ml-2 bg-blue-100 text-blue-600 py-0.5 px-1.5 sm:px-2 rounded-full text-[10px] sm:text-xs">
                 {pendingCount}
               </span>
             )}
@@ -318,35 +318,35 @@ export const ResumeManagementEnhanced: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('approved')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+            className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
               activeTab === 'approved'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             Approved
-            <span className="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">
+            <span className="ml-1 sm:ml-2 bg-gray-100 text-gray-600 py-0.5 px-1.5 sm:px-2 rounded-full text-[10px] sm:text-xs">
               {approvedCount}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('rejected')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+            className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
               activeTab === 'rejected'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
             Rejected
-            <span className="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs">
+            <span className="ml-1 sm:ml-2 bg-gray-100 text-gray-600 py-0.5 px-1.5 sm:px-2 rounded-full text-[10px] sm:text-xs">
               {rejectedCount}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('needs_photos')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+            className={`py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
               activeTab === 'needs_photos'
                 ? 'border-blue-500 text-blue-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -354,7 +354,7 @@ export const ResumeManagementEnhanced: React.FC = () => {
           >
             Needs Photos
             {needsPhotosCount > 0 && (
-              <span className="ml-2 bg-orange-100 text-orange-600 py-0.5 px-2 rounded-full text-xs">
+              <span className="ml-1 sm:ml-2 bg-orange-100 text-orange-600 py-0.5 px-1.5 sm:px-2 rounded-full text-[10px] sm:text-xs">
                 {needsPhotosCount}
               </span>
             )}
@@ -363,14 +363,14 @@ export const ResumeManagementEnhanced: React.FC = () => {
       </div>
 
       {/* Search and Actions */}
-      <div className="mb-6 flex items-center justify-between">
-        <div className="relative max-w-md flex-1">
+      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-0 sm:justify-between">
+        <div className="relative flex-1 max-w-full sm:max-w-md">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by name..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <svg
             className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
@@ -390,7 +390,7 @@ export const ResumeManagementEnhanced: React.FC = () => {
         {activeTab === 'pending' && selectedApplicants.size > 0 && (
           <button
             onClick={handleBulkApprove}
-            className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="sm:ml-4 px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Approve Selected ({selectedApplicants.size})
           </button>
@@ -418,30 +418,30 @@ export const ResumeManagementEnhanced: React.FC = () => {
               <thead className="bg-gray-50">
                 <tr>
                   {activeTab === 'pending' && (
-                    <th className="px-6 py-3 text-left">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left">
                       <input
                         type="checkbox"
                         checked={selectedApplicants.size === filteredByTab.length}
                         onChange={toggleSelectAll}
-                        className="rounded border-gray-300"
+                        className="rounded border-gray-300 w-3 h-3 sm:w-4 sm:h-4"
                       />
                     </th>
                   )}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Applicant
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Position
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Photos
                   </th>
                   {activeTab === 'rejected' && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Rejection Reason
                     </th>
                   )}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -450,27 +450,27 @@ export const ResumeManagementEnhanced: React.FC = () => {
                 {filteredByTab.map((applicant) => (
                   <tr key={applicant.id}>
                     {activeTab === 'pending' && (
-                      <td className="px-6 py-4">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
                         <input
                           type="checkbox"
                           checked={selectedApplicants.has(applicant.id)}
                           onChange={() => toggleSelectApplicant(applicant.id)}
-                          className="rounded border-gray-300"
+                          className="rounded border-gray-300 w-3 h-3 sm:w-4 sm:h-4"
                         />
                       </td>
                     )}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         {applicant.photoUrl ? (
                           <img
                             src={applicant.photoUrl}
                             alt={applicant.fullName}
-                            className="h-10 w-10 rounded-full object-cover"
+                            className="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover"
                           />
                         ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-300 flex items-center justify-center">
                             <svg
-                              className="h-6 w-6 text-gray-500"
+                              className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500"
                               fill="currentColor"
                               viewBox="0 0 20 20"
                             >
@@ -482,31 +482,31 @@ export const ResumeManagementEnhanced: React.FC = () => {
                             </svg>
                           </div>
                         )}
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                        <div className="ml-2 sm:ml-4">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900">
                             {applicant.fullName}
                           </div>
-                          <div className="text-sm text-gray-500">{applicant.email}</div>
+                          <div className="text-[10px] sm:text-sm text-gray-500 truncate max-w-[120px] sm:max-w-none">{applicant.email}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
+                      <div className="text-xs sm:text-sm text-gray-900">
                         {applicant.positionApplied || 'N/A'}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-[10px] sm:text-sm text-gray-500">
                         {applicant.countryDestination || 'N/A'}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-2">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className="space-y-1 sm:space-y-2">
                         {/* 2x2 Photo */}
-                        <div className="flex items-center space-x-2">
-                          <label className="text-xs text-gray-600 w-20">2x2 Photo:</label>
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <label className="text-[10px] sm:text-xs text-gray-600 w-14 sm:w-20">2x2 Photo:</label>
                           {applicant.photoUrl ? (
-                            <span className="text-xs text-green-600">✓ Uploaded</span>
+                            <span className="text-[10px] sm:text-xs text-green-600">✓ Uploaded</span>
                           ) : activeTab === 'needs_photos' ? (
-                            <label className="cursor-pointer text-xs text-blue-600 hover:text-blue-800">
+                            <label className="cursor-pointer text-[10px] sm:text-xs text-blue-600 hover:text-blue-800">
                               Upload
                               <input
                                 type="file"
@@ -520,17 +520,17 @@ export const ResumeManagementEnhanced: React.FC = () => {
                               />
                             </label>
                           ) : (
-                            <span className="text-xs text-red-600">✗ Missing</span>
+                            <span className="text-[10px] sm:text-xs text-red-600">✗ Missing</span>
                           )}
                         </div>
 
                         {/* Full Body Photo */}
-                        <div className="flex items-center space-x-2">
-                          <label className="text-xs text-gray-600 w-20">Full Body:</label>
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <label className="text-[10px] sm:text-xs text-gray-600 w-14 sm:w-20">Full Body:</label>
                           {applicant.fullBodyPhotoUrl ? (
-                            <span className="text-xs text-green-600">✓ Uploaded</span>
+                            <span className="text-[10px] sm:text-xs text-green-600">✓ Uploaded</span>
                           ) : activeTab === 'needs_photos' ? (
-                            <label className="cursor-pointer text-xs text-blue-600 hover:text-blue-800">
+                            <label className="cursor-pointer text-[10px] sm:text-xs text-blue-600 hover:text-blue-800">
                               Upload
                               <input
                                 type="file"
@@ -545,17 +545,17 @@ export const ResumeManagementEnhanced: React.FC = () => {
                               />
                             </label>
                           ) : (
-                            <span className="text-xs text-red-600">✗ Missing</span>
+                            <span className="text-[10px] sm:text-xs text-red-600">✗ Missing</span>
                           )}
                         </div>
 
                         {/* Passport Copy */}
-                        <div className="flex items-center space-x-2">
-                          <label className="text-xs text-gray-600 w-20">Passport:</label>
+                        <div className="flex items-center space-x-1 sm:space-x-2">
+                          <label className="text-[10px] sm:text-xs text-gray-600 w-14 sm:w-20">Passport:</label>
                           {applicant.passportCopyUrl ? (
-                            <span className="text-xs text-green-600">✓ Uploaded</span>
+                            <span className="text-[10px] sm:text-xs text-green-600">✓ Uploaded</span>
                           ) : activeTab === 'needs_photos' ? (
-                            <label className="cursor-pointer text-xs text-blue-600 hover:text-blue-800">
+                            <label className="cursor-pointer text-[10px] sm:text-xs text-blue-600 hover:text-blue-800">
                               Upload
                               <input
                                 type="file"
@@ -570,37 +570,37 @@ export const ResumeManagementEnhanced: React.FC = () => {
                               />
                             </label>
                           ) : (
-                            <span className="text-xs text-red-600">✗ Missing</span>
+                            <span className="text-[10px] sm:text-xs text-red-600">✗ Missing</span>
                           )}
                         </div>
                       </div>
                     </td>
                     {activeTab === 'rejected' && (
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="text-xs sm:text-sm text-gray-900">
                           {applicant.resumeRejectionReason || 'No reason provided'}
                         </div>
                       </td>
                     )}
-                    <td className="px-6 py-4 whitespace-nowrap text-sm space-y-2">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm space-y-1 sm:space-y-2">
                       {activeTab === 'pending' && (
                         <>
                           <button
                             onClick={() => handleApprove(applicant.id)}
-                            className="block w-full px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                            className="block w-full px-2 sm:px-3 py-1 text-[10px] sm:text-sm bg-green-600 text-white rounded hover:bg-green-700"
                           >
                             Approve
                           </button>
                           <button
                             onClick={() => setRejectingApplicant(applicant.id)}
-                            className="block w-full px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                            className="block w-full px-2 sm:px-3 py-1 text-[10px] sm:text-sm bg-red-600 text-white rounded hover:bg-red-700"
                           >
                             Reject
                           </button>
                         </>
                       )}
                       {activeTab === 'approved' && (
-                        <span className="text-green-600 font-medium">✓ Approved</span>
+                        <span className="text-xs sm:text-sm text-green-600 font-medium">✓ Approved</span>
                       )}
                       {activeTab === 'rejected' && (
                         <button
@@ -613,7 +613,7 @@ export const ResumeManagementEnhanced: React.FC = () => {
                             });
                             fetchMedicalPassedApplicants();
                           }}
-                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                          className="px-2 sm:px-3 py-1 text-[10px] sm:text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
                         >
                           Re-review
                         </button>
@@ -622,7 +622,7 @@ export const ResumeManagementEnhanced: React.FC = () => {
                         href={`/applicants/${applicant.id}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block text-blue-600 hover:text-blue-800"
+                        className="block text-[10px] sm:text-sm text-blue-600 hover:text-blue-800 mt-1"
                       >
                         View Profile
                       </a>
@@ -637,23 +637,23 @@ export const ResumeManagementEnhanced: React.FC = () => {
 
       {/* Rejection Modal */}
       {rejectingApplicant && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4">Reject Resume</h3>
-            <p className="text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full">
+            <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4">Reject Resume</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
               Please provide a reason for rejecting this applicant's resume:
             </p>
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 mb-4"
+              className="w-full border border-gray-300 rounded-lg p-2 mb-3 sm:mb-4 text-sm sm:text-base"
               rows={4}
               placeholder="Enter rejection reason..."
             />
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
               <button
                 onClick={() => handleReject(rejectingApplicant, rejectionReason)}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
                 Confirm Rejection
               </button>
@@ -662,7 +662,7 @@ export const ResumeManagementEnhanced: React.FC = () => {
                   setRejectingApplicant(null);
                   setRejectionReason('');
                 }}
-                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
               >
                 Cancel
               </button>

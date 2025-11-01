@@ -158,22 +158,22 @@ export const EmployerInquiries: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Employer Inquiries</h1>
-        <p className="text-gray-600">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Employer Inquiries</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           Manage inquiries and leads from potential employers
         </p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 bg-blue-100 rounded-lg p-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start">
+            <div className="flex-shrink-0 bg-blue-100 rounded-lg p-2 sm:p-3 mb-2 sm:mb-0">
               <svg
-                className="h-6 w-6 text-blue-600"
+                className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -186,18 +186,18 @@ export const EmployerInquiries: React.FC = () => {
                 />
               </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{inquiries.length}</p>
+            <div className="sm:ml-3 text-center sm:text-left">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Total</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">{inquiries.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 bg-blue-100 rounded-lg p-3">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start">
+            <div className="flex-shrink-0 bg-blue-100 rounded-lg p-2 sm:p-3 mb-2 sm:mb-0">
               <svg
-                className="h-6 w-6 text-blue-600"
+                className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -210,20 +210,20 @@ export const EmployerInquiries: React.FC = () => {
                 />
               </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">New</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="sm:ml-3 text-center sm:text-left">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">New</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
                 {inquiries.filter((i) => i.status === 'new').length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start">
+            <div className="flex-shrink-0 bg-yellow-100 rounded-lg p-2 sm:p-3 mb-2 sm:mb-0">
               <svg
-                className="h-6 w-6 text-yellow-600"
+                className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -236,20 +236,20 @@ export const EmployerInquiries: React.FC = () => {
                 />
               </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">In Progress</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="sm:ml-3 text-center sm:text-left">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">In Progress</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
                 {inquiries.filter((i) => i.status === 'contacted').length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0 bg-green-100 rounded-lg p-3">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start">
+            <div className="flex-shrink-0 bg-green-100 rounded-lg p-2 sm:p-3 mb-2 sm:mb-0">
               <svg
-                className="h-6 w-6 text-green-600"
+                className="h-5 w-5 sm:h-6 sm:w-6 text-green-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -262,9 +262,9 @@ export const EmployerInquiries: React.FC = () => {
                 />
               </svg>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Resolved</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="sm:ml-3 text-center sm:text-left">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Resolved</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900">
                 {inquiries.filter((i) => i.status === 'resolved' || i.status === 'closed').length}
               </p>
             </div>
@@ -273,43 +273,45 @@ export const EmployerInquiries: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6 flex items-center space-x-4">
-        <div>
-          <label className="text-sm font-medium text-gray-700 mr-2">Status:</label>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      <div className="bg-white rounded-lg shadow p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+          <div className="flex items-center">
+            <label className="text-xs sm:text-sm font-medium text-gray-700 mr-2 whitespace-nowrap">Status:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+
+          <div className="flex items-center">
+            <label className="text-xs sm:text-sm font-medium text-gray-700 mr-2 whitespace-nowrap">Type:</label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="flex-1 sm:flex-none px-2 sm:px-3 py-1.5 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All</option>
+              <option value="shortlist">Shortlist</option>
+              <option value="contact">Contact Request</option>
+            </select>
+          </div>
+
+          <div className="flex-grow"></div>
+
+          <button
+            onClick={fetchInquiries}
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium text-center"
           >
-            <option value="all">All</option>
-            <option value="new">New</option>
-            <option value="contacted">Contacted</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
-          </select>
+            Refresh
+          </button>
         </div>
-
-        <div>
-          <label className="text-sm font-medium text-gray-700 mr-2">Type:</label>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="all">All</option>
-            <option value="shortlist">Shortlist</option>
-            <option value="contact">Contact Request</option>
-          </select>
-        </div>
-
-        <div className="flex-grow"></div>
-
-        <button
-          onClick={fetchInquiries}
-          className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
-        >
-          Refresh
-        </button>
       </div>
 
       {/* Inquiries Table */}
@@ -327,22 +329,22 @@ export const EmployerInquiries: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Employer
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Applicant
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Type
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -350,35 +352,35 @@ export const EmployerInquiries: React.FC = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredInquiries.map((inquiry) => (
                   <tr key={inquiry.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-xs sm:text-sm font-medium text-gray-900">
                           {inquiry.employerName}
                         </div>
-                        <div className="text-sm text-gray-500">{inquiry.companyName}</div>
-                        <div className="text-xs text-gray-400">{inquiry.email}</div>
+                        <div className="text-[10px] sm:text-sm text-gray-500 truncate max-w-[120px] sm:max-w-none">{inquiry.companyName}</div>
+                        <div className="text-[10px] sm:text-xs text-gray-400 truncate max-w-[120px] sm:max-w-none">{inquiry.email}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <a
                         href={`/applicants/${inquiry.applicantId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                        className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 hover:underline"
                       >
                         {inquiry.applicantName}
                       </a>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full ${
                           typeColors[inquiry.inquiryType]
                         }`}
                       >
                         {inquiry.inquiryType === 'shortlist' ? 'Shortlist' : 'Contact'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <select
                         value={inquiry.status}
                         onChange={(e) =>
@@ -387,7 +389,7 @@ export const EmployerInquiries: React.FC = () => {
                             e.target.value as 'new' | 'contacted' | 'resolved' | 'closed'
                           )
                         }
-                        className={`px-2 py-1 text-xs font-medium rounded-full border-0 ${
+                        className={`px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full border-0 ${
                           statusColors[inquiry.status]
                         }`}
                       >
@@ -397,15 +399,15 @@ export const EmployerInquiries: React.FC = () => {
                         <option value="closed">Closed</option>
                       </select>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-[10px] sm:text-sm text-gray-500">
                       {inquiry.createdAt.toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-[10px] sm:text-sm">
                       <button
                         onClick={() => setSelectedInquiry(inquiry)}
                         className="text-blue-600 hover:text-blue-800"
                       >
-                        View Details
+                        View
                       </button>
                     </td>
                   </tr>
@@ -420,13 +422,13 @@ export const EmployerInquiries: React.FC = () => {
       {selectedInquiry && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white">Inquiry Details</h3>
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-semibold text-white">Inquiry Details</h3>
               <button
                 onClick={() => setSelectedInquiry(null)}
                 className="text-white hover:text-gray-200"
               >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -437,39 +439,39 @@ export const EmployerInquiries: React.FC = () => {
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
               {/* Employer Info */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Employer Information</h4>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Name:</span>
-                    <span className="text-sm font-medium text-gray-900">
+                <h4 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Employer Information</h4>
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4 space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-xs sm:text-sm text-gray-600">Name:</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900">
                       {selectedInquiry.employerName}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Company:</span>
-                    <span className="text-sm font-medium text-gray-900">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-xs sm:text-sm text-gray-600">Company:</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900">
                       {selectedInquiry.companyName}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Email:</span>
-                    <span className="text-sm font-medium text-gray-900">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-xs sm:text-sm text-gray-600">Email:</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900 break-all">
                       {selectedInquiry.email}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Phone:</span>
-                    <span className="text-sm font-medium text-gray-900">
+                  <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                    <span className="text-xs sm:text-sm text-gray-600">Phone:</span>
+                    <span className="text-xs sm:text-sm font-medium text-gray-900">
                       {selectedInquiry.phone}
                     </span>
                   </div>
                   {selectedInquiry.country && (
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Country:</span>
-                      <span className="text-sm font-medium text-gray-900">
+                    <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                      <span className="text-xs sm:text-sm text-gray-600">Country:</span>
+                      <span className="text-xs sm:text-sm font-medium text-gray-900">
                         {selectedInquiry.country}
                       </span>
                     </div>
@@ -480,21 +482,21 @@ export const EmployerInquiries: React.FC = () => {
               {/* Message */}
               {selectedInquiry.message && (
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Message</h4>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-900">{selectedInquiry.message}</p>
+                  <h4 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Message</h4>
+                  <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                    <p className="text-xs sm:text-sm text-gray-900">{selectedInquiry.message}</p>
                   </div>
                 </div>
               )}
 
               {/* Notes */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Internal Notes</h4>
+                <h4 className="text-xs sm:text-sm font-semibold text-gray-700 mb-2">Internal Notes</h4>
                 <textarea
                   defaultValue={selectedInquiry.notes || ''}
                   placeholder="Add internal notes..."
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-3 sm:px-4 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   onBlur={(e) => {
                     if (e.target.value !== selectedInquiry.notes) {
                       handleAddNotes(selectedInquiry.id, e.target.value);
@@ -504,16 +506,16 @@ export const EmployerInquiries: React.FC = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end space-x-3 pt-4 border-t">
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 pt-4 border-t">
                 <button
                   onClick={() => setSelectedInquiry(null)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                 >
                   Close
                 </button>
                 <a
                   href={`mailto:${selectedInquiry.email}`}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700"
+                  className="px-4 py-2 text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 text-center"
                 >
                   Email Employer
                 </a>

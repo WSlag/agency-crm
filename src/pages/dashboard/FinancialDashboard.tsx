@@ -235,30 +235,37 @@ export const FinancialDashboard: React.FC = () => {
                 </Link>
               </div>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {summary.recentExpenses.length === 0 ? (
-                <div className="text-center py-12">
-                  <BanknotesIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No recent expenses</p>
+                <div className="text-center py-8 sm:py-12">
+                  <BanknotesIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-sm sm:text-base text-gray-500">No recent expenses</p>
                 </div>
               ) : (
-                <ul className="space-y-4">
+                <ul className="space-y-3">
                   {summary.recentExpenses.map((expense) => (
                     <li
                       key={expense.id}
-                      className="flex items-center space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      className="p-3 rounded-xl hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          {EXPENSE_CONFIG[expense.expenseType].name}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {new Date(expense.expenseDate).toLocaleDateString()}
-                        </p>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {EXPENSE_CONFIG[expense.expenseType].name}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {new Date(expense.expenseDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
+                            {formatCurrency(expense.amount)}
+                          </span>
+                        </div>
                       </div>
-                      <div>
+                      <div className="flex justify-start">
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
                             expense.status === 'pending'
                               ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-yellow-300'
                               : expense.status === 'verified'
@@ -272,11 +279,6 @@ export const FinancialDashboard: React.FC = () => {
                         >
                           {expense.status.charAt(0).toUpperCase() +
                             expense.status.slice(1)}
-                        </span>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <span className="text-sm font-bold text-gray-900">
-                          {formatCurrency(expense.amount)}
                         </span>
                       </div>
                     </li>
@@ -306,30 +308,37 @@ export const FinancialDashboard: React.FC = () => {
                 </Link>
               </div>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {summary.recentCommissions.length === 0 ? (
-                <div className="text-center py-12">
-                  <BanknotesIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No recent commissions</p>
+                <div className="text-center py-8 sm:py-12">
+                  <BanknotesIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-sm sm:text-base text-gray-500">No recent commissions</p>
                 </div>
               ) : (
-                <ul className="space-y-4">
+                <ul className="space-y-3">
                   {summary.recentCommissions.map((commission) => (
                     <li
                       key={commission.id}
-                      className="flex items-center space-x-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                      className="p-3 rounded-xl hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
-                          Commission
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          Agent ID: {commission.agentId}
-                        </p>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            Commission
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            Agent ID: {commission.agentId}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
+                            {formatCurrency(commission.amount)}
+                          </span>
+                        </div>
                       </div>
-                      <div>
+                      <div className="flex justify-start">
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${
                             commission.status === 'pending'
                               ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white border-yellow-300'
                               : commission.status === 'verified'
@@ -343,11 +352,6 @@ export const FinancialDashboard: React.FC = () => {
                         >
                           {commission.status.charAt(0).toUpperCase() +
                             commission.status.slice(1)}
-                        </span>
-                      </div>
-                      <div className="flex-shrink-0">
-                        <span className="text-sm font-bold text-gray-900">
-                          {formatCurrency(commission.amount)}
                         </span>
                       </div>
                     </li>
@@ -369,27 +373,27 @@ export const FinancialDashboard: React.FC = () => {
                 </h3>
               </div>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               {Object.keys(summary.expensesByType).length === 0 ? (
-                <div className="text-center py-12">
-                  <ChartBarIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                  <p className="text-gray-500">No expense data</p>
+                <div className="text-center py-8 sm:py-12">
+                  <ChartBarIcon className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-sm sm:text-base text-gray-500">No expense data</p>
                 </div>
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-4 sm:space-y-5">
                   {Object.entries(summary.expensesByType).map(
                     ([type, amount]) => (
                       <div key={type}>
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-sm font-semibold text-gray-700">
+                          <p className="text-xs sm:text-sm font-semibold text-gray-700 truncate pr-2">
                             {EXPENSE_CONFIG[type as keyof typeof EXPENSE_CONFIG]
                               .name}
                           </p>
-                          <p className="text-sm font-bold text-gray-900">
+                          <p className="text-xs sm:text-sm font-bold text-gray-900 whitespace-nowrap">
                             {formatCurrency(amount)}
                           </p>
                         </div>
-                        <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="relative h-2.5 sm:h-3 bg-gray-200 rounded-full overflow-hidden">
                           <div
                             style={{
                               width: `${
@@ -422,39 +426,39 @@ export const FinancialDashboard: React.FC = () => {
                 </h3>
               </div>
             </div>
-            <div className="p-6">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
+            <div className="p-4 sm:p-6">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">Total Amount</p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Total Amount</p>
+                    <p className="text-base sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                       {formatCurrency(summary.totalCommissions)}
                     </p>
                   </div>
-                  <div className="p-3 bg-white rounded-xl shadow-md">
-                    <BanknotesIcon className="h-8 w-8 text-green-600" />
+                  <div className="p-2 sm:p-3 bg-white rounded-xl shadow-md">
+                    <BanknotesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
                   </div>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl">
+                <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">Pending Amount</p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Pending Amount</p>
+                    <p className="text-base sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
                       {formatCurrency(summary.pendingCommissions)}
                     </p>
                   </div>
-                  <div className="p-3 bg-white rounded-xl shadow-md">
-                    <ClockIcon className="h-8 w-8 text-yellow-600" />
+                  <div className="p-2 sm:p-3 bg-white rounded-xl shadow-md">
+                    <ClockIcon className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600" />
                   </div>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl">
+                <div className="flex items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">Total Count</p>
-                    <p className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">Total Count</p>
+                    <p className="text-base sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                       {commissions.length}
                     </p>
                   </div>
-                  <div className="p-3 bg-white rounded-xl shadow-md">
-                    <ChartBarIcon className="h-8 w-8 text-indigo-600" />
+                  <div className="p-2 sm:p-3 bg-white rounded-xl shadow-md">
+                    <ChartBarIcon className="h-6 w-6 sm:h-8 sm:w-8 text-indigo-600" />
                   </div>
                 </div>
               </div>

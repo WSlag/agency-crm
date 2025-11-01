@@ -132,18 +132,18 @@ export const CalendarViewPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
-              <p className="text-gray-600 mt-1">Manage your events and schedule</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Calendar</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">Manage your events and schedule</p>
             </div>
             <button
               onClick={handleCreateEvent}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2 shadow-lg"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2 shadow-lg w-full sm:w-auto"
             >
               <PlusIcon className="h-5 w-5" />
               <span>New Event</span>
@@ -151,26 +151,26 @@ export const CalendarViewPage: React.FC = () => {
           </div>
 
           {/* Controls */}
-          <div className="flex items-center justify-between bg-white rounded-xl shadow-lg p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white rounded-xl shadow-lg p-3 sm:p-4">
             {/* Search & Filters */}
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Search events..."
                 value={filter.searchTerm || ''}
                 onChange={(e) => setFilter({ searchTerm: e.target.value })}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64"
+                className="px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64 text-sm sm:text-base"
               />
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+                className={`px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition-colors ${
                   showFilters
                     ? 'bg-indigo-100 text-indigo-700'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                <FunnelIcon className="h-5 w-5" />
-                <span>Filters</span>
+                <FunnelIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-sm sm:text-base">Filters</span>
               </button>
             </div>
 
@@ -178,25 +178,25 @@ export const CalendarViewPage: React.FC = () => {
             <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setView('month')}
-                className={`px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+                className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 rounded-lg flex items-center justify-center space-x-1 sm:space-x-2 transition-colors ${
                   view === 'month'
                     ? 'bg-white text-indigo-600 shadow'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <Squares2X2Icon className="h-5 w-5" />
-                <span>Month</span>
+                <Squares2X2Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-xs sm:text-base">Month</span>
               </button>
               <button
                 onClick={() => setView('list')}
-                className={`px-3 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+                className={`flex-1 sm:flex-initial px-2 sm:px-3 py-2 rounded-lg flex items-center justify-center space-x-1 sm:space-x-2 transition-colors ${
                   view === 'list'
                     ? 'bg-white text-indigo-600 shadow'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                <ListBulletIcon className="h-5 w-5" />
-                <span>List</span>
+                <ListBulletIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="text-xs sm:text-base">List</span>
               </button>
             </div>
           </div>

@@ -168,53 +168,53 @@ export const AgencyInfoSettings: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Agency Information</h1>
-        <p className="text-gray-600">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">Agency Information</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           Configure how your agency appears on the public employer portal
         </p>
       </div>
 
       {/* Preview */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-8 mb-8 text-white">
-        <div className="flex items-center space-x-4 mb-4">
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl sm:rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 text-white">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 mb-4">
           {formData.logoUrl && (
             <img
               src={formData.logoUrl}
               alt="Logo"
-              className="h-16 w-auto bg-white rounded px-3 py-2"
+              className="h-12 sm:h-16 w-auto bg-white rounded px-2 sm:px-3 py-1 sm:py-2"
             />
           )}
-          <div>
-            <h2 className="text-2xl font-bold">
+          <div className="flex-1">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold">
               {formData.agencyName || 'Your Agency Name'}
             </h2>
-            {formData.tagline && <p className="text-blue-100">{formData.tagline}</p>}
+            {formData.tagline && <p className="text-sm sm:text-base text-blue-100 mt-1">{formData.tagline}</p>}
           </div>
         </div>
-        <p className="text-sm text-blue-100">
+        <p className="text-xs sm:text-sm text-blue-100">
           This is how your agency will appear to employers
         </p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* Logo Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Agency Logo
           </label>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
             {formData.logoUrl && (
               <img
                 src={formData.logoUrl}
                 alt="Logo preview"
-                className="h-20 w-auto border border-gray-300 rounded p-2"
+                className="h-16 sm:h-20 w-auto border border-gray-300 rounded p-2"
               />
             )}
-            <label className="cursor-pointer bg-white py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
+            <label className="cursor-pointer bg-white py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 text-center">
               {uploading ? 'Uploading...' : 'Upload Logo'}
               <input
                 type="file"
@@ -228,7 +228,7 @@ export const AgencyInfoSettings: React.FC = () => {
         </div>
 
         {/* Basic Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <label htmlFor="agencyName" className="block text-sm font-medium text-gray-700 mb-2">
               Agency Name *
@@ -240,7 +240,7 @@ export const AgencyInfoSettings: React.FC = () => {
               value={formData.agencyName}
               onChange={handleChange}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -255,7 +255,7 @@ export const AgencyInfoSettings: React.FC = () => {
               value={formData.tagline}
               onChange={handleChange}
               placeholder="e.g., Your Trusted Recruitment Partner"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
@@ -273,14 +273,14 @@ export const AgencyInfoSettings: React.FC = () => {
             required
             rows={4}
             placeholder="Describe your agency and services..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
           />
         </div>
 
         {/* Contact Information */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Contact Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number *
@@ -292,7 +292,7 @@ export const AgencyInfoSettings: React.FC = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -307,7 +307,7 @@ export const AgencyInfoSettings: React.FC = () => {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -322,7 +322,7 @@ export const AgencyInfoSettings: React.FC = () => {
                 value={formData.address}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -337,7 +337,7 @@ export const AgencyInfoSettings: React.FC = () => {
                 value={formData.website}
                 onChange={handleChange}
                 placeholder="https://yourwebsite.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -351,7 +351,7 @@ export const AgencyInfoSettings: React.FC = () => {
                 name="licenseNumber"
                 value={formData.licenseNumber}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -359,8 +359,8 @@ export const AgencyInfoSettings: React.FC = () => {
 
         {/* Social Media */}
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Social Media</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Social Media</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
             <div>
               <label htmlFor="facebook" className="block text-sm font-medium text-gray-700 mb-2">
                 Facebook
@@ -372,7 +372,7 @@ export const AgencyInfoSettings: React.FC = () => {
                 value={formData.facebook}
                 onChange={handleChange}
                 placeholder="https://facebook.com/..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -387,7 +387,7 @@ export const AgencyInfoSettings: React.FC = () => {
                 value={formData.linkedin}
                 onChange={handleChange}
                 placeholder="https://linkedin.com/company/..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -402,25 +402,25 @@ export const AgencyInfoSettings: React.FC = () => {
                 value={formData.twitter}
                 onChange={handleChange}
                 placeholder="https://twitter.com/..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 sm:px-4 py-2 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
         </div>
 
         {/* Submit */}
-        <div className="flex justify-end space-x-4 pt-4 border-t">
+        <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4 border-t">
           <button
             type="button"
             onClick={fetchAgencyInfo}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="px-4 sm:px-6 py-2 text-sm sm:text-base border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving || uploading}
-            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

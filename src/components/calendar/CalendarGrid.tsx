@@ -128,21 +128,21 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg">
+    <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-xl font-bold text-gray-900">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between sm:justify-start sm:space-x-4">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">
             {monthName} {year}
           </h2>
           <button
             onClick={goToToday}
-            className="px-3 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+            className="px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
           >
             Today
           </button>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-center space-x-2">
           <button
             onClick={goToPreviousMonth}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -161,21 +161,22 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
       </div>
 
       {/* Calendar Grid */}
-      <div className="p-6">
+      <div className="p-2 sm:p-6">
         {/* Week day headers */}
-        <div className="grid grid-cols-7 gap-2 mb-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
           {weekDays.map((day) => (
             <div
               key={day}
-              className="text-center text-xs font-semibold text-gray-600 py-2"
+              className="text-center text-xs font-semibold text-gray-600 py-1 sm:py-2"
             >
-              {day}
+              <span className="hidden sm:inline">{day}</span>
+              <span className="sm:hidden">{day.substring(0, 1)}</span>
             </div>
           ))}
         </div>
 
         {/* Calendar days */}
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {days.map((day, index) => {
             const dayEvents = getEventsForDay(day.date);
             const isTodayDate = isToday(day.date);
@@ -186,7 +187,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                 key={index}
                 onClick={() => onDayClick(day.date)}
                 className={`
-                  min-h-[100px] p-2 rounded-lg border cursor-pointer transition-all
+                  min-h-[60px] sm:min-h-[100px] p-1 sm:p-2 rounded border cursor-pointer transition-all
                   ${!day.isCurrentMonth ? 'bg-gray-50 opacity-50' : 'bg-white hover:bg-gray-50'}
                   ${isTodayDate ? 'border-indigo-500 border-2' : 'border-gray-200'}
                   ${isSelectedDate && !isTodayDate ? 'border-purple-400 border-2' : ''}
@@ -196,7 +197,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                 <div className="flex items-center justify-between mb-1">
                   <span
                     className={`
-                      text-sm font-medium
+                      text-xs sm:text-sm font-medium
                       ${!day.isCurrentMonth ? 'text-gray-400' : 'text-gray-900'}
                       ${isTodayDate ? 'text-indigo-600 font-bold' : ''}
                     `}
@@ -204,15 +205,15 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                     {day.date.getDate()}
                   </span>
                   {dayEvents.length > 0 && (
-                    <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-1 sm:px-1.5 py-0.5 rounded-full">
                       {dayEvents.length}
                     </span>
                   )}
                 </div>
 
                 {/* Events */}
-                <div className="space-y-1">
-                  {dayEvents.slice(0, 3).map((event) => {
+                <div className="space-y-0.5 sm:space-y-1">
+                  {dayEvents.slice(0, 2).map((event) => {
                     const config = getEventTypeConfig(event.eventType);
                     return (
                       <div
@@ -222,29 +223,32 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({
                           onEventClick(event);
                         }}
                         className={`
-                          text-xs px-2 py-1 rounded truncate cursor-pointer
+                          text-xs px-1 sm:px-2 py-0.5 sm:py-1 rounded truncate cursor-pointer
                           ${config.bgColor} ${config.color} hover:opacity-80 transition-opacity
                         `}
                         title={event.title}
                       >
-                        {event.allDay ? (
-                          event.title
-                        ) : (
-                          <>
-                            {event.startDate.toLocaleTimeString('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              hour12: true,
-                            })}{' '}
-                            {event.title}
-                          </>
-                        )}
+                        <span className="hidden sm:inline">
+                          {event.allDay ? (
+                            event.title
+                          ) : (
+                            <>
+                              {event.startDate.toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true,
+                              })}{' '}
+                              {event.title}
+                            </>
+                          )}
+                        </span>
+                        <span className="sm:hidden">•</span>
                       </div>
                     );
                   })}
-                  {dayEvents.length > 3 && (
-                    <div className="text-xs text-gray-500 px-2">
-                      +{dayEvents.length - 3} more
+                  {dayEvents.length > 2 && (
+                    <div className="text-xs text-gray-500 px-1 sm:px-2 hidden sm:block">
+                      +{dayEvents.length - 2} more
                     </div>
                   )}
                 </div>
