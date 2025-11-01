@@ -67,19 +67,26 @@ export const useBranchStore = create<BranchState>((set, get) => ({
       console.log('Fetching active branches...');
       set({ loading: true, error: null });
       const branchesRef = collection(firestore, 'branches');
-      const q = query(branchesRef, where('status', '==', 'active'));
+      // Fetch all branches and filter in memory to handle both 'status' and 'active' fields
+      const q = query(branchesRef);
       const snapshot = await getDocs(q);
-      const branches = snapshot.docs.map(doc => {
-        const data = doc.data();
-        console.log('Raw branch data:', { id: doc.id, data });
-        return {
-          id: doc.id,
-          name: data.name || data.branchName || 'Unknown Branch',
-          ...data,
-          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
-          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
-        };
-      }) as Branch[];
+      const branches = snapshot.docs
+        .map(doc => {
+          const data = doc.data();
+          console.log('Raw branch data:', { id: doc.id, data });
+          return {
+            id: doc.id,
+            name: data.name || data.branchName || 'Unknown Branch',
+            branchName: data.branchName || data.name || 'Unknown Branch',
+            ...data,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt ? new Date(data.updatedAt) : new Date(),
+          };
+        })
+        .filter(branch => {
+          // Support both 'status' === 'active' and 'active' === true
+          return (branch as any).status === 'active' || (branch as any).active === true;
+        }) as Branch[];
       console.log('Active branches fetched:', branches);
       set({ branches, loading: false });
       return branches;

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
+import { useAuthStore } from '../../stores/authStore';
 import {
   ArrowsRightLeftIcon,
   ArrowLeftIcon,
@@ -14,6 +15,8 @@ import {
   FunnelIcon
 } from '@heroicons/react/24/outline';
 import { useReportExporter } from '../../hooks/useReportExporter';
+import { ReportIntroCard } from '../../components/reports';
+import * as XLSX from 'xlsx';
 
 interface TransferStats {
   total: number;
@@ -44,7 +47,9 @@ interface Transfer {
 }
 
 export const TransferAnalytics = () => {
+  const { user, customClaims } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<TransferStats>({
     total: 0,
     pending: 0,
@@ -59,24 +64,33 @@ export const TransferAnalytics = () => {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter' | 'year' | 'all'>('month');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'completed'>('all');
-  
+
   const { exportToPDF, exportToExcel, exporting } = useReportExporter();
 
   useEffect(() => {
     fetchTransferData();
-  }, [dateRange, statusFilter]);
+  }, [dateRange, statusFilter, customClaims]);
 
   const fetchTransferData = async () => {
     try {
       setLoading(true);
       const transfersRef = collection(firestore, 'transfers');
-      let q = query(transfersRef, orderBy('requestedDate', 'desc'));
+
+      // Build query constraints array
+      const constraints: any[] = [];
+
+      // Role-based filtering
+      // Branch Managers: Only see transfers from their branch
+      if (customClaims?.role?.toLowerCase() === 'branch_manager' && customClaims?.branchId) {
+        constraints.push(where('fromBranchId', '==', customClaims.branchId));
+      }
+      // HO Officers and Accountants see all transfers (no restriction)
 
       // Apply date filter
       if (dateRange !== 'all') {
         const now = new Date();
         let startDate = new Date();
-        
+
         switch (dateRange) {
           case 'week':
             startDate.setDate(now.getDate() - 7);
@@ -91,9 +105,15 @@ export const TransferAnalytics = () => {
             startDate.setFullYear(now.getFullYear() - 1);
             break;
         }
-        
-        q = query(transfersRef, where('requestedDate', '>=', Timestamp.fromDate(startDate)), orderBy('requestedDate', 'desc'));
+
+        constraints.push(where('requestedDate', '>=', Timestamp.fromDate(startDate)));
       }
+
+      // Add ordering
+      constraints.push(orderBy('requestedDate', 'desc'));
+
+      // Build final query
+      const q = query(transfersRef, ...constraints);
 
       const snapshot = await getDocs(q);
       const transfersData: Transfer[] = [];
@@ -189,8 +209,18 @@ export const TransferAnalytics = () => {
       });
 
       setStats(newStats);
-    } catch (error) {
+      setError(null); // Clear any previous errors
+    } catch (error: any) {
       console.error('Error fetching transfer data:', error);
+
+      // Provide helpful error messages
+      if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+        setError('Database indexes are still building. Please wait a few minutes and refresh the page.');
+      } else if (error.code === 'permission-denied') {
+        setError('You do not have permission to view this data. Please contact your administrator.');
+      } else {
+        setError('Failed to load transfer data. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }
@@ -206,11 +236,53 @@ export const TransferAnalytics = () => {
   };
 
   const handleExportExcel = () => {
-    exportToExcel({
-      title: 'Transfer Analytics Report',
-      data: transfers,
-      columns: ['applicantName', 'fromBranchName', 'assignedOfficerName', 'transferStatus', 'requestedDate', 'approvedDate', 'completedDate'],
-    });
+    // Format data for Excel export
+    const excelData = transfers.map(t => ({
+      'Applicant': t.applicantName,
+      'From Branch': t.fromBranchName,
+      'Assigned Officer': t.assignedOfficerName || '-',
+      'Status': t.transferStatus,
+      'Requested Date': t.requestedDate.toLocaleDateString(),
+      'Approved Date': t.approvedDate?.toLocaleDateString() || '-',
+      'Completed Date': t.completedDate?.toLocaleDateString() || '-',
+      'Transfer Reason': t.transferReason || '-'
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Transfer Analytics');
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `transfer_analytics_${timestamp}.xlsx`);
+  };
+
+  const handleExportCSV = () => {
+    // Format data for CSV export
+    const csvData = transfers.map(t => ({
+      'Applicant': t.applicantName,
+      'From Branch': t.fromBranchName,
+      'Assigned Officer': t.assignedOfficerName || '-',
+      'Status': t.transferStatus,
+      'Requested Date': t.requestedDate.toLocaleDateString(),
+      'Approved Date': t.approvedDate?.toLocaleDateString() || '-',
+      'Completed Date': t.completedDate?.toLocaleDateString() || '-',
+      'Transfer Reason': t.transferReason || '-'
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(csvData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Transfer Analytics');
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `transfer_analytics_${timestamp}.csv`, { bookType: 'csv' });
   };
 
   const getStatusColor = (status: string) => {
@@ -236,6 +308,28 @@ export const TransferAnalytics = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-center space-x-3">
+            <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="text-lg font-semibold text-red-900">Error Loading Data</h3>
+          </div>
+          <p className="mt-2 text-sm text-red-700">{error}</p>
+          <button
+            onClick={fetchTransferData}
+            className="mt-4 w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-full bg-gray-50">
       {/* Header */}
@@ -247,12 +341,12 @@ export const TransferAnalytics = () => {
               Back to Reports
             </Link>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3">
                 <ArrowsRightLeftIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">Transfer Analytics</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">Transfer Analytics</h1>
               </div>
               <p className="mt-2 text-purple-100">
                 Comprehensive analysis of applicant transfers from branches to Head Office
@@ -260,18 +354,16 @@ export const TransferAnalytics = () => {
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={handleExportPDF}
-                disabled={exporting}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-purple-600 bg-white hover:bg-purple-50 disabled:opacity-50"
-              >
-                Export PDF
-              </button>
-              <button
                 onClick={handleExportExcel}
-                disabled={exporting}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-purple-600 bg-white hover:bg-purple-50 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-purple-600 bg-white hover:bg-purple-50"
               >
                 Export Excel
+              </button>
+              <button
+                onClick={handleExportCSV}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-purple-600 bg-white hover:bg-purple-50"
+              >
+                Export CSV
               </button>
             </div>
           </div>
@@ -280,23 +372,23 @@ export const TransferAnalytics = () => {
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Total Transfers</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.total}</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.total}</div>
             </div>
             <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Pending</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.pending}</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.pending}</div>
             </div>
             <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Approved</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.approved}</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.approved}</div>
             </div>
             <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Completed</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.completed}</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.completed}</div>
             </div>
             <div className="bg-purple-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Avg. Processing</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.avgProcessingTime.toFixed(1)}d</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.avgProcessingTime.toFixed(1)}d</div>
             </div>
           </div>
         </div>
@@ -342,69 +434,66 @@ export const TransferAnalytics = () => {
             </div>
           </div>
 
-          {/* Analytics Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* By Branch */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <ChartBarIcon className="h-5 w-5 mr-2 text-purple-600" />
-                Transfers by Branch
-              </h3>
-              <div className="space-y-3">
-                {Object.entries(stats.byBranch)
-                  .sort(([, a], [, b]) => b - a)
-                  .slice(0, 5)
-                  .map(([branch, count]) => (
-                    <div key={branch} className="flex items-center">
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{branch}</div>
-                        <div className="mt-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-purple-600 h-2 rounded-full"
-                            style={{ width: `${(count / stats.total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="ml-4 text-sm font-semibold text-gray-900">{count}</div>
-                    </div>
-                  ))}
-              </div>
-            </div>
+          {/* Help Card */}
+          <ReportIntroCard
+            title="Transfer Analytics Report"
+            description="Track and analyze applicant transfers from branches to the Head Office, monitoring status, processing times, and officer assignments."
+            whatYouWillSee={[
+              'Transfer status distribution (pending, approved, rejected, completed)',
+              'Monthly transfer trends to identify patterns',
+              'Breakdown by branch and officer assignments',
+              'Average processing time for completed transfers'
+            ]}
+            whenToUse="Use this report to monitor transfer efficiency, identify bottlenecks, and ensure timely officer assignments for transferred applicants."
+            keyMetrics={[
+              { name: 'Total Transfers', description: 'Total number of transfer requests in the selected period' },
+              { name: 'Avg. Processing Time', description: 'Average number of days from request to completion' },
+              { name: 'Status Distribution', description: 'Breakdown of transfers by current status' }
+            ]}
+          />
 
-            {/* By Officer */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-indigo-600" />
-                Assignments by Officer
-              </h3>
-              <div className="space-y-3">
-                {Object.entries(stats.byOfficer)
-                  .sort(([, a], [, b]) => b.count - a.count)
-                  .slice(0, 5)
-                  .map(([id, data]) => (
-                    <div key={id} className="flex items-center">
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{data.name}</div>
-                        <div className="mt-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-indigo-600 h-2 rounded-full"
-                            style={{ width: `${(data.count / stats.total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="ml-4 text-sm font-semibold text-gray-900">{data.count}</div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Transfers Table */}
+          {/* Transfer Details Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Transfer Details</h3>
             </div>
-            <div className="overflow-x-auto">
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-gray-200">
+              {transfers.map((transfer) => (
+                <div key={transfer.id} className="p-4 hover:bg-gray-50">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900">{transfer.applicantName}</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(transfer.transferStatus)}`}>
+                        {transfer.transferStatus.charAt(0).toUpperCase() + transfer.transferStatus.slice(1)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-gray-500">From:</span>
+                        <p className="text-gray-900 font-medium">{transfer.fromBranchName}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Officer:</span>
+                        <p className="text-gray-900 font-medium">{transfer.assignedOfficerName || '-'}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Requested:</span>
+                        <p className="text-gray-900">{transfer.requestedDate.toLocaleDateString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Completed:</span>
+                        <p className="text-gray-900">{transfer.completedDate?.toLocaleDateString() || '-'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -445,6 +534,38 @@ export const TransferAnalytics = () => {
               </table>
             </div>
           </div>
+
+          {transfers.length === 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+              <ArrowsRightLeftIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No transfers found</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                {dateRange !== 'all' || statusFilter !== 'all'
+                  ? 'No transfers match the selected filters. Try adjusting your filters or selecting "All Time".'
+                  : 'No transfer requests in the system yet. Transfer requests will appear here when applicants are transferred to the Head Office.'}
+              </p>
+              {(dateRange !== 'all' || statusFilter !== 'all') && (
+                <div className="mt-4 space-x-2">
+                  {dateRange !== 'all' && (
+                    <button
+                      onClick={() => setDateRange('all')}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                    >
+                      View All Time
+                    </button>
+                  )}
+                  {statusFilter !== 'all' && (
+                    <button
+                      onClick={() => setStatusFilter('all')}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                    >
+                      View All Statuses
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

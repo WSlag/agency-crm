@@ -3,12 +3,15 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
+  doc,
   orderBy,
   Timestamp,
 } from 'firebase/firestore';
 import { firestore } from '../config/firebase';
 import type { Expense } from '../types/expense';
 import type { Commission } from '../types/commission';
+import * as XLSX from 'xlsx';
 
 export interface ReportFilter {
   startDate?: Date;
@@ -176,10 +179,48 @@ export class ReportGenerator {
           } as Commission)
       );
 
+      // Enrich commission data with agent and branch names
+      const enrichedCommissions = await Promise.all(
+        commissions.map(async (commission) => {
+          let agentName = 'N/A';
+          let branchName = 'N/A';
+
+          // Fetch agent name
+          if (commission.agentId) {
+            try {
+              const agentDoc = await getDoc(doc(firestore, 'agents', commission.agentId));
+              if (agentDoc.exists()) {
+                agentName = agentDoc.data().agentName || 'N/A';
+              }
+            } catch (err) {
+              console.error('Error fetching agent:', err);
+            }
+          }
+
+          // Fetch branch name
+          if (commission.branchId) {
+            try {
+              const branchDoc = await getDoc(doc(firestore, 'branches', commission.branchId));
+              if (branchDoc.exists()) {
+                branchName = branchDoc.data().branchName || 'N/A';
+              }
+            } catch (err) {
+              console.error('Error fetching branch:', err);
+            }
+          }
+
+          return {
+            ...commission,
+            agentName,
+            branchName,
+          };
+        })
+      );
+
       const summary = this.calculateCommissionSummary(commissions);
 
       return {
-        data: commissions,
+        data: enrichedCommissions as any,
         summary,
       };
     } catch (error) {
@@ -223,7 +264,13 @@ export class ReportGenerator {
       summary.byType[expense.expenseType].amount += expense.amount;
 
       // By month
-      const month = new Date(expense.expenseDate).toISOString().slice(0, 7);
+      // Handle expenseDate which could be a Timestamp or Date or null
+      const expenseDate = expense.expenseDate?.toDate ? expense.expenseDate.toDate() : expense.expenseDate;
+      const dateObj = expenseDate ? new Date(expenseDate) : null;
+      const month = dateObj && !isNaN(dateObj.getTime())
+        ? dateObj.toISOString().slice(0, 7)
+        : new Date().toISOString().slice(0, 7);
+
       if (!summary.byMonth[month]) {
         summary.byMonth[month] = { count: 0, amount: 0 };
       }
@@ -243,7 +290,7 @@ export class ReportGenerator {
       totalAmount: 0,
       count: commissions.length,
       averageAmount: 0,
-      minAmount: commissions.length > 0 ? commissions[0].totalAmount : 0,
+      minAmount: commissions.length > 0 ? commissions[0].amount : 0,
       maxAmount: 0,
       byStatus: {},
       byType: {},
@@ -252,28 +299,34 @@ export class ReportGenerator {
 
     for (const commission of commissions) {
       // Total amount
-      summary.totalAmount += commission.totalAmount;
+      summary.totalAmount += commission.amount;
 
       // Min/Max amount
-      summary.minAmount = Math.min(summary.minAmount, commission.totalAmount);
-      summary.maxAmount = Math.max(summary.maxAmount, commission.totalAmount);
+      summary.minAmount = Math.min(summary.minAmount, commission.amount);
+      summary.maxAmount = Math.max(summary.maxAmount, commission.amount);
 
       // By status
       if (!summary.byStatus[commission.status]) {
         summary.byStatus[commission.status] = { count: 0, amount: 0 };
       }
       summary.byStatus[commission.status].count++;
-      summary.byStatus[commission.status].amount += commission.totalAmount;
+      summary.byStatus[commission.status].amount += commission.amount;
 
       // By type
       if (!summary.byType[commission.commissionType]) {
         summary.byType[commission.commissionType] = { count: 0, amount: 0 };
       }
       summary.byType[commission.commissionType].count++;
-      summary.byType[commission.commissionType].amount += commission.totalAmount;
+      summary.byType[commission.commissionType].amount += commission.amount;
 
       // By month
-      const month = new Date(commission.createdAt).toISOString().slice(0, 7);
+      // Handle createdAt which could be a Timestamp or Date or null
+      const createdAt = commission.createdAt?.toDate ? commission.createdAt.toDate() : commission.createdAt;
+      const dateObj = createdAt ? new Date(createdAt) : null;
+      const month = dateObj && !isNaN(dateObj.getTime())
+        ? dateObj.toISOString().slice(0, 7)
+        : new Date().toISOString().slice(0, 7);
+
       if (!summary.byMonth[month]) {
         summary.byMonth[month] = { count: 0, amount: 0 };
       }
@@ -338,5 +391,22 @@ export class ReportGenerator {
       link.click();
       document.body.removeChild(link);
     }
+  }
+
+  public async exportToExcel(
+    data: any[],
+    fields: string[],
+    filename: string
+  ): Promise<void> {
+    // Create worksheet from data
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // Create workbook and add the worksheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+
+    // Generate Excel file and trigger download
+    // XLSX.writeFile automatically adds .xlsx extension and sets proper MIME type
+    XLSX.writeFile(wb, `${filename}.xlsx`);
   }
 }

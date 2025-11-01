@@ -1,4 +1,5 @@
 import { ReportResult } from './reportService';
+import * as XLSX from 'xlsx';
 
 export type ExportFormat = 'csv' | 'pdf' | 'excel';
 
@@ -65,13 +66,25 @@ export class ExportService {
   }
 
   /**
-   * Export report data to Excel format (simplified)
-   * For production, consider using xlsx library
+   * Export report data to Excel format using xlsx library
    */
   exportToExcel(result: ReportResult): Blob {
-    // For now, use CSV format with .xlsx extension
-    // In production, implement proper Excel export with formatting
-    return this.exportToCSV(result);
+    const { data, columns } = result;
+
+    // Create worksheet from data
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // Create workbook and add the worksheet
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Report');
+
+    // Generate proper Excel binary
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+
+    // Return as Blob with correct MIME type
+    return new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
   }
 
   /**

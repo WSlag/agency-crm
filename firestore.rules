@@ -147,10 +147,10 @@ service cloud.firestore {
     // ==========================================
     
     match /applicants/{applicantId} {
-      // Allow public read for resume-visible applicants with passed medical and active status
-      // NOTE: Only 'active' applicants are publicly visible (excludes pending, archived, blacklisted, inactive)
+      // Allow public read for approved applicants with passed medical and active status
+      // NOTE: Only 'active' applicants with 'approved' status are publicly visible
       allow read: if isAuthenticated() ||
-        (resource.data.resumeVisible == true &&
+        (resource.data.resumeApprovalStatus == 'approved' &&
          resource.data.medicalStatus.examination.result == 'passed' &&
          resource.data.status == 'active');
       allow create: if isAdmin() ||
@@ -437,11 +437,11 @@ service cloud.firestore {
       allow create: if isAdmin() || isHOAccountant();
       allow update, delete: if isAdmin();
     }
-    
+
     // ==========================================
     // REPORTS COLLECTION
     // ==========================================
-    
+
     match /reports/{reportId} {
       allow read: if isAuthenticated() && (
         isAdmin() ||
@@ -453,7 +453,36 @@ service cloud.firestore {
       allow update: if isAdmin() || resource.data.generatedBy == request.auth.uid;
       allow delete: if isAdmin();
     }
-    
+
+    // ==========================================
+    // REPORT TEMPLATES COLLECTION
+    // ==========================================
+
+    match /reportTemplates/{templateId} {
+      // Users can read their own templates
+      // Users can also read public templates from their organization
+      allow read: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        (resource.data.isPublic == true && resource.data.organizationId == request.auth.token.organizationId) ||
+        isAdmin()
+      );
+
+      // Users can create templates
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+
+      // Users can update their own templates
+      allow update: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        isAdmin()
+      );
+
+      // Users can delete their own templates
+      allow delete: if isAuthenticated() && (
+        resource.data.createdBy == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
     // ==========================================
     // EXPENSES COLLECTION (Top-Level)
     // ==========================================
@@ -574,6 +603,42 @@ service cloud.firestore {
       allow create: if true;
       // Only admins can update/delete inquiries
       allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // EVENTS COLLECTION (Calendar/Event Management)
+    // ==========================================
+
+    match /events/{eventId} {
+      // Users can read events they're attending or in their branch
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        isPresident() ||
+        request.auth.uid in resource.data.attendees ||
+        (isBranchManager() && belongsToBranch(resource.data.branchId)) ||
+        (isHORecruitmentOfficer() && request.auth.uid in resource.data.attendees) ||
+        (isHOAccountant() && request.auth.uid in resource.data.attendees)
+      );
+
+      // Users can create events in their own branch
+      allow create: if isAuthenticated() && (
+        isAdmin() ||
+        (isBranchManager() && belongsToBranch(request.resource.data.branchId)) ||
+        isHORecruitmentOfficer() ||
+        isHOAccountant()
+      ) && request.resource.data.createdBy == request.auth.uid;
+
+      // Users can update events they created or if they're admin
+      allow update: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.createdBy == request.auth.uid
+      );
+
+      // Users can delete events they created or if they're admin
+      allow delete: if isAuthenticated() && (
+        isAdmin() ||
+        resource.data.createdBy == request.auth.uid
+      );
     }
 
     // ==========================================

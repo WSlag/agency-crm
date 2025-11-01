@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
+import { useAuthStore } from '../../stores/authStore';
 import {
   GlobeAltIcon,
   ArrowLeftIcon,
@@ -14,6 +15,8 @@ import {
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 import { useReportExporter } from '../../hooks/useReportExporter';
+import { ReportIntroCard } from '../../components/reports';
+import * as XLSX from 'xlsx';
 
 interface DeploymentData {
   id: string;
@@ -46,7 +49,9 @@ interface DeploymentStats {
 }
 
 export const DeploymentReports = () => {
+  const { user, customClaims } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [deployments, setDeployments] = useState<DeploymentData[]>([]);
   const [stats, setStats] = useState<DeploymentStats>({
     total: 0,
@@ -59,22 +64,36 @@ export const DeploymentReports = () => {
   });
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter' | 'year' | 'all'>('month');
   const [countryFilter, setCountryFilter] = useState<string>('all');
-  
+
   const { exportToPDF, exportToExcel, exporting } = useReportExporter();
 
   useEffect(() => {
     fetchDeploymentData();
-  }, [dateRange, countryFilter]);
+  }, [dateRange, countryFilter, customClaims]);
 
   const fetchDeploymentData = async () => {
     try {
       setLoading(true);
 
-      // Fetch deployed applicants
-      let q = query(
-        collection(firestore, 'applicants'),
+      // Build query constraints
+      const constraints: any[] = [
         where('currentStage', '==', 'deployed'),
-        orderBy('deployment.startDate', 'desc')
+      ];
+
+      // Role-based filtering
+      // Branch Managers: Only see deployments from their branch
+      if (customClaims?.role?.toLowerCase() === 'branch_manager' && customClaims?.branchId) {
+        constraints.push(where('branchId', '==', customClaims.branchId));
+      }
+      // Admins, Presidents see all deployments (no restriction)
+
+      // Note: We order by deployment.startDate, but handle null values in processing
+      constraints.push(orderBy('deployment.startDate', 'desc'));
+
+      // Fetch deployed applicants
+      const q = query(
+        collection(firestore, 'applicants'),
+        ...constraints
       );
 
       const snapshot = await getDocs(q);
@@ -92,26 +111,29 @@ export const DeploymentReports = () => {
       agentsSnap.forEach(doc => agentMap.set(doc.id, doc.data().agentName));
 
       const deploymentsData: DeploymentData[] = [];
-      
+
       snapshot.forEach(doc => {
         const data = doc.data();
-        if (data.deployment && data.deployment.startDate) {
+        // Include all deployed applicants, even if deployment details are incomplete
+        // This allows showing all deployed applicants rather than filtering them out
+        if (data.deployment) {
+          const startDate = data.deployment.startDate?.toDate();
           deploymentsData.push({
             id: doc.id,
             applicantId: doc.id,
-            applicantName: data.fullName,
+            applicantName: data.fullName || 'Unknown',
             branchId: data.branchId,
             branchName: branchMap.get(data.branchId) || 'Unknown Branch',
             agentId: data.agentId,
             agentName: data.agentId ? agentMap.get(data.agentId) : undefined,
-            country: data.deployment.country || 'Unknown',
-            position: data.deployment.position || 'Unknown',
-            employer: data.deployment.employer || 'Unknown',
+            country: data.deployment.country || 'N/A',
+            position: data.deployment.position || 'N/A',
+            employer: data.deployment.employer || 'N/A',
             salary: {
               amount: data.deployment.salary?.amount || 0,
               currency: data.deployment.salary?.currency || 'PHP',
             },
-            startDate: data.deployment.startDate?.toDate(),
+            startDate: startDate || new Date(0), // Use epoch as placeholder for null dates
             contractPeriod: data.deployment.contractPeriod || 0,
             currentStage: data.currentStage,
           });
@@ -123,7 +145,7 @@ export const DeploymentReports = () => {
       if (dateRange !== 'all') {
         const now = new Date();
         let startDate = new Date();
-        
+
         switch (dateRange) {
           case 'week':
             startDate.setDate(now.getDate() - 7);
@@ -138,8 +160,12 @@ export const DeploymentReports = () => {
             startDate.setFullYear(now.getFullYear() - 1);
             break;
         }
-        
-        filteredDeployments = deploymentsData.filter(d => d.startDate >= startDate);
+
+        // Filter by date, but exclude deployments with no start date (epoch = 1970)
+        filteredDeployments = deploymentsData.filter(d => {
+          if (d.startDate.getTime() === 0) return false; // Exclude deployments with no start date from date filters
+          return d.startDate >= startDate;
+        });
       }
 
       // Apply country filter
@@ -188,8 +214,18 @@ export const DeploymentReports = () => {
       }
 
       setStats(newStats);
-    } catch (error) {
+      setError(null); // Clear any previous errors
+    } catch (error: any) {
       console.error('Error fetching deployment data:', error);
+
+      // Provide helpful error messages
+      if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+        setError('Database indexes are still building. Please wait a few minutes and refresh the page.');
+      } else if (error.code === 'permission-denied') {
+        setError('You do not have permission to view this data. Please contact your administrator.');
+      } else {
+        setError('Failed to load deployment data. Please try again later.');
+      }
     } finally {
       setLoading(false);
     }
@@ -205,11 +241,57 @@ export const DeploymentReports = () => {
   };
 
   const handleExportExcel = () => {
-    exportToExcel({
-      title: 'Deployment Report',
-      data: deployments,
-      columns: ['applicantName', 'branchName', 'agentName', 'country', 'position', 'employer', 'salary.amount', 'salary.currency', 'contractPeriod', 'startDate'],
-    });
+    // Format data for Excel export
+    const excelData = deployments.map(d => ({
+      'Applicant': d.applicantName,
+      'Branch': d.branchName,
+      'Agent': d.agentName || '-',
+      'Country': d.country,
+      'Position': d.position,
+      'Employer': d.employer,
+      'Salary Amount': d.salary.amount,
+      'Currency': d.salary.currency,
+      'Contract Period (months)': d.contractPeriod,
+      'Start Date': d.startDate.toLocaleDateString()
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Deployments');
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `deployment_report_${timestamp}.xlsx`);
+  };
+
+  const handleExportCSV = () => {
+    // Format data for CSV export
+    const csvData = deployments.map(d => ({
+      'Applicant': d.applicantName,
+      'Branch': d.branchName,
+      'Agent': d.agentName || '-',
+      'Country': d.country,
+      'Position': d.position,
+      'Employer': d.employer,
+      'Salary Amount': d.salary.amount,
+      'Currency': d.salary.currency,
+      'Contract Period (months)': d.contractPeriod,
+      'Start Date': d.startDate.toLocaleDateString()
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(csvData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Deployments');
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `deployment_report_${timestamp}.csv`, { bookType: 'csv' });
   };
 
   const uniqueCountries = Array.from(new Set(deployments.map(d => d.country))).filter(Boolean);
@@ -218,6 +300,28 @@ export const DeploymentReports = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="max-w-md w-full bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-center space-x-3">
+            <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="text-lg font-semibold text-red-900">Error Loading Data</h3>
+          </div>
+          <p className="mt-2 text-sm text-red-700">{error}</p>
+          <button
+            onClick={fetchDeploymentData}
+            className="mt-4 w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -233,7 +337,7 @@ export const DeploymentReports = () => {
               Back to Reports
             </Link>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3">
@@ -246,18 +350,16 @@ export const DeploymentReports = () => {
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={handleExportPDF}
-                disabled={exporting}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-green-600 bg-white hover:bg-green-50 disabled:opacity-50"
-              >
-                Export PDF
-              </button>
-              <button
                 onClick={handleExportExcel}
-                disabled={exporting}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-green-600 bg-white hover:bg-green-50 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-green-600 bg-white hover:bg-green-50"
               >
                 Export Excel
+              </button>
+              <button
+                onClick={handleExportCSV}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-green-600 bg-white hover:bg-green-50"
+              >
+                Export CSV
               </button>
             </div>
           </div>
@@ -326,117 +428,25 @@ export const DeploymentReports = () => {
             </div>
           </div>
 
-          {/* Analytics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* By Country */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <MapPinIcon className="h-5 w-5 mr-2 text-green-600" />
-                Deployments by Country
-              </h3>
-              <div className="space-y-3">
-                {Object.entries(stats.byCountry)
-                  .sort(([, a], [, b]) => b - a)
-                  .slice(0, 10)
-                  .map(([country, count]) => (
-                    <div key={country} className="flex items-center">
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{country}</div>
-                        <div className="mt-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-600 h-2 rounded-full"
-                            style={{ width: `${(count / stats.total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="ml-4 text-sm font-semibold text-gray-900">{count}</div>
-                    </div>
-                  ))}
-              </div>
-            </div>
+          {/* Help Card */}
+          <ReportIntroCard
+            title="Deployment Reports"
+            description="Comprehensive analysis of overseas worker deployments, tracking destinations, positions, salaries, and trends."
+            whatYouWillSee={[
+              'Distribution of deployments across countries',
+              'Popular job positions and their demand',
+              'Monthly deployment trends',
+              'Average salary and contract duration metrics'
+            ]}
+            whenToUse="Use this report to analyze deployment patterns, identify popular destinations, track salary trends, and plan recruitment strategies."
+            keyMetrics={[
+              { name: 'Total Deployments', description: 'Number of successfully deployed workers in the selected period' },
+              { name: 'Countries', description: 'Number of unique destination countries' },
+              { name: 'Avg. Salary', description: 'Average monthly salary across all deployments' }
+            ]}
+          />
 
-            {/* By Position */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <BriefcaseIcon className="h-5 w-5 mr-2 text-teal-600" />
-                Deployments by Position
-              </h3>
-              <div className="space-y-3">
-                {Object.entries(stats.byPosition)
-                  .sort(([, a], [, b]) => b - a)
-                  .slice(0, 10)
-                  .map(([position, count]) => (
-                    <div key={position} className="flex items-center">
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{position}</div>
-                        <div className="mt-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-teal-600 h-2 rounded-full"
-                            style={{ width: `${(count / stats.total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="ml-4 text-sm font-semibold text-gray-900">{count}</div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            {/* By Branch */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <BuildingOfficeIcon className="h-5 w-5 mr-2 text-cyan-600" />
-                Deployments by Branch
-              </h3>
-              <div className="space-y-3">
-                {Object.entries(stats.byBranch)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([branch, count]) => (
-                    <div key={branch} className="flex items-center">
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{branch}</div>
-                        <div className="mt-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-cyan-600 h-2 rounded-full"
-                            style={{ width: `${(count / stats.total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="ml-4 text-sm font-semibold text-gray-900">{count}</div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            {/* Monthly Trend */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <CalendarIcon className="h-5 w-5 mr-2 text-blue-600" />
-                Monthly Trend
-              </h3>
-              <div className="space-y-3">
-                {Object.entries(stats.byMonth)
-                  .sort(([a], [b]) => new Date(b).getTime() - new Date(a).getTime())
-                  .slice(0, 6)
-                  .map(([month, count]) => (
-                    <div key={month} className="flex items-center">
-                      <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-900">{month}</div>
-                        <div className="mt-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${(count / stats.total) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="ml-4 text-sm font-semibold text-gray-900">{count}</div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Deployment Table */}
+          {/* Deployment Details Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Deployment Details</h3>
@@ -476,7 +486,7 @@ export const DeploymentReports = () => {
                         {deployment.salary.currency} {deployment.salary.amount.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {deployment.startDate.toLocaleDateString()}
+                        {deployment.startDate.getTime() === 0 ? 'N/A' : deployment.startDate.toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
@@ -490,8 +500,18 @@ export const DeploymentReports = () => {
               <GlobeAltIcon className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No deployments found</h3>
               <p className="mt-1 text-sm text-gray-500">
-                No deployments match the selected filters.
+                {dateRange !== 'all'
+                  ? 'No deployments match the selected filters. Try selecting "All Time" to see all deployments.'
+                  : 'No deployed applicants in the system yet. Applicants marked as "deployed" will appear here.'}
               </p>
+              {dateRange !== 'all' && (
+                <button
+                  onClick={() => setDateRange('all')}
+                  className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  View All Time
+                </button>
+              )}
             </div>
           )}
         </div>

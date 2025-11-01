@@ -154,7 +154,7 @@ export const JobDetail = () => {
           
           <div className="sm:flex sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">{selectedJob.jobTitle}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">{selectedJob.jobTitle}</h1>
               <div className="mt-2 flex items-center space-x-4 text-blue-100">
                 <div className="flex items-center">
                   <BuildingOfficeIcon className="h-5 w-5 mr-1" />
@@ -204,7 +204,7 @@ export const JobDetail = () => {
                       `}
                     >
                       <Icon className="h-5 w-5" />
-                      <span>{tab.name}</span>
+                      <span className="hidden sm:inline">{tab.name}</span>
                     </button>
                   );
                 })}
@@ -361,27 +361,27 @@ export const JobDetail = () => {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="bg-blue-50 rounded-lg p-4">
                         <div className="text-sm font-medium text-blue-600">Total Applications</div>
-                        <div className="text-2xl font-bold text-blue-900 mt-1">{analytics.totalApplications}</div>
+                        <div className="text-xl md:text-2xl font-bold text-blue-900 mt-1">{analytics.totalApplications}</div>
                       </div>
                       <div className="bg-yellow-50 rounded-lg p-4">
                         <div className="text-sm font-medium text-yellow-600">In Interview</div>
-                        <div className="text-2xl font-bold text-yellow-900 mt-1">{analytics.interviewCount}</div>
+                        <div className="text-xl md:text-2xl font-bold text-yellow-900 mt-1">{analytics.interviewCount}</div>
                       </div>
                       <div className="bg-purple-50 rounded-lg p-4">
                         <div className="text-sm font-medium text-purple-600">Offered</div>
-                        <div className="text-2xl font-bold text-purple-900 mt-1">{analytics.offeredCount}</div>
+                        <div className="text-xl md:text-2xl font-bold text-purple-900 mt-1">{analytics.offeredCount}</div>
                       </div>
                       <div className="bg-green-50 rounded-lg p-4">
                         <div className="text-sm font-medium text-green-600">Accepted</div>
-                        <div className="text-2xl font-bold text-green-900 mt-1">{analytics.acceptedCount}</div>
+                        <div className="text-xl md:text-2xl font-bold text-green-900 mt-1">{analytics.acceptedCount}</div>
                       </div>
                       <div className="bg-red-50 rounded-lg p-4">
                         <div className="text-sm font-medium text-red-600">Rejected</div>
-                        <div className="text-2xl font-bold text-red-900 mt-1">{analytics.rejectedCount}</div>
+                        <div className="text-xl md:text-2xl font-bold text-red-900 mt-1">{analytics.rejectedCount}</div>
                       </div>
                       <div className="bg-indigo-50 rounded-lg p-4">
                         <div className="text-sm font-medium text-indigo-600">Fill Rate</div>
-                        <div className="text-2xl font-bold text-indigo-900 mt-1">{analytics.fillRate.toFixed(1)}%</div>
+                        <div className="text-xl md:text-2xl font-bold text-indigo-900 mt-1">{analytics.fillRate.toFixed(1)}%</div>
                       </div>
                     </div>
                   ) : (

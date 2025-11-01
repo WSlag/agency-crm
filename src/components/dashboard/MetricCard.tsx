@@ -144,7 +144,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
           <p className="mt-1 text-xs text-gray-400">{description}</p>
         )}
         <dd className="mt-1 flex items-baseline justify-between md:block lg:flex">
-          <div className={`flex items-baseline text-3xl font-bold ${colors.text}`}>
+          <div className={`flex items-baseline text-2xl sm:text-3xl font-bold ${colors.text}`}>
             {formattedValue}
           </div>
           {trend && change !== undefined && (

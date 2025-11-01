@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
+import { useAuthStore } from '../../stores/authStore';
 import {
   UserGroupIcon,
   ArrowLeftIcon,
@@ -13,6 +14,8 @@ import {
   FunnelIcon
 } from '@heroicons/react/24/outline';
 import { useReportExporter } from '../../hooks/useReportExporter';
+import { ReportIntroCard } from '../../components/reports';
+import * as XLSX from 'xlsx';
 
 interface OfficerPerformance {
   officerId: string;
@@ -28,26 +31,40 @@ interface OfficerPerformance {
 }
 
 export const OfficerPerformance = () => {
+  const { user, customClaims } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [officers, setOfficers] = useState<OfficerPerformance[]>([]);
   const [dateRange, setDateRange] = useState<'week' | 'month' | 'quarter' | 'year' | 'all'>('month');
   const [sortBy, setSortBy] = useState<'assignedCount' | 'completedCount' | 'completionRate' | 'avgProcessingTime'>('completedCount');
-  
+
   const { exportToPDF, exportToExcel, exporting } = useReportExporter();
 
   useEffect(() => {
     fetchOfficerPerformance();
-  }, [dateRange]);
+  }, [dateRange, customClaims]);
 
   const fetchOfficerPerformance = async () => {
     try {
       setLoading(true);
 
-      // Fetch all HO Recruitment Officers
-      const usersQuery = query(
-        collection(firestore, 'users'),
-        where('role', '==', 'ho_recruitment_officer')
-      );
+      // Role-based filtering
+      let usersQuery;
+
+      if (customClaims?.role?.toLowerCase() === 'ho_recruitment_officer') {
+        // HO Officers only see their own performance
+        usersQuery = query(
+          collection(firestore, 'users'),
+          where('role', '==', 'ho_recruitment_officer'),
+          where('__name__', '==', user?.uid)
+        );
+      } else {
+        // Admins and Presidents see all HO Officers
+        usersQuery = query(
+          collection(firestore, 'users'),
+          where('role', '==', 'ho_recruitment_officer')
+        );
+      }
+
       const usersSnap = await getDocs(usersQuery);
 
       const performanceData: OfficerPerformance[] = [];
@@ -168,11 +185,53 @@ export const OfficerPerformance = () => {
   };
 
   const handleExportExcel = () => {
-    exportToExcel({
-      title: 'Officer Performance Report',
-      data: officers,
-      columns: ['officerName', 'email', 'assignedCount', 'completedCount', 'activeApplicants', 'deployedApplicants', 'completionRate', 'avgProcessingTime'],
-    });
+    // Format data for Excel export
+    const excelData = officers.map(o => ({
+      'Officer Name': o.officerName,
+      'Email': o.email,
+      'Assigned Count': o.assignedCount,
+      'Completed Count': o.completedCount,
+      'Active Applicants': o.activeApplicants,
+      'Deployed Applicants': o.deployedApplicants,
+      'Completion Rate (%)': o.completionRate.toFixed(1),
+      'Avg Processing Time (days)': o.avgProcessingTime > 0 ? o.avgProcessingTime.toFixed(0) : 'N/A'
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Officer Performance');
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `officer_performance_${timestamp}.xlsx`);
+  };
+
+  const handleExportCSV = () => {
+    // Format data for CSV export
+    const csvData = officers.map(o => ({
+      'Officer Name': o.officerName,
+      'Email': o.email,
+      'Assigned Count': o.assignedCount,
+      'Completed Count': o.completedCount,
+      'Active Applicants': o.activeApplicants,
+      'Deployed Applicants': o.deployedApplicants,
+      'Completion Rate (%)': o.completionRate.toFixed(1),
+      'Avg Processing Time (days)': o.avgProcessingTime > 0 ? o.avgProcessingTime.toFixed(0) : 'N/A'
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(csvData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Officer Performance');
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `officer_performance_${timestamp}.csv`, { bookType: 'csv' });
   };
 
   const totalStats = {
@@ -203,7 +262,7 @@ export const OfficerPerformance = () => {
               Back to Reports
             </Link>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center space-x-3">
@@ -216,18 +275,16 @@ export const OfficerPerformance = () => {
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={handleExportPDF}
-                disabled={exporting}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50 disabled:opacity-50"
-              >
-                Export PDF
-              </button>
-              <button
                 onClick={handleExportExcel}
-                disabled={exporting}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50 disabled:opacity-50"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50"
               >
                 Export Excel
+              </button>
+              <button
+                onClick={handleExportCSV}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50"
+              >
+                Export CSV
               </button>
             </div>
           </div>
@@ -296,6 +353,24 @@ export const OfficerPerformance = () => {
               </div>
             </div>
           </div>
+
+          {/* Help Card */}
+          <ReportIntroCard
+            title="Officer Performance Report"
+            description="Track and analyze the performance of HO Recruitment Officers, monitoring assignment workload, deployment success rates, and processing efficiency."
+            whatYouWillSee={[
+              'Individual officer performance metrics',
+              'Completion rates and processing times',
+              'Workload distribution (assigned vs deployed)',
+              'Top-performing officers based on selected criteria'
+            ]}
+            whenToUse="Use this report to evaluate officer productivity, identify training needs, balance workloads, and recognize high performers."
+            keyMetrics={[
+              { name: 'Completion Rate', description: 'Percentage of assigned applicants successfully deployed' },
+              { name: 'Avg. Processing Time', description: 'Average days from transfer to deployment' },
+              { name: 'Active Applicants', description: 'Number of applicants currently being processed' }
+            ]}
+          />
 
           {/* Officer Performance Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

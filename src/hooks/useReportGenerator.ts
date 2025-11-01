@@ -8,6 +8,8 @@ interface UseReportGeneratorResult {
   generateCommissionReport: (filter: ReportFilter) => Promise<void>;
   exportExpenseReport: (filename: string) => Promise<void>;
   exportCommissionReport: (filename: string) => Promise<void>;
+  exportExpenseReportToExcel: (filename: string) => Promise<void>;
+  exportCommissionReportToExcel: (filename: string) => Promise<void>;
   expenseReport: {
     data: Expense[];
     summary: any;
@@ -158,11 +160,103 @@ export const useReportGenerator = (): UseReportGeneratorResult => {
     [commissionReport]
   );
 
+  const exportExpenseReportToExcel = useCallback(
+    async (filename: string) => {
+      if (!expenseReport) {
+        setError('No expense report data available');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const fields = [
+          'id',
+          'expenseType',
+          'amount',
+          'currency',
+          'description',
+          'expenseDate',
+          'status',
+          'branchId',
+          'applicantId',
+          'enteredBy',
+          'verifiedBy',
+          'verifiedAt',
+          'approvedBy',
+          'approvedAt',
+          'paidBy',
+          'paidAt',
+        ];
+
+        await generator.exportToExcel(
+          expenseReport.data,
+          fields,
+          filename  // No extension - exportToExcel will add .xlsx
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to export expense report to Excel');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [expenseReport]
+  );
+
+  const exportCommissionReportToExcel = useCallback(
+    async (filename: string) => {
+      if (!commissionReport) {
+        setError('No commission report data available');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const fields = [
+          'id',
+          'commissionType',
+          'agentId',
+          'applicantId',
+          'branchId',
+          'baseAmount',
+          'bonusAmount',
+          'totalAmount',
+          'currency',
+          'status',
+          'requestedBy',
+          'requestedAt',
+          'verifiedBy',
+          'verifiedAt',
+          'approvedBy',
+          'approvedAt',
+          'paidBy',
+          'paidAt',
+        ];
+
+        await generator.exportToExcel(
+          commissionReport.data,
+          fields,
+          filename  // No extension - exportToExcel will add .xlsx
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to export commission report to Excel');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [commissionReport]
+  );
+
   return {
     generateExpenseReport,
     generateCommissionReport,
     exportExpenseReport,
     exportCommissionReport,
+    exportExpenseReportToExcel,
+    exportCommissionReportToExcel,
     expenseReport,
     commissionReport,
     loading,

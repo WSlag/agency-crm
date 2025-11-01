@@ -224,7 +224,7 @@ export const TransfersList = () => {
             <div className="sm:flex-auto">
               <div className="flex items-center space-x-3">
                 <ArrowsRightLeftIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">Transfer History</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">Transfer History</h1>
               </div>
               <p className="mt-2 text-indigo-100">
                 View transfer history across your accessible transfers
@@ -239,8 +239,8 @@ export const TransfersList = () => {
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Tabs */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="border-b border-gray-200">
-              <nav className="flex -mb-px space-x-8 px-6" aria-label="Tabs">
+            <div className="border-b border-gray-200 overflow-x-auto">
+              <nav className="flex -mb-px space-x-4 sm:space-x-8 px-4 sm:px-6" aria-label="Tabs">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
@@ -254,7 +254,8 @@ export const TransfersList = () => {
                       }
                     `}
                   >
-                    {tab.name}
+                    <span className="hidden sm:inline">{tab.name}</span>
+                    <span className="sm:hidden">{tab.name.split(' ')[0]}</span>
                     <span className={`
                       ml-2 py-0.5 px-2 rounded-full text-xs
                       ${activeTab === tab.id

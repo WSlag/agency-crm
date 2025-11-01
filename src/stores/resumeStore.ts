@@ -45,16 +45,16 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   filters: {},
   sortBy: 'date',
 
-  // Fetch public resumes (only those with medical passed and resumeVisible = true)
+  // Fetch public resumes (only those with approved status)
   fetchPublicResumes: async () => {
     set({ loading: true, error: null });
     try {
       const applicantsRef = collection(db, 'applicants');
 
-      // Query for applicants with medical passed and resume visible
+      // Query for applicants with approved status, medical passed, and active status
       const q = query(
         applicantsRef,
-        where('resumeVisible', '==', true),
+        where('resumeApprovalStatus', '==', 'approved'),
         where('medicalStatus.examination.result', '==', 'passed'),
         where('status', '==', 'active')
       );

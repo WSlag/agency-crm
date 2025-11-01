@@ -201,6 +201,10 @@ export interface Applicant {
 
   // Resume Visibility (Public Employer Portal)
   resumeVisible?: boolean;           // If true, resume is visible on public employer portal
+  resumeApprovalStatus?: 'pending' | 'approved' | 'rejected' | null; // Approval status for portal visibility
+  resumeApprovedBy?: string | null;  // User ID who approved/rejected
+  resumeApprovedAt?: Date | null;    // When approval/rejection happened
+  resumeRejectionReason?: string;    // Reason for rejection
   photoUrl?: string;                 // 2x2 ID photo URL
   fullBodyPhotoUrl?: string;         // Full body photo URL
   passportCopyUrl?: string;          // Passport copy document URL

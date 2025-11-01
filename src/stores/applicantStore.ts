@@ -27,6 +27,12 @@ import {
   ApplicantPipeline,
 } from '../types/applicant';
 import { getStatusFilterOption } from '../config/statusConfig';
+import {
+  isApplicantReadyForPortal,
+  needsPhotoUpload,
+  notifyReadyForApproval,
+  notifyMissingPhotos,
+} from '../utils/resumeApprovalHelpers';
 
 interface ApplicantState {
   applicants: Applicant[];
@@ -456,8 +462,48 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
   updateApplicant: async (id, data) => {
     try {
       const docRef = doc(firestore, 'applicants', id);
+
+      // Fetch current applicant data to check for changes
+      const currentDoc = await getDoc(docRef);
+      if (!currentDoc.exists()) {
+        throw new Error('Applicant not found');
+      }
+
+      const currentData = currentDoc.data() as Applicant;
+      const updatedApplicant = { ...currentData, ...data, id };
+
+      // Check if this update makes the applicant ready for portal approval
+      const wasReady = isApplicantReadyForPortal(currentData as Applicant);
+      const isNowReady = isApplicantReadyForPortal(updatedApplicant);
+
+      // Auto-detection logic
+      const autoUpdates: any = {};
+
+      // If applicant just became ready for portal (medical passed + all photos uploaded)
+      if (!wasReady && isNowReady) {
+        // Check if resumeApprovalStatus is not already set
+        if (!currentData.resumeApprovalStatus || currentData.resumeApprovalStatus === null) {
+          autoUpdates.resumeApprovalStatus = 'pending';
+          console.log(`✅ Auto-setting resumeApprovalStatus to 'pending' for ${updatedApplicant.fullName}`);
+
+          // Send notification that applicant is ready for approval
+          await notifyReadyForApproval(updatedApplicant);
+        }
+      }
+
+      // If applicant passed medical but is missing photos
+      const wasNeedingPhotos = needsPhotoUpload(currentData as Applicant);
+      const isNowNeedingPhotos = needsPhotoUpload(updatedApplicant);
+
+      if (!wasNeedingPhotos && isNowNeedingPhotos) {
+        // Send notification about missing photos
+        await notifyMissingPhotos(updatedApplicant);
+      }
+
+      // Apply update with auto-detected changes
       await updateDoc(docRef, {
         ...data,
+        ...autoUpdates,
         updatedAt: serverTimestamp(),
       });
     } catch (error) {

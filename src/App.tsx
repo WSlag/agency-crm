@@ -80,6 +80,11 @@ import { ReportList } from './pages/reports/ReportList';
 import { ReportDetail } from './pages/reports/ReportDetail';
 import { SharedReports } from './pages/reports/SharedReports';
 
+// Calendar
+import { CalendarViewPage } from './pages/calendar/CalendarView';
+import { EventDetail } from './pages/calendar/EventDetail';
+import { EventForm } from './pages/calendar/EventForm';
+
 // Settings
 import { SystemSettings } from './pages/settings/SystemSettings';
 import { NotificationSettings } from './pages/settings/NotificationSettings';
@@ -94,6 +99,8 @@ import { EmployerPortal } from './pages/public/EmployerPortal';
 
 // Admin Resume Management
 import { ResumeManagement } from './pages/admin/ResumeManagement';
+import { ResumeManagementEnhanced } from './pages/admin/ResumeManagementEnhanced';
+import { BulkResumeProcessor } from './pages/admin/BulkResumeProcessor';
 import { AgencyInfoSettings } from './pages/admin/AgencyInfoSettings';
 import { EmployerInquiries } from './pages/admin/EmployerInquiries';
 import { AddSampleData } from './pages/admin/AddSampleData';
@@ -402,12 +409,74 @@ const App: React.FC = () => {
             <Route path="builder" element={<ReportBuilder />} />
             <Route path="list" element={<ReportList />} />
             <Route path=":id" element={<ReportDetail />} />
-            <Route path="financial" element={<FinancialReports />} />
-            <Route path="branch-performance" element={<BranchPerformance />} />
-            <Route path="agent-performance" element={<AgentPerformance />} />
-            <Route path="transfer-analytics" element={<TransferAnalytics />} />
-            <Route path="officer-performance" element={<OfficerPerformance />} />
-            <Route path="deployment" element={<DeploymentReports />} />
+
+            {/* Transfer Analytics - Admin, President, Branch Manager */}
+            <Route
+              path="transfer-analytics"
+              element={
+                <RoleGuard allowedRoles={['admin', 'president', 'branch_manager']}>
+                  <TransferAnalytics />
+                </RoleGuard>
+              }
+            />
+
+            {/* Officer Performance - Admin, President, HO Recruitment Officer */}
+            <Route
+              path="officer-performance"
+              element={
+                <RoleGuard allowedRoles={['admin', 'president', 'ho_recruitment_officer']}>
+                  <OfficerPerformance />
+                </RoleGuard>
+              }
+            />
+
+            {/* Deployment Reports - Admin, President, Branch Manager */}
+            <Route
+              path="deployment"
+              element={
+                <RoleGuard allowedRoles={['admin', 'president', 'branch_manager']}>
+                  <DeploymentReports />
+                </RoleGuard>
+              }
+            />
+
+            {/* Financial Reports - Admin, President, HO Accountant */}
+            <Route
+              path="financial"
+              element={
+                <RoleGuard allowedRoles={['admin', 'president', 'ho_accountant']}>
+                  <FinancialReports />
+                </RoleGuard>
+              }
+            />
+
+            {/* Branch Performance - Admin, President, Branch Manager */}
+            <Route
+              path="branch-performance"
+              element={
+                <RoleGuard allowedRoles={['admin', 'president', 'branch_manager']}>
+                  <BranchPerformance />
+                </RoleGuard>
+              }
+            />
+
+            {/* Agent Performance - Admin, President only */}
+            <Route
+              path="agent-performance"
+              element={
+                <RoleGuard allowedRoles={['admin', 'president']}>
+                  <AgentPerformance />
+                </RoleGuard>
+              }
+            />
+          </Route>
+
+          {/* Calendar Routes */}
+          <Route path="/calendar">
+            <Route index element={<CalendarViewPage />} />
+            <Route path="event/new" element={<EventForm />} />
+            <Route path="event/:id" element={<EventDetail />} />
+            <Route path="event/:id/edit" element={<EventForm />} />
           </Route>
 
           {/* Admin Resume Management Routes */}
@@ -415,7 +484,23 @@ const App: React.FC = () => {
             path="/admin/resume-management"
             element={
               <RoleGuard allowedRoles={['admin']}>
+                <ResumeManagementEnhanced />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/resume-management-legacy"
+            element={
+              <RoleGuard allowedRoles={['admin']}>
                 <ResumeManagement />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/admin/bulk-resume-processor"
+            element={
+              <RoleGuard allowedRoles={['admin']}>
+                <BulkResumeProcessor />
               </RoleGuard>
             }
           />

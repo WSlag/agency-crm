@@ -15,7 +15,7 @@ import { PipelineFlow } from '../../components/dashboard/PipelineFlow';
 import { FinancialOverview } from '../../components/dashboard/FinancialOverview';
 import { ActivityFeed } from '../../components/dashboard/ActivityFeed';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, limit, getDocs, onSnapshot, getDoc, doc } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
 import {
@@ -152,15 +152,51 @@ const QuickTipsWidget: React.FC = () => {
 
 // Today's Agenda Widget
 const TodaysAgenda: React.FC = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [todaysEvents, setTodaysEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const today = new Date();
   const dayOfWeek = today.toLocaleDateString('en-US', { weekday: 'long' });
   const date = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-  const events = [
-    { time: '09:00 AM', title: 'Team Meeting', color: 'bg-blue-500' },
-    { time: '02:00 PM', title: 'Review Applications', color: 'bg-green-500' },
-    { time: '04:30 PM', title: 'Financial Check', color: 'bg-purple-500' },
-  ];
+  // Fetch today's events
+  useEffect(() => {
+    const fetchTodaysEvents = async () => {
+      if (!user?.uid) return;
+
+      try {
+        setLoading(true);
+        const { EventService } = await import('../../services/eventService');
+        const events = await EventService.getTodaysEventsForUser(user.uid);
+        setTodaysEvents(events);
+      } catch (error) {
+        console.error('Error fetching todays events:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTodaysEvents();
+  }, [user?.uid]);
+
+  // Get color based on event type
+  const getEventColor = (eventType: string): string => {
+    const colors: { [key: string]: string } = {
+      meeting: 'bg-blue-500',
+      interview: 'bg-green-500',
+      deadline: 'bg-red-500',
+      training: 'bg-purple-500',
+      review: 'bg-yellow-500',
+      other: 'bg-gray-500',
+    };
+    return colors[eventType] || 'bg-gray-500';
+  };
+
+  const handleViewCalendar = () => {
+    navigate('/calendar');
+  };
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4">
@@ -168,28 +204,57 @@ const TodaysAgenda: React.FC = () => {
         <CalendarDaysIcon className="h-4 w-4 text-indigo-600" />
         <h3 className="text-sm font-semibold text-gray-900">Today's Agenda</h3>
       </div>
-      
+
       <div className="mb-3 pb-3 border-b border-gray-200">
         <p className="text-lg font-bold text-gray-900">{dayOfWeek}</p>
         <p className="text-xs text-gray-500">{date}</p>
       </div>
 
-      <div className="space-y-2">
-        {events.map((event, index) => (
-          <div
-            key={index}
-            className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-all cursor-pointer group"
-          >
-            <div className={`w-1 h-10 ${event.color} rounded-full group-hover:w-2 transition-all`} />
-            <div className="flex-1">
-              <p className="text-xs font-semibold text-gray-900">{event.title}</p>
-              <p className="text-xs text-gray-500">{event.time}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      <button className="mt-3 w-full text-xs text-indigo-600 hover:text-indigo-700 font-medium text-center py-2 hover:bg-indigo-50 rounded-lg transition-all">
+      {loading ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600" />
+        </div>
+      ) : todaysEvents.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-xs text-gray-500">No events scheduled for today</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {todaysEvents.slice(0, 5).map((event) => {
+            const eventTime = event.allDay
+              ? 'All Day'
+              : event.startDate.toLocaleString('en-US', {
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true,
+                });
+
+            return (
+              <div
+                key={event.id}
+                onClick={() => navigate(`/calendar/event/${event.id}`)}
+                className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-lg transition-all cursor-pointer group"
+              >
+                <div className={`w-1 h-10 ${getEventColor(event.eventType)} rounded-full group-hover:w-2 transition-all`} />
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-gray-900">{event.title}</p>
+                  <p className="text-xs text-gray-500">{eventTime}</p>
+                </div>
+              </div>
+            );
+          })}
+          {todaysEvents.length > 5 && (
+            <p className="text-xs text-gray-500 text-center pt-2">
+              +{todaysEvents.length - 5} more events
+            </p>
+          )}
+        </div>
+      )}
+
+      <button
+        onClick={handleViewCalendar}
+        className="mt-3 w-full text-xs text-indigo-600 hover:text-indigo-700 font-medium text-center py-2 hover:bg-indigo-50 rounded-lg transition-all"
+      >
         View Full Calendar →
       </button>
     </div>
@@ -1010,7 +1075,7 @@ const AdminDashboard = () => {
       <PipelineFlow stages={pipelineStages} />
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {metrics.map((metric, index) => (
           <MetricCard
             key={index}
@@ -1077,7 +1142,7 @@ const BranchManagerDashboard = ({ branchId }: { branchId: string | null }) => {
       <PipelineFlow stages={pipelineStages} />
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {metrics.map((metric, index) => (
           <MetricCard
             key={index}

@@ -17,6 +17,7 @@ import {
   TrophyIcon,
   SparklesIcon,
   ShieldCheckIcon,
+  CalendarIcon,
 } from '@heroicons/react/24/outline';
 import type { NavigationItem } from '../types/navigation';
 
@@ -86,6 +87,12 @@ export const navigation: NavigationItem[] = [
     href: '/reports',
     icon: ChartBarIcon,
     roles: ['admin', 'president', 'ho_accountant']
+  },
+  {
+    name: 'Calendar',
+    href: '/calendar',
+    icon: CalendarIcon,
+    roles: ['admin', 'president', 'ho_recruitment_officer', 'ho_accountant', 'branch_manager']
   },
   {
     name: 'Branch Targets',

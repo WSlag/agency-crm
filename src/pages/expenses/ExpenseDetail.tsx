@@ -236,56 +236,56 @@ export const ExpenseDetail: React.FC = () => {
         <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl p-8 mb-8 overflow-hidden">
           <div className="absolute inset-0 bg-black opacity-10"></div>
           <div className="relative z-10">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
               <div className="flex items-center space-x-4">
                 <button
                   onClick={() => navigate('/expenses')}
                   className="p-2 bg-white/20 backdrop-blur-sm rounded-xl hover:bg-white/30 transition-all transform hover:scale-110"
                 >
-                  <ArrowLeftIcon className="h-6 w-6 text-white" />
+                  <ArrowLeftIcon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </button>
                 <div>
                   <div className="flex items-center space-x-3">
-                    <SparklesIcon className="h-8 w-8 text-white animate-pulse" />
-                    <h1 className="text-3xl font-bold text-white">Expense Details</h1>
+                    <SparklesIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white animate-pulse" />
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Expense Details</h1>
                   </div>
-                  <p className="text-indigo-100 mt-1">View and manage expense information</p>
+                  <p className="text-indigo-100 mt-1 text-sm sm:text-base">View and manage expense information</p>
                 </div>
               </div>
-              <div className="flex space-x-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3 w-full lg:w-auto">
                 {canVerify && (
                   <button
                     onClick={() => setShowVerification(true)}
-                    className="inline-flex items-center px-6 py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white font-medium hover:bg-white/30 transition-all transform hover:scale-105 shadow-lg"
+                    className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white text-sm sm:text-base font-medium hover:bg-white/30 transition-all transform hover:scale-105 shadow-lg"
                   >
-                    <CheckCircleIcon className="h-5 w-5 mr-2" />
+                    <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     Verify Expense
                   </button>
                 )}
                 {canApprove && (
                   <button
                     onClick={() => setShowApproval(true)}
-                    className="inline-flex items-center px-6 py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white font-medium hover:bg-white/30 transition-all transform hover:scale-105 shadow-lg"
+                    className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white text-sm sm:text-base font-medium hover:bg-white/30 transition-all transform hover:scale-105 shadow-lg"
                   >
-                    <CheckCircleIcon className="h-5 w-5 mr-2" />
+                    <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     Approve Expense
                   </button>
                 )}
                 {canRecordPayment && (
                   <button
                     onClick={() => setShowPayment(true)}
-                    className="inline-flex items-center px-6 py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white font-medium hover:bg-white/30 transition-all transform hover:scale-105 shadow-lg"
+                    className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-white/20 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white text-sm sm:text-base font-medium hover:bg-white/30 transition-all transform hover:scale-105 shadow-lg"
                   >
-                    <BanknotesIcon className="h-5 w-5 mr-2" />
+                    <BanknotesIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     Record Payment
                   </button>
                 )}
                 {canDelete && (
                   <button
                     onClick={handleDelete}
-                    className="inline-flex items-center px-6 py-3 bg-red-500/90 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white font-medium hover:bg-red-600 transition-all transform hover:scale-105 shadow-lg"
+                    className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-red-500/90 backdrop-blur-sm border-2 border-white/40 rounded-xl text-white text-sm sm:text-base font-medium hover:bg-red-600 transition-all transform hover:scale-105 shadow-lg"
                   >
-                    <TrashIcon className="h-5 w-5 mr-2" />
+                    <TrashIcon className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                     Delete
                   </button>
                 )}
@@ -311,7 +311,7 @@ export const ExpenseDetail: React.FC = () => {
             <dl className="grid grid-cols-1 gap-x-6 gap-y-6 sm:grid-cols-2">
               <div className="sm:col-span-1">
                 <dt className="text-sm font-medium text-gray-500 mb-1">Amount</dt>
-                <dd className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                <dd className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                   {new Intl.NumberFormat('en-PH', {
                     style: 'currency',
                     currency: selectedExpense.currency,

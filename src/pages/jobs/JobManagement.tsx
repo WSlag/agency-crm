@@ -77,7 +77,7 @@ export const JobManagement = () => {
             <div className="sm:flex-auto">
               <div className="flex items-center space-x-3">
                 <SparklesIcon className="h-8 w-8 text-white" />
-                <h1 className="text-3xl font-bold text-white">Job Management</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">Job Management</h1>
               </div>
               <p className="mt-2 text-blue-100">
                 Manage job postings and track applicant assignments
@@ -100,23 +100,23 @@ export const JobManagement = () => {
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Total Jobs</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.total}</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.total}</div>
             </div>
             <div className="bg-green-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Open</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.open}</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.open}</div>
             </div>
             <div className="bg-blue-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Filled</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.filled}</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.filled}</div>
             </div>
             <div className="bg-gray-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Closed</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.closed}</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.closed}</div>
             </div>
             <div className="bg-yellow-500/20 backdrop-blur-sm rounded-lg p-4">
               <div className="text-white text-sm font-medium">Total Openings</div>
-              <div className="text-white text-2xl font-bold mt-1">{stats.totalOpenings}</div>
+              <div className="text-white text-xl md:text-2xl font-bold mt-1">{stats.totalOpenings}</div>
             </div>
           </div>
         </div>

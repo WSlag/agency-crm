@@ -345,19 +345,19 @@ export const CommissionDetailPage = () => {
             Back to Commissions
           </button>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center space-x-3">
-                <BanknotesIcon className="h-10 w-10 text-white" />
-                <h1 className="text-3xl font-bold text-white">Commission Details</h1>
+                <BanknotesIcon className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">Commission Details</h1>
               </div>
-              <p className="mt-2 text-indigo-100">
+              <p className="mt-2 text-sm sm:text-base text-indigo-100">
                 View and manage commission request
               </p>
             </div>
-            
-            <div className={`inline-flex items-center space-x-2 rounded-full px-6 py-3 text-base font-semibold border-2 ${getStatusBadgeColor(commission.status)} shadow-lg`}>
-              <StatusIcon className="h-5 w-5" />
+
+            <div className={`inline-flex items-center space-x-2 rounded-full px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold border-2 ${getStatusBadgeColor(commission.status)} shadow-lg flex-shrink-0`}>
+              <StatusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
               <span>{commission.status.charAt(0).toUpperCase() + commission.status.slice(1)}</span>
             </div>
           </div>
@@ -377,7 +377,7 @@ export const CommissionDetailPage = () => {
               </h2>
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
                 <p className="text-sm text-gray-600 mb-1">Total Amount</p>
-                <p className="text-4xl font-bold text-indigo-600">
+                <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-indigo-600">
                   {formatCurrency(commission.amount || 0, commission.currency || 'PHP')}
                 </p>
                 {commission.commissionType && (

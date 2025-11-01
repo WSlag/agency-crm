@@ -182,7 +182,7 @@ export const JobForm = () => {
               Back to Jobs
             </Link>
           </div>
-          <h1 className="text-3xl font-bold text-white">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
             {id ? 'Edit Job' : 'Post New Job'}
           </h1>
         </div>

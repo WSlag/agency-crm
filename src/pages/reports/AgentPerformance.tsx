@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, where } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { collection, query, getDocs, where, Timestamp } from 'firebase/firestore';
 import { firestore } from '../../config/firebase';
+import { useAuthStore } from '../../stores/authStore';
 import { Agent } from '../../types';
-import { 
-  SparklesIcon, 
+import {
+  SparklesIcon,
   UserGroupIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
   ClockIcon,
-  CheckBadgeIcon
+  CheckBadgeIcon,
+  ArrowLeftIcon
 } from '@heroicons/react/24/outline';
+import { ReportIntroCard } from '../../components/reports';
+import * as XLSX from 'xlsx';
+import { ArrowDownTrayIcon, DocumentChartBarIcon } from '@heroicons/react/24/outline';
 
 interface AgentMetrics {
   totalApplicants: number;
@@ -25,6 +31,8 @@ interface AgentPerformanceData {
 }
 
 export const AgentPerformance: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, customClaims } = useAuthStore();
   const [performanceData, setPerformanceData] = useState<AgentPerformanceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +41,23 @@ export const AgentPerformance: React.FC = () => {
     endDate: new Date()
   });
 
+  const calculateSuccessRate = (total: number, successful: number) => {
+    return total > 0 ? (successful / total) * 100 : 0;
+  };
+
   useEffect(() => {
     const fetchPerformanceData = async () => {
       try {
         setLoading(true);
         setError(null);
+
+        // Role-based access: Only admins and presidents can view agent performance
+        const userRole = customClaims?.role?.toLowerCase();
+        if (userRole !== 'admin' && userRole !== 'president') {
+          setError('You do not have permission to view this report');
+          setLoading(false);
+          return;
+        }
 
         // Fetch active agents
         const agentsQuery = query(
@@ -45,18 +65,76 @@ export const AgentPerformance: React.FC = () => {
           where('status', '==', 'active')
         );
         const agentsSnapshot = await getDocs(agentsQuery);
-        
+
         const agentData = await Promise.all(
           agentsSnapshot.docs.map(async (doc) => {
             const agent = { id: doc.id, ...doc.data() } as Agent;
-            
-            // Mock metrics data (replace with actual calculations)
+
+            // Fetch applicants for this agent
+            const applicantsQuery = query(
+              collection(firestore, 'applicants'),
+              where('agentId', '==', agent.id)
+            );
+            const applicantsSnap = await getDocs(applicantsQuery);
+
+            const applicants = applicantsSnap.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              createdAt: doc.data().createdAt?.toDate(),
+              deployment: doc.data().deployment,
+              currentStage: doc.data().currentStage,
+            }));
+
+            // Filter by date range
+            const filteredApplicants = applicants.filter(a => {
+              const createdAt = a.createdAt;
+              return createdAt &&
+                createdAt >= dateRange.startDate &&
+                createdAt <= dateRange.endDate;
+            });
+
+            const totalApplicants = filteredApplicants.length;
+            const successfulApplicants = filteredApplicants.filter(a => a.currentStage === 'deployed').length;
+            const activeApplications = filteredApplicants.filter(a =>
+              a.currentStage !== 'deployed' && a.currentStage !== 'withdrawn'
+            ).length;
+
+            // Calculate average processing time
+            const deployedWithDates = filteredApplicants.filter(a =>
+              a.currentStage === 'deployed' &&
+              a.deployment?.startDate &&
+              a.createdAt
+            );
+            const averageProcessingTime = deployedWithDates.length > 0
+              ? deployedWithDates.reduce((sum, a) => {
+                  const start = a.createdAt!.getTime();
+                  const end = (a.deployment.startDate instanceof Date
+                    ? a.deployment.startDate
+                    : a.deployment.startDate.toDate()).getTime();
+                  const days = (end - start) / (1000 * 60 * 60 * 24);
+                  return sum + days;
+                }, 0) / deployedWithDates.length
+              : 0;
+
+            // Fetch commission for this agent
+            const commissionsQuery = query(
+              collection(firestore, 'commissions'),
+              where('agentId', '==', agent.id),
+              where('createdAt', '>=', Timestamp.fromDate(dateRange.startDate)),
+              where('createdAt', '<=', Timestamp.fromDate(dateRange.endDate))
+            );
+            const commissionsSnap = await getDocs(commissionsQuery);
+            const commissionEarned = commissionsSnap.docs.reduce((sum, doc) => {
+              const amount = doc.data().amount || 0;
+              return sum + amount;
+            }, 0);
+
             const metrics: AgentMetrics = {
-              totalApplicants: Math.floor(Math.random() * 50),
-              successfulApplicants: Math.floor(Math.random() * 30),
-              commissionEarned: Math.random() * 10000,
-              averageProcessingTime: Math.random() * 30,
-              activeApplications: Math.floor(Math.random() * 10)
+              totalApplicants,
+              successfulApplicants,
+              commissionEarned,
+              averageProcessingTime,
+              activeApplications,
             };
 
             return { agent, metrics };
@@ -66,16 +144,63 @@ export const AgentPerformance: React.FC = () => {
         setPerformanceData(agentData);
         setLoading(false);
       } catch (err) {
+        console.error('Error fetching agent performance data:', err);
         setError('Failed to fetch performance data');
         setLoading(false);
       }
     };
 
     fetchPerformanceData();
-  }, [dateRange]);
+  }, [dateRange, customClaims]);
 
-  const calculateSuccessRate = (total: number, successful: number) => {
-    return total > 0 ? (successful / total) * 100 : 0;
+  const handleExportExcel = () => {
+    // Format data for Excel export
+    const excelData = performanceData.map(({ agent, metrics }) => ({
+      'Agent Name': agent.agentName,
+      'Contact': agent.contactInfo || '-',
+      'Total Applicants': metrics.totalApplicants,
+      'Successful Applicants': metrics.successfulApplicants,
+      'Success Rate (%)': calculateSuccessRate(metrics.totalApplicants, metrics.successfulApplicants).toFixed(1),
+      'Commission Earned (PHP)': metrics.commissionEarned.toFixed(2),
+      'Active Applications': metrics.activeApplications,
+      'Avg Processing Time (days)': metrics.averageProcessingTime.toFixed(1)
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Agent Performance');
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `agent_performance_${timestamp}.xlsx`);
+  };
+
+  const handleExportCSV = () => {
+    // Format data for CSV export
+    const csvData = performanceData.map(({ agent, metrics }) => ({
+      'Agent Name': agent.agentName,
+      'Contact': agent.contactInfo || '-',
+      'Total Applicants': metrics.totalApplicants,
+      'Successful Applicants': metrics.successfulApplicants,
+      'Success Rate (%)': calculateSuccessRate(metrics.totalApplicants, metrics.successfulApplicants).toFixed(1),
+      'Commission Earned (PHP)': metrics.commissionEarned.toFixed(2),
+      'Active Applications': metrics.activeApplications,
+      'Avg Processing Time (days)': metrics.averageProcessingTime.toFixed(1)
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(csvData);
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Agent Performance');
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `agent_performance_${timestamp}.csv`, { bookType: 'csv' });
   };
 
   if (loading) {
@@ -115,8 +240,8 @@ export const AgentPerformance: React.FC = () => {
 
   // Calculate summary stats
   const totalCommission = performanceData.reduce((sum, { metrics }) => sum + metrics.commissionEarned, 0);
-  const avgSuccessRate = performanceData.reduce((sum, { metrics }) => 
-    sum + calculateSuccessRate(metrics.totalApplicants, metrics.successfulApplicants), 
+  const avgSuccessRate = performanceData.reduce((sum, { metrics }) =>
+    sum + calculateSuccessRate(metrics.totalApplicants, metrics.successfulApplicants),
     0
   ) / performanceData.length;
 
@@ -125,6 +250,15 @@ export const AgentPerformance: React.FC = () => {
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl">
         <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-4">
+            <button
+              onClick={() => navigate('/reports')}
+              className="inline-flex items-center text-white hover:text-indigo-100"
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-2" />
+              Back
+            </button>
+          </div>
           <div className="sm:flex sm:items-center sm:justify-between">
             <div className="sm:flex-auto">
               <div className="flex items-center space-x-3">
@@ -136,25 +270,43 @@ export const AgentPerformance: React.FC = () => {
               </p>
             </div>
             <div className="mt-4 sm:mt-0">
-              <div className="flex space-x-3">
-                <input
-                  type="date"
-                  value={dateRange.startDate.toISOString().split('T')[0]}
-                  onChange={(e) => setDateRange(prev => ({
-                    ...prev,
-                    startDate: new Date(e.target.value)
-                  }))}
-                  className="rounded-lg border-2 border-white/30 bg-white/10 backdrop-blur-sm px-4 py-2 text-white placeholder-white/60 focus:border-white focus:ring-white sm:text-sm"
-                />
-                <input
-                  type="date"
-                  value={dateRange.endDate.toISOString().split('T')[0]}
-                  onChange={(e) => setDateRange(prev => ({
-                    ...prev,
-                    endDate: new Date(e.target.value)
-                  }))}
-                  className="rounded-lg border-2 border-white/30 bg-white/10 backdrop-blur-sm px-4 py-2 text-white placeholder-white/60 focus:border-white focus:ring-white sm:text-sm"
-                />
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex space-x-3">
+                  <input
+                    type="date"
+                    value={dateRange.startDate.toISOString().split('T')[0]}
+                    onChange={(e) => setDateRange(prev => ({
+                      ...prev,
+                      startDate: new Date(e.target.value)
+                    }))}
+                    className="rounded-lg border-2 border-white/30 bg-white/10 backdrop-blur-sm px-4 py-2 text-white placeholder-white/60 focus:border-white focus:ring-white sm:text-sm"
+                  />
+                  <input
+                    type="date"
+                    value={dateRange.endDate.toISOString().split('T')[0]}
+                    onChange={(e) => setDateRange(prev => ({
+                      ...prev,
+                      endDate: new Date(e.target.value)
+                    }))}
+                    className="rounded-lg border-2 border-white/30 bg-white/10 backdrop-blur-sm px-4 py-2 text-white placeholder-white/60 focus:border-white focus:ring-white sm:text-sm"
+                  />
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleExportExcel}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50"
+                  >
+                    <DocumentChartBarIcon className="h-5 w-5 mr-2" />
+                    Export Excel
+                  </button>
+                  <button
+                    onClick={handleExportCSV}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50"
+                  >
+                    <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                    Export CSV
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -198,8 +350,27 @@ export const AgentPerformance: React.FC = () => {
       </div>
 
       <div className="px-4 sm:px-6 lg:px-8 py-8 bg-gray-50">
-        {/* Performance Table */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Help Card */}
+          <ReportIntroCard
+            title="Agent Performance Report"
+            description="Track and analyze the performance of recruitment agents, monitoring their applicant conversion rates, commission earnings, and overall effectiveness."
+            whatYouWillSee={[
+              'Agent-wise performance metrics and rankings',
+              'Commission earnings and success rates',
+              'Active applications and processing times',
+              'Top-performing agents by commission'
+            ]}
+            whenToUse="Use this report to identify high-performing agents, track commission payments, and evaluate agent effectiveness in recruiting applicants."
+            keyMetrics={[
+              { name: 'Success Rate', description: 'Percentage of agent applicants successfully deployed' },
+              { name: 'Commission Earned', description: 'Total commission earned by each agent in the selected period' },
+              { name: 'Active Applications', description: 'Number of applicants currently being processed' }
+            ]}
+          />
+
+          {/* Performance Table */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
@@ -263,6 +434,7 @@ export const AgentPerformance: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       </div>
     </div>

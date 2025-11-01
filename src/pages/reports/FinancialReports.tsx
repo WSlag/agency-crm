@@ -1,14 +1,23 @@
-import React from 'react';
+import React, { useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { useReportGenerator } from '../../hooks/useReportGenerator';
+import { useAuthStore } from '../../stores/authStore';
+import { useAgentStore } from '../../stores/agentStore';
+import { useBranchStore } from '../../stores/branchStore';
+import { useApplicantStore } from '../../stores/applicantStore';
 import { EXPENSE_CONFIG } from '../../types/expense';
 import { COMMISSION_CONFIG, CommissionType } from '../../types/commission';
-import { 
-  SparklesIcon, 
-  CurrencyDollarIcon, 
+import { ReportIntroCard, MetricTooltip } from '../../components/reports';
+import { SearchableApplicantSelect } from '../../components/reports/SearchableApplicantSelect';
+import { SearchableAgentSelect } from '../../components/reports/SearchableAgentSelect';
+import {
+  SparklesIcon,
+  CurrencyDollarIcon,
   ChartBarIcon,
   ArrowDownTrayIcon,
-  DocumentChartBarIcon
+  DocumentChartBarIcon,
+  ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 
 type ReportType = 'expense' | 'commission';
@@ -24,12 +33,19 @@ interface ReportFilter {
 }
 
 export const FinancialReports: React.FC = () => {
+  const navigate = useNavigate();
+  const { customClaims } = useAuthStore();
+  const { agents, fetchActiveAgents } = useAgentStore();
+  const { branches, fetchActiveBranches } = useBranchStore();
+  const { applicants, fetchApplicants } = useApplicantStore();
   const [reportType, setReportType] = React.useState<ReportType>('expense');
   const {
     generateExpenseReport,
     generateCommissionReport,
     exportExpenseReport,
     exportCommissionReport,
+    exportExpenseReportToExcel,
+    exportCommissionReportToExcel,
     expenseReport,
     commissionReport,
     loading,
@@ -43,20 +59,47 @@ export const FinancialReports: React.FC = () => {
     },
   });
 
+  // Fetch data for dropdown filters
+  useEffect(() => {
+    fetchActiveAgents();
+    fetchActiveBranches();
+    fetchApplicants();
+  }, [fetchActiveAgents, fetchActiveBranches, fetchApplicants]);
+
   const handleGenerateReport = async (data: ReportFilter) => {
+    // Apply role-based filtering
+    const filteredData = { ...data };
+
+    // Branch Managers: Auto-filter by their branch ONLY if no branch is manually selected
+    if (customClaims?.role?.toLowerCase() === 'branch_manager' && customClaims?.branchId) {
+      if (!data.branchId) {
+        filteredData.branchId = customClaims.branchId;
+      }
+    }
+    // HO Accountants and Admins/Presidents see all financial data (no restriction)
+
     if (reportType === 'expense') {
-      await generateExpenseReport(data);
+      await generateExpenseReport(filteredData);
     } else {
-      await generateCommissionReport(data);
+      await generateCommissionReport(filteredData);
     }
   };
 
-  const handleExport = async () => {
+  const handleExportCSV = async () => {
     const timestamp = new Date().toISOString().slice(0, 10);
     if (reportType === 'expense') {
       await exportExpenseReport(`expense_report_${timestamp}`);
     } else {
       await exportCommissionReport(`commission_report_${timestamp}`);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    const timestamp = new Date().toISOString().slice(0, 10);
+    if (reportType === 'expense') {
+      await exportExpenseReportToExcel(`expense_report_${timestamp}`);
+    } else {
+      await exportCommissionReportToExcel(`commission_report_${timestamp}`);
     }
   };
 
@@ -74,9 +117,18 @@ export const FinancialReports: React.FC = () => {
       {/* Header with gradient background */}
       <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl">
         <div className="px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-4">
+            <button
+              onClick={() => navigate('/reports')}
+              className="inline-flex items-center text-white hover:text-indigo-100"
+            >
+              <ArrowLeftIcon className="h-5 w-5 mr-2" />
+              Back
+            </button>
+          </div>
           <div className="flex items-center space-x-3">
             <SparklesIcon className="h-8 w-8 text-white" />
-            <h1 className="text-3xl font-bold text-white">Financial Reports</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">Financial Reports</h1>
           </div>
           <p className="mt-2 text-indigo-100">
             Generate comprehensive financial reports for expenses and commissions
@@ -115,10 +167,60 @@ export const FinancialReports: React.FC = () => {
           </div>
         </div>
 
+        {/* Help/Info Card */}
+        <ReportIntroCard
+          title={`What is the ${reportType === 'expense' ? 'Expense' : 'Commission'} Report?`}
+          description={
+            reportType === 'expense'
+              ? 'This report provides a comprehensive analysis of all expenses incurred during the recruitment and deployment process, helping you track costs and manage budgets effectively.'
+              : 'This report tracks all commission payments earned by agents and branches, showing detailed breakdowns by type, status, and time period.'
+          }
+          whatYouWillSee={
+            reportType === 'expense'
+              ? [
+                  'Total expense amounts and counts across all categories',
+                  'Expense breakdown by status (pending, verified, approved, paid)',
+                  'Expense breakdown by type (application fees, medical fees, training, etc.)',
+                  'Monthly expense trends to track spending patterns',
+                  'Visual charts showing expense distribution',
+                ]
+              : [
+                  'Total commission amounts and transaction counts',
+                  'Commission breakdown by status and payment state',
+                  'Commission breakdown by type (agent, branch, recruiter)',
+                  'Monthly commission trends and payment history',
+                  'Visual charts showing commission distribution',
+                ]
+          }
+          whenToUse={
+            reportType === 'expense'
+              ? 'Use this report to monitor spending, identify cost-saving opportunities, track pending payments, and ensure expenses align with your budget. Perfect for monthly financial reviews and audit preparation.'
+              : 'Use this report to track commission payments, verify agent earnings, monitor payment schedules, and analyze commission distribution across your organization.'
+          }
+          keyMetrics={[
+            {
+              name: 'Total Amount',
+              description: `Sum of all ${reportType === 'expense' ? 'expenses' : 'commissions'} in the selected date range, regardless of status.`,
+            },
+            {
+              name: 'Average Amount',
+              description: `Mean ${reportType === 'expense' ? 'expense' : 'commission'} per transaction, useful for budgeting and forecasting.`,
+            },
+            {
+              name: 'Status Breakdown',
+              description: `Shows how ${reportType === 'expense' ? 'expenses' : 'commissions'} are distributed across different approval and payment stages.`,
+            },
+            {
+              name: 'Monthly Trend',
+              description: `Visualizes ${reportType === 'expense' ? 'spending' : 'earnings'} patterns over time to identify seasonal variations and trends.`,
+            },
+          ]}
+        />
+
         {/* Report Filters */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6 mb-6">
           <form onSubmit={handleSubmit(handleGenerateReport)} className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-${reportType === 'commission' ? '4' : '3'} xl:grid-cols-${reportType === 'commission' ? '4' : '5'}`}>
               {/* Date Range */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -209,6 +311,78 @@ export const FinancialReports: React.FC = () => {
                   )}
                 />
               </div>
+
+              {/* Agent Filter - Only for Commission Report */}
+              {reportType === 'commission' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Agent
+                  </label>
+                  <Controller
+                    name="agentId"
+                    control={control}
+                    render={({ field }) => (
+                      <SearchableAgentSelect
+                        {...field}
+                        agents={agents.filter(agent => {
+                          // Filter agents based on role
+                          if (customClaims?.role?.toLowerCase() === 'branch_manager' && customClaims?.branchId) {
+                            return agent.branchId === customClaims.branchId;
+                          }
+                          return true;
+                        })}
+                        placeholder="Search agents by name, email..."
+                      />
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Branch Filter - Only for Expense Report */}
+              {reportType === 'expense' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Branch
+                  </label>
+                  <Controller
+                    name="branchId"
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        className="block w-full rounded-lg border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
+                      >
+                        <option value="">All Branches</option>
+                        {branches.map((branch) => (
+                          <option key={branch.id} value={branch.id}>
+                            {branch.name || branch.branchName || 'Unknown Branch'}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Applicant Filter - Only for Expense Report */}
+              {reportType === 'expense' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Applicant
+                  </label>
+                  <Controller
+                    name="applicantId"
+                    control={control}
+                    render={({ field }) => (
+                      <SearchableApplicantSelect
+                        {...field}
+                        applicants={applicants}
+                        placeholder="Search applicants by name, email..."
+                      />
+                    )}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end space-x-4">
@@ -233,15 +407,26 @@ export const FinancialReports: React.FC = () => {
                 )}
               </button>
               {report && (
-                <button
-                  type="button"
-                  onClick={handleExport}
-                  disabled={loading}
-                  className="inline-flex items-center px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg shadow-lg hover:from-green-700 hover:to-emerald-700 hover:scale-105 transition-all duration-200 disabled:opacity-50"
-                >
-                  <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-                  Export to CSV
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={handleExportExcel}
+                    disabled={loading}
+                    className="inline-flex items-center px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-blue-600 rounded-lg shadow-lg hover:from-indigo-700 hover:to-blue-700 hover:scale-105 transition-all duration-200 disabled:opacity-50"
+                  >
+                    <DocumentChartBarIcon className="h-5 w-5 mr-2" />
+                    Export to Excel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExportCSV}
+                    disabled={loading}
+                    className="inline-flex items-center px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg shadow-lg hover:from-green-700 hover:to-emerald-700 hover:scale-105 transition-all duration-200 disabled:opacity-50"
+                  >
+                    <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+                    Export to CSV
+                  </button>
+                </>
               )}
             </div>
           </form>
@@ -285,8 +470,14 @@ export const FinancialReports: React.FC = () => {
                     </div>
                     <div className="ml-5 w-0 flex-1">
                       <dl>
-                        <dt className="text-sm font-medium text-gray-500 truncate">
-                          Total Amount
+                        <dt className="text-sm font-medium text-gray-500 truncate flex items-center space-x-1">
+                          <span>Total Amount</span>
+                          <MetricTooltip
+                            title="Total Amount"
+                            description={`Sum of all ${reportType === 'expense' ? 'expenses' : 'commissions'} in the selected date range, including all statuses (pending, approved, paid, etc.).`}
+                            formula={`Total = ${report.summary.count} items × Average Amount`}
+                            example="If you have 10 expenses averaging ₱5,000 each, your total would be ₱50,000."
+                          />
                         </dt>
                         <dd className="text-2xl font-bold text-gray-900">
                           {formatCurrency(report.summary.totalAmount)}
@@ -368,92 +559,82 @@ export const FinancialReports: React.FC = () => {
               </div>
             </div>
 
-            {/* Breakdown by Status */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <ChartBarIcon className="h-6 w-6 text-indigo-600 mr-2" />
-                Breakdown by Status
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {Object.entries(report.summary.byStatus).map(
-                  ([status, data]) => (
-                    <div
-                      key={status}
-                      className="border-2 border-gray-200 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white hover:shadow-lg transition-all duration-200 hover:scale-105"
-                    >
-                      <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </h4>
-                      <p className="mt-2 text-2xl font-bold text-gray-900">
-                        {formatCurrency(data.amount)}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {data.count} {data.count === 1 ? 'item' : 'items'}
-                      </p>
-                    </div>
-                  )
-                )}
+            {/* Detailed Data Table */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                  <DocumentChartBarIcon className="h-6 w-6 text-indigo-600 mr-2" />
+                  {reportType === 'expense' ? 'Expense' : 'Commission'} Details
+                </h3>
               </div>
-            </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                    <tr>
+                      <th scope="col" className="py-4 pl-6 pr-3 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                        {reportType === 'expense' ? 'Type' : 'Agent/Branch'}
+                      </th>
+                      <th scope="col" className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th scope="col" className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th scope="col" className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                        Date
+                      </th>
+                      {reportType === 'expense' && (
+                        <th scope="col" className="px-3 py-4 text-left text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                          Description
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {report.data.map((item: any, index: number) => (
+                      <tr key={index} className="hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 transition-all duration-200">
+                        <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm font-semibold text-gray-900">
+                          {reportType === 'expense'
+                            ? EXPENSE_CONFIG[item.expenseType]?.name || item.expenseType
+                            : item.agentName || item.branchName || 'N/A'}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">
+                          {formatCurrency(item.amount)}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            item.status === 'paid' || item.status === 'approved'
+                              ? 'bg-green-100 text-green-800'
+                              : item.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : item.status === 'verified'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {item.status}
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-600">
+                          {(() => {
+                            const date = item.expenseDate || item.dateEarned || item.createdAt;
+                            if (!date) return 'N/A';
 
-            {/* Breakdown by Type */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <DocumentChartBarIcon className="h-6 w-6 text-indigo-600 mr-2" />
-                Breakdown by Type
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {Object.entries(report.summary.byType).map(
-                  ([type, data]) => (
-                    <div
-                      key={type}
-                      className="border-2 border-gray-200 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white hover:shadow-lg transition-all duration-200 hover:scale-105"
-                    >
-                      <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
-                        {reportType === 'expense'
-                          ? EXPENSE_CONFIG[type]?.name
-                          : COMMISSION_CONFIG[type as CommissionType]?.name}
-                      </h4>
-                      <p className="mt-2 text-2xl font-bold text-gray-900">
-                        {formatCurrency(data.amount)}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {data.count} {data.count === 1 ? 'item' : 'items'}
-                      </p>
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-
-            {/* Monthly Trend */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                <ChartBarIcon className="h-6 w-6 text-indigo-600 mr-2" />
-                Monthly Trend
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {Object.entries(report.summary.byMonth)
-                  .sort((a, b) => b[0].localeCompare(a[0]))
-                  .map(([month, data]) => (
-                    <div
-                      key={month}
-                      className="border-2 border-gray-200 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-white hover:shadow-lg transition-all duration-200 hover:scale-105"
-                    >
-                      <h4 className="text-sm font-semibold text-gray-600">
-                        {new Date(month).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                        })}
-                      </h4>
-                      <p className="mt-2 text-2xl font-bold text-gray-900">
-                        {formatCurrency(data.amount)}
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {data.count} {data.count === 1 ? 'item' : 'items'}
-                      </p>
-                    </div>
-                  ))}
+                            // Handle Firestore Timestamp objects
+                            const dateObj = date?.toDate ? date.toDate() : new Date(date);
+                            return !isNaN(dateObj.getTime())
+                              ? dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+                              : 'Invalid Date';
+                          })()}
+                        </td>
+                        {reportType === 'expense' && (
+                          <td className="px-3 py-4 text-sm text-gray-600 max-w-xs truncate">
+                            {item.description || '-'}
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

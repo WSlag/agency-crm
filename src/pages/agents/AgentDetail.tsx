@@ -203,7 +203,7 @@ export const AgentDetail = () => {
                 {selectedAgent.agentName?.charAt(0).toUpperCase() || '?'}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">{selectedAgent.agentName || 'Unknown Agent'}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">{selectedAgent.agentName || 'Unknown Agent'}</h1>
                 <p className="mt-1 text-teal-100">{selectedAgent.email || 'No email'}</p>
               </div>
             </div>
@@ -245,7 +245,7 @@ export const AgentDetail = () => {
                       `}
                     >
                       <Icon className="h-5 w-5" />
-                      <span>{tab.name}</span>
+                      <span className="hidden sm:inline">{tab.name}</span>
                     </button>
                   );
                 })}
