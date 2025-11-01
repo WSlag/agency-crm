@@ -406,7 +406,6 @@ const App: React.FC = () => {
           {/* Reports Routes */}
           <Route path="/reports">
             <Route index element={<ReportBuilder />} />
-            <Route path="builder" element={<ReportBuilder />} />
             <Route path="list" element={<ReportList />} />
             <Route path=":id" element={<ReportDetail />} />
 
