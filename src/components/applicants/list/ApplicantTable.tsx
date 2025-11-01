@@ -68,6 +68,12 @@ export const ApplicantTable = ({
         return 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border-green-300';
       case 'inactive':
         return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300';
+      case 'pending':
+        return 'bg-gradient-to-r from-yellow-100 to-yellow-200 text-yellow-800 border-yellow-300';
+      case 'archived':
+        return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border-gray-300';
+      case 'blacklisted':
+        return 'bg-gradient-to-r from-red-900 to-red-800 text-white border-red-900';
       case 'rejected':
         return 'bg-gradient-to-r from-red-100 to-red-200 text-red-800 border-red-300';
       case 'document_verification':

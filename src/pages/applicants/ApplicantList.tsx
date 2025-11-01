@@ -8,6 +8,8 @@ import { useOfficerStore } from '../../stores/officerStore';
 import { useAuth } from '../../contexts/AuthContext';
 import { ApplicantFilter, ApplicantSort } from '../../types/applicant';
 import { PlusIcon, SparklesIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { STAGE_LABELS, getAllStagesInOrder } from '../../config/stageConfig';
+import { getAllStatusFilterOptions } from '../../config/statusConfig';
 
 export const ApplicantList = () => {
   const navigate = useNavigate();
@@ -280,13 +282,11 @@ export const ApplicantList = () => {
                 className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
               >
                 <option value="">All Stages</option>
-                <option value="registration">Registration</option>
-                <option value="interview">Interview</option>
-                <option value="medical">Medical</option>
-                <option value="transfer">Transfer</option>
-                <option value="processing">Processing</option>
-                <option value="deployment">Deployment</option>
-                <option value="deployed">Deployed</option>
+                {getAllStagesInOrder().map((stage) => (
+                  <option key={stage} value={stage}>
+                    {STAGE_LABELS[stage]}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -297,19 +297,15 @@ export const ApplicantList = () => {
               </label>
               <select
                 id="status"
-                value={filter.status || ''}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
+                value={filter.statusFilterId || ''}
+                onChange={(e) => handleFilterChange('statusFilterId', e.target.value)}
                 className="block w-full rounded-lg border-2 border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition-all hover:border-indigo-400 bg-white"
               >
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="pending_approval">Pending Approval</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="withdrawn">Withdrawn</option>
-                <option value="on_hold">On Hold</option>
-                <option value="deployed">Deployed</option>
+                {getAllStatusFilterOptions().map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
 

@@ -28,7 +28,7 @@ export const ApplicantProfile = () => {
     }
   }, [id, fetchApplicantById]);
 
-  const handleStatusChange = async (status: 'active' | 'inactive') => {
+  const handleStatusChange = async (status: 'active' | 'inactive' | 'pending' | 'archived' | 'blacklisted') => {
     if (id && selectedApplicant) {
       await updateApplicant(id, { status });
     }

@@ -97,7 +97,7 @@ export const CommunicationHistory: React.FC<CommunicationHistoryProps> = ({ appl
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Communication History</h3>
           <p className="mt-1 text-sm text-gray-500">
@@ -106,7 +106,7 @@ export const CommunicationHistory: React.FC<CommunicationHistoryProps> = ({ appl
         </div>
         <button
           onClick={() => setShowAddDialog(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
           Add Communication

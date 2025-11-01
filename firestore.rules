@@ -147,7 +147,8 @@ service cloud.firestore {
     // ==========================================
     
     match /applicants/{applicantId} {
-      // Allow public read for resume-visible applicants with passed medical
+      // Allow public read for resume-visible applicants with passed medical and active status
+      // NOTE: Only 'active' applicants are publicly visible (excludes pending, archived, blacklisted, inactive)
       allow read: if isAuthenticated() ||
         (resource.data.resumeVisible == true &&
          resource.data.medicalStatus.examination.result == 'passed' &&
@@ -304,15 +305,51 @@ service cloud.firestore {
       allow update: if resource.data.recipientId == request.auth.uid || isAdmin();
       allow delete: if isAdmin();
     }
-    
+
+    // ==========================================
+    // NOTIFICATION PREFERENCES COLLECTION
+    // ==========================================
+
+    match /notification_preferences/{userId} {
+      // Users can read and update their own preferences
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      // Admins can read all preferences
+      allow read: if isAdmin();
+    }
+
+    // ==========================================
+    // PUSH SUBSCRIPTIONS COLLECTION
+    // ==========================================
+
+    match /push_subscriptions/{subscriptionId} {
+      // Users can read and manage their own push subscriptions
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Admins can read all subscriptions
+      allow read: if isAdmin();
+    }
+
     // ==========================================
     // AUDIT LOGS COLLECTION
     // ==========================================
-    
+
     match /audit_logs/{logId} {
       allow read: if isAdmin() || isPresident();
       allow create: if isAuthenticated();
       allow update, delete: if false; // Audit logs are immutable
+    }
+
+    // ==========================================
+    // STATUS CHANGE LOGS COLLECTION
+    // ==========================================
+
+    match /status_change_logs/{logId} {
+      // Admins and managers can read status change logs
+      allow read: if isAdmin() || isBranchManager() || isHORecruitmentOfficer() || isPresident();
+      // System can create logs when status changes occur
+      allow create: if isAuthenticated();
+      // Logs are immutable
+      allow update, delete: if false;
     }
     
     // ==========================================

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { notificationService, Notification } from '../services/NotificationService';
+import { useNotificationStore } from '../stores/notificationStore';
 
 interface UseNotificationsResult {
   notifications: Notification[];
@@ -17,6 +18,11 @@ export function useNotifications(userId: string): UseNotificationsResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const subscribeToNotifications = useNotificationStore(state => state.subscribeToNotifications);
+  const storeNotifications = useNotificationStore(state => state.notifications);
+  const storeLoading = useNotificationStore(state => state.loading);
+  const storeError = useNotificationStore(state => state.error);
+
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
@@ -31,9 +37,29 @@ export function useNotifications(userId: string): UseNotificationsResult {
     }
   }, [userId]);
 
+  // Set up real-time listener on mount
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    if (!userId) return;
+
+    const unsubscribe = subscribeToNotifications(userId);
+
+    // Cleanup: unsubscribe when component unmounts
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [userId, subscribeToNotifications]);
+
+  // Sync with store state
+  useEffect(() => {
+    setNotifications(storeNotifications);
+    setUnreadCount(storeNotifications.filter(n => n.status === 'unread').length);
+    setLoading(storeLoading);
+    if (storeError) {
+      setError(storeError);
+    }
+  }, [storeNotifications, storeLoading, storeError]);
 
   const markAsRead = async (notificationId: string) => {
     try {

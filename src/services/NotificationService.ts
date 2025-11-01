@@ -29,6 +29,7 @@ export interface Notification {
   scheduledFor?: Date;
   sentVia?: NotificationChannel[];
   error?: string;
+  retryCount?: number; // Track number of retry attempts
 }
 
 class NotificationService {
@@ -36,6 +37,7 @@ class NotificationService {
   private messaging: any;
   private notificationQueue: Map<string, Notification>;
   private processingQueue: boolean;
+  private readonly MAX_RETRY_ATTEMPTS = 3; // Maximum retry attempts before giving up
 
   private constructor() {
     this.notificationQueue = new Map();
@@ -93,7 +95,8 @@ class NotificationService {
         ...notification,
         createdAt: new Date(),
         sentVia: [],
-        read: false
+        read: false,
+        retryCount: 0
       };
 
       // Add to Firestore
@@ -136,19 +139,43 @@ class NotificationService {
         const notificationRef = doc(firestore, 'notifications', id);
         await updateDoc(notificationRef, {
           sentVia: notification.sentVia,
-          error: null
+          error: null,
+          retryCount: 0
         });
 
         // Remove from queue
         this.notificationQueue.delete(id);
       } catch (error) {
         console.error(`Error processing notification ${id}:`, error);
-        
-        // Update Firestore with error
-        const notificationRef = doc(firestore, 'notifications', id);
-        await updateDoc(notificationRef, {
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
+
+        // Increment retry count
+        const currentRetryCount = notification.retryCount || 0;
+        notification.retryCount = currentRetryCount + 1;
+
+        // Check if max retries exceeded
+        if (notification.retryCount >= this.MAX_RETRY_ATTEMPTS) {
+          console.error(`Max retry attempts (${this.MAX_RETRY_ATTEMPTS}) reached for notification ${id}. Removing from queue.`);
+
+          // Update Firestore with final error status
+          const notificationRef = doc(firestore, 'notifications', id);
+          await updateDoc(notificationRef, {
+            error: `Failed after ${this.MAX_RETRY_ATTEMPTS} attempts: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            retryCount: notification.retryCount
+          });
+
+          // Remove from queue - stop retrying
+          this.notificationQueue.delete(id);
+        } else {
+          // Update Firestore with error and retry count
+          console.warn(`Retry ${notification.retryCount}/${this.MAX_RETRY_ATTEMPTS} for notification ${id}`);
+
+          const notificationRef = doc(firestore, 'notifications', id);
+          await updateDoc(notificationRef, {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            retryCount: notification.retryCount
+          });
+          // Keep in queue for retry
+        }
       }
     }
 

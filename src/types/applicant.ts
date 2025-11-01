@@ -88,7 +88,7 @@ export interface Applicant {
   currentStage: ApplicantStageLegacy;
   transferredToHO: boolean;
   transferredDate: Date | null;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'pending' | 'archived' | 'blacklisted';
   createdAt: Date;
   updatedAt: Date;
   
@@ -216,10 +216,11 @@ export interface ApplicantFilter {
     start: Date;
     end: Date;
   };
-  status?: 'active' | 'inactive' | 'pending_approval' | 'approved' | 'rejected' | 'withdrawn' | 'on_hold' | 'deployed';
+  status?: 'active' | 'inactive' | 'pending' | 'archived' | 'blacklisted' | 'pending_approval' | 'approved' | 'rejected' | 'withdrawn' | 'on_hold' | 'deployed';
   transferredToHO?: boolean;
   currentStatus?: ApplicantStatus; // New filter for current status
   requiresApproval?: boolean; // Filter for pending approvals
+  statusFilterId?: string; // Status filter option ID from statusConfig
 }
 
 export interface ApplicantSort {
@@ -297,6 +298,20 @@ export interface StageHistory {
   status: 'pending' | 'approved' | 'rejected';
   rejectionReason?: string;
   notes?: string;
+}
+
+/**
+ * Status change log record
+ */
+export interface StatusChangeLog {
+  id: string;
+  applicantId: string;
+  fromStatus: ApplicantStatus | string;
+  toStatus: ApplicantStatus | string;
+  reason: string;
+  changedBy: string;
+  changedAt: Date;
+  statusType: 'profile' | 'workflow'; // Distinguishes between status and currentStatus fields
 }
 
 // Registration form data type - omits server-generated fields

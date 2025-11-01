@@ -13,6 +13,8 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  onSnapshot,
+  Unsubscribe,
 } from 'firebase/firestore';
 import { firestore } from '../config/firebase';
 import type {
@@ -38,6 +40,7 @@ interface NotificationState {
   filter: NotificationFilter;
   sort: NotificationSort;
   pagination: NotificationPagination;
+  unsubscribe: Unsubscribe | null;
 
   // Actions
   setFilter: (filter: NotificationFilter) => void;
@@ -46,6 +49,7 @@ interface NotificationState {
 
   // Notification Operations
   fetchNotifications: (userId?: string) => Promise<void>;
+  subscribeToNotifications: (userId?: string) => Unsubscribe | null;
   fetchNotificationById: (id: string) => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: (userId?: string) => Promise<void>;
@@ -83,6 +87,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
     limit: 10,
     total: 0,
   },
+  unsubscribe: null,
 
   setFilter: (filter) => set({ filter }),
   setSort: (sort) => set({ sort }),
@@ -169,6 +174,79 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         error: error instanceof Error ? error.message : 'Failed to fetch notifications',
         loading: false,
       });
+    }
+  },
+
+  subscribeToNotifications: (userId?: string) => {
+    try {
+      // Unsubscribe from previous listener if exists
+      const currentUnsubscribe = get().unsubscribe;
+      if (currentUnsubscribe) {
+        currentUnsubscribe();
+      }
+
+      // Try to get user from parameter, store, or Firebase auth
+      let currentUserId = userId;
+      if (!currentUserId) {
+        const storeUser = useAuthStore.getState().user;
+        if (storeUser) {
+          currentUserId = storeUser.uid;
+        }
+      }
+
+      if (!currentUserId) {
+        console.warn('Cannot subscribe to notifications: User not authenticated');
+        return null;
+      }
+
+      console.log('🔔 Subscribing to real-time notifications for user:', currentUserId);
+
+      // Build query for real-time notifications
+      const notificationsRef = collection(firestore, 'notifications');
+      const q = query(
+        notificationsRef,
+        where('recipientId', '==', currentUserId),
+        where('status', '==', 'unread'),
+        orderBy('createdAt', 'desc'),
+        limit(50) // Limit to last 50 unread notifications
+      );
+
+      // Set up real-time listener
+      const unsubscribe = onSnapshot(
+        q,
+        (snapshot) => {
+          const notifications = snapshot.docs.map((doc) => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt ? new Date(data.createdAt) : new Date(),
+              readAt: data.readAt?.toDate ? data.readAt.toDate() : data.readAt ? new Date(data.readAt) : undefined,
+            };
+          }) as Notification[];
+
+          console.log(`📬 Real-time update: ${notifications.length} unread notifications`);
+
+          // Update notifications in store, merging with existing read notifications
+          const currentNotifications = get().notifications;
+          const readNotifications = currentNotifications.filter(n => n.status === 'read');
+          const allNotifications = [...notifications, ...readNotifications];
+
+          set({ notifications: allNotifications, loading: false, error: null });
+        },
+        (error) => {
+          console.error('❌ Error in notification listener:', error);
+          set({ error: error.message, loading: false });
+        }
+      );
+
+      // Store unsubscribe function
+      set({ unsubscribe });
+
+      return unsubscribe;
+    } catch (error) {
+      console.error('❌ Error setting up notification listener:', error);
+      return null;
     }
   },
 

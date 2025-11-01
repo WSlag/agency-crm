@@ -26,6 +26,7 @@ import {
   ApplicantDocument,
   ApplicantPipeline,
 } from '../types/applicant';
+import { getStatusFilterOption } from '../config/statusConfig';
 
 interface ApplicantState {
   applicants: Applicant[];
@@ -115,6 +116,19 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
         // Check both fields for backward compatibility
         queryConstraints.push(where('currentStage', '==', filter.currentStage));
       }
+
+      // Handle new statusFilterId from centralized config
+      if (filter.statusFilterId) {
+        const statusOption = getStatusFilterOption(filter.statusFilterId);
+
+        if (statusOption && statusOption.field && statusOption.value) {
+          // Apply the correct filter based on the status option configuration
+          queryConstraints.push(where(statusOption.field, '==', statusOption.value));
+        }
+        // If statusOption is 'all', no filter is applied (shows all statuses)
+      }
+
+      // Legacy status filter support (for backward compatibility)
       if (filter.status) {
         // Special handling for "pending_approval" status
         // Pending approval applicants are identified by requiresApproval field, not status field
@@ -141,23 +155,26 @@ export const useApplicantStore = create<ApplicantState>((set, get) => ({
       // Log the filters being applied
       console.log('Applying filters:', {
         filter,
-        queryConstraints: queryConstraints.map(c => ({ 
+        queryConstraints: queryConstraints.map(c => ({
           field: c.field?.toString(),
           op: c.op?.toString(),
           value: c.value
         }))
       });
 
-      // Add the sort field after the filters
-      queryConstraints.push(orderBy(sort.field, sort.direction));
-
       // Handle search term separately as it requires special indexing
+      // IMPORTANT: When using inequality filters on a field, that field must be the first orderBy
       if (filter.searchTerm) {
         queryConstraints = [
           where('fullName', '>=', filter.searchTerm),
           where('fullName', '<=', filter.searchTerm + '\uf8ff'),
-          ...queryConstraints
+          ...queryConstraints,
+          orderBy('fullName', 'asc'), // Must order by fullName first when filtering on it
+          orderBy(sort.field, sort.direction) // Then apply the requested sort
         ];
+      } else {
+        // Add the sort field after the filters (only when no search term)
+        queryConstraints.push(orderBy(sort.field, sort.direction));
       }
 
       // PERFORMANCE: Apply pagination with limit (default 50, max 100)

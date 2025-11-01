@@ -3,6 +3,7 @@ import { Applicant } from '../../../types/applicant';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useBranchStore } from '../../../stores/branchStore';
 import { useAgentStore } from '../../../stores/agentStore';
+import { StatusActions } from './StatusActions';
 
 interface ProfileHeaderProps {
   applicant: Applicant;
@@ -45,6 +46,12 @@ export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHead
         return 'bg-green-100 text-green-800';
       case 'inactive':
         return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'archived':
+        return 'bg-gray-100 text-gray-800';
+      case 'blacklisted':
+        return 'bg-red-900 text-white';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -105,14 +112,23 @@ export const ProfileHeader = ({ applicant, onStatusChange, onEdit }: ProfileHead
             <div className="mt-4 md:mt-0 flex flex-col sm:flex-row gap-2 sm:gap-3 md:ml-4">
               <select
                 value={applicant.status || applicant.currentStatus || 'active'}
-                onChange={(e) => handleStatusChange(e.target.value as 'active' | 'inactive')}
+                onChange={(e) => handleStatusChange(e.target.value as 'active' | 'inactive' | 'pending' | 'archived' | 'blacklisted')}
                 disabled={isChangingStatus}
                 className="w-full sm:w-auto rounded-lg border-2 border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-indigo-500 transition-all"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
+                <option value="pending">Pending</option>
+                <option value="archived">Archived</option>
+                <option value="blacklisted">Blacklisted</option>
               </select>
-              
+
+              <StatusActions
+                applicant={applicant}
+                user={{ uid: user?.uid || '', email: user?.email || null, role: customClaims?.role || '' }}
+                onStatusChange={() => window.location.reload()}
+              />
+
               <button
                 type="button"
                 onClick={onEdit}

@@ -79,15 +79,21 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
             const deployedCount = applicantsByStage['deployed'] || 0;
 
             // Calculate specific status counts using only valid applicants
+            // Profile Status counts (from 'status' field)
             const activeCount = validApplicants.filter(doc => {
               const data = doc.data();
               return data.status === 'active';
             }).length;
-            
+
             const inactiveCount = validApplicants.filter(doc => doc.data().status === 'inactive').length;
-            const rejectedCount = validApplicants.filter(doc => doc.data().status === 'rejected').length;
-            const onHoldCount = validApplicants.filter(doc => doc.data().status === 'on_hold').length;
-            const withdrawnCount = validApplicants.filter(doc => doc.data().status === 'withdrawn').length;
+            const pendingCount = validApplicants.filter(doc => doc.data().status === 'pending').length;
+            const archivedCount = validApplicants.filter(doc => doc.data().status === 'archived').length;
+            const blacklistedCount = validApplicants.filter(doc => doc.data().status === 'blacklisted').length;
+
+            // Workflow Status counts (from 'currentStatus' field)
+            const rejectedCount = validApplicants.filter(doc => doc.data().currentStatus === 'rejected').length;
+            const onHoldCount = validApplicants.filter(doc => doc.data().currentStatus === 'on_hold').length;
+            const withdrawnCount = validApplicants.filter(doc => doc.data().currentStatus === 'withdrawn').length;
             
             setMetrics([
               {
@@ -133,9 +139,11 @@ export const useDashboardMetrics = (role: UserRole, branchId?: string | null): D
               applicantsByStatus: [
                 { label: 'Active', value: activeCount, type: 'number' as const },
                 { label: 'Inactive', value: inactiveCount, type: 'number' as const },
+                { label: 'Pending', value: pendingCount, type: 'number' as const },
+                { label: 'Archived', value: archivedCount, type: 'number' as const },
+                { label: 'Blacklisted', value: blacklistedCount, type: 'number' as const },
                 { label: 'Rejected', value: rejectedCount, type: 'number' as const },
                 { label: 'On Hold', value: onHoldCount, type: 'number' as const },
-                { label: 'Deployed', value: deployedCount, type: 'number' as const },
                 { label: 'Withdrawn', value: withdrawnCount, type: 'number' as const },
               ]
             });

@@ -50,13 +50,13 @@ export const ProfileDetails = ({ applicant }: ProfileDetailsProps) => {
   return (
     <div className="mt-8">
       <Tab.Group selectedIndex={selectedIndex} onChange={setSelectedIndex}>
-        <Tab.List className="border-b border-gray-200">
-          <div className="-mb-px flex space-x-8">
+        <Tab.List className="border-b border-gray-200 relative">
+          <div className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto scrollbar-hide pb-px snap-x snap-mandatory scroll-smooth touch-pan-x">
             {tabs.map((tab) => (
               <Tab
                 key={tab.name}
                 className={({ selected }) =>
-                  `whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium ${
+                  `whitespace-nowrap border-b-2 py-3 px-2 sm:py-4 sm:px-1 text-xs sm:text-sm font-medium snap-start ${
                     selected
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'

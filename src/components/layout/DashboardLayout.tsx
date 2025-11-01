@@ -1,7 +1,7 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useRef } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { 
-  Bars3Icon, 
+import {
+  Bars3Icon,
   XMarkIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
@@ -20,12 +20,19 @@ import { NotificationCenter } from '../notifications/NotificationCenter';
 export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationsOpenExpanded, setNotificationsOpenExpanded] = useState(false);
+  const [notificationsOpenCollapsed, setNotificationsOpenCollapsed] = useState(false);
+  const [notificationsOpenMobile, setNotificationsOpenMobile] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['Applicants']));
   const { user, customClaims, signOut } = useAuth();
   const location = useLocation();
   const { filteredNavigation, isActive } = useNavigation();
   const { unreadCount } = useNotifications(user?.uid || '');
+
+  // Refs for notification button positioning
+  const notificationButtonExpandedRef = useRef<HTMLButtonElement>(null);
+  const notificationButtonCollapsedRef = useRef<HTMLButtonElement>(null);
+  const notificationButtonMobileRef = useRef<HTMLButtonElement>(null);
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems(prev => {
@@ -120,7 +127,7 @@ export const DashboardLayout = () => {
                       </Link>
                       
                       <button
-                        onClick={() => setNotificationsOpen(!notificationsOpen)}
+                        onClick={() => setNotificationsOpenMobile(!notificationsOpenMobile)}
                         className="w-full flex items-center justify-between px-3 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
                       >
                         <div className="flex items-center space-x-2">
@@ -297,35 +304,62 @@ export const DashboardLayout = () => {
               </Link>
               
               {/* Notifications Button */}
-              <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="mt-3 w-full flex items-center justify-between px-3 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-all duration-200 group"
-              >
-                <div className="flex items-center space-x-2">
-                  <BellIcon className="h-5 w-5 text-white group-hover:animate-bounce" />
-                  <span className="text-sm text-white">Notifications</span>
-                </div>
-                <NotificationBadge count={unreadCount} />
-              </button>
+              <div className="relative mt-3">
+                <button
+                  ref={notificationButtonExpandedRef}
+                  onClick={() => setNotificationsOpenExpanded(!notificationsOpenExpanded)}
+                  className="w-full flex items-center justify-between px-3 py-2 bg-white/10 hover:bg-white/20 rounded-md transition-all duration-200 group"
+                >
+                  <div className="flex items-center space-x-2">
+                    <BellIcon className="h-5 w-5 text-white group-hover:animate-bounce" />
+                    <span className="text-sm text-white">Notifications</span>
+                  </div>
+                  <NotificationBadge count={unreadCount} />
+                </button>
+
+                {/* Notification Dropdown - Desktop Expanded */}
+                {notificationsOpenExpanded && (
+                  <NotificationCenter
+                    isOpen={notificationsOpenExpanded}
+                    onClose={() => setNotificationsOpenExpanded(false)}
+                    buttonRef={notificationButtonExpandedRef}
+                  />
+                )}
+              </div>
             </div>
           )}
           
           {collapsed && (
             <div className="flex flex-col items-center space-y-3">
-              <Link 
+              <Link
                 to="/profile"
                 className="p-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
                 title="My Profile"
               >
                 <UserCircleIcon className="h-8 w-8 text-white" />
               </Link>
-              <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="relative p-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
-              >
-                <BellIcon className="h-5 w-5 text-white" />
-                <NotificationBadge count={unreadCount} className="absolute -top-1 -right-1" />
-              </button>
+
+              {/* Notifications Button - Collapsed Sidebar */}
+              <div className="relative">
+                <button
+                  ref={notificationButtonCollapsedRef}
+                  onClick={() => setNotificationsOpenCollapsed(!notificationsOpenCollapsed)}
+                  className="relative p-2 bg-white/10 hover:bg-white/20 rounded-md transition-colors"
+                  title="Notifications"
+                >
+                  <BellIcon className="h-5 w-5 text-white" />
+                  <NotificationBadge count={unreadCount} className="absolute -top-1 -right-1" />
+                </button>
+
+                {/* Notification Dropdown - Collapsed Sidebar */}
+                {notificationsOpenCollapsed && (
+                  <NotificationCenter
+                    isOpen={notificationsOpenCollapsed}
+                    onClose={() => setNotificationsOpenCollapsed(false)}
+                    buttonRef={notificationButtonCollapsedRef}
+                  />
+                )}
+              </div>
             </div>
           )}
           
@@ -478,7 +512,11 @@ export const DashboardLayout = () => {
           {/* Mobile Notification Button */}
           <div className="relative">
             <button
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
+              ref={notificationButtonMobileRef}
+              onClick={(e) => {
+                e.stopPropagation();
+                setNotificationsOpenMobile(!notificationsOpenMobile);
+              }}
               className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full"
               aria-label={`${unreadCount} unread notifications`}
             >
@@ -488,12 +526,14 @@ export const DashboardLayout = () => {
                 className="absolute -top-1 -right-1"
               />
             </button>
-            
-            {/* Notification Dropdown */}
-            {notificationsOpen && (
-              <div className="absolute right-0 mt-2 z-50">
-                <NotificationCenter />
-              </div>
+
+            {/* Notification Dropdown - Mobile */}
+            {notificationsOpenMobile && (
+              <NotificationCenter
+                isOpen={notificationsOpenMobile}
+                onClose={() => setNotificationsOpenMobile(false)}
+                buttonRef={notificationButtonMobileRef}
+              />
             )}
           </div>
         </div>

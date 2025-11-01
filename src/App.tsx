@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './config/firebase';
 import { useAuthStore } from './stores/authStore';
+import { FCMService } from './services/fcmService';
 
 // Auth Components
 import Login from './components/auth/Login';
@@ -111,6 +112,16 @@ const App: React.FC = () => {
           role: idTokenResult.claims.role as string,
           branchId: idTokenResult.claims.branchId as string | null
         });
+
+        // Initialize FCM for push notifications after user is authenticated
+        try {
+          const fcmService = FCMService.getInstance();
+          await fcmService.init();
+          console.log('FCM initialized successfully');
+        } catch (error) {
+          console.warn('FCM initialization failed:', error);
+          // Don't block the app if FCM fails - it's optional
+        }
       } else {
         setUser(null);
         setCustomClaims(null);
