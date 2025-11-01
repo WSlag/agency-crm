@@ -24,7 +24,10 @@
       "Bash(timeout 3 bash:*)",
       "Bash(cat:*)",
       "Bash(cmd //c taskkill //PID 27344 //F)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
