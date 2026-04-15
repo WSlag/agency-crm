@@ -1,48 +1,87 @@
-# Agency CRM
+# 🏢 Agency CRM Platform
 
-A Progressive Web Application (PWA) for managing the end-to-end recruitment workflow of a multi-branch recruitment agency.
+## 🚀 Production-Ready Recruitment System
 
-## Environment Setup
+A Progressive Web Application (PWA) designed to manage the **end-to-end recruitment workflow** for multi-branch recruitment agencies.
+
+Built to digitize and streamline operations such as applicant tracking, deployment processing, and financial tracking across branches.
+
+---
+
+## 🧠 Business Context
+
+Recruitment agencies often rely on:
+- Manual tracking (Excel, paper, chat)
+- Disconnected branch operations
+- Lack of real-time visibility
+
+👉 This system solves these by providing a **centralized digital workflow platform**.
+
+---
+
+## 💡 Key Features
+
+- 🧾 Applicant Lifecycle Management (Lead → Deployment)
+- 🏢 Multi-Branch Workflow System
+- 💰 Expense & Fund Request Tracking
+- 📊 Admin Dashboard & Reporting
+- 🔐 Role-Based Access Control
+- 📱 Mobile-First Progressive Web App (PWA)
+
+---
+
+## ⚙️ Tech Stack
+
+### Frontend
+- React + Vite
+- Tailwind CSS
+
+### Backend
+- Firebase (Firestore, Auth, Cloud Functions)
+
+### Architecture
+- Real-time database (Firestore)
+- Cloud-based serverless backend
+- PWA for mobile accessibility
+
+---
+
+## 🏗 System Capabilities
+
+This platform demonstrates:
+
+- CRM system architecture design  
+- Workflow automation for recruitment agencies  
+- Role-based system design  
+- Real-time data synchronization  
+- Multi-branch business logic implementation  
+
+---
+
+## 💼 Use Case
+
+Ideal for:
+- Recruitment agencies
+- HR outsourcing firms
+- Multi-branch operations
+- Manpower deployment companies
+
+---
+
+## ⚙️ Environment Setup
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- npm (v7 or higher)
+- Node.js (v16+)
+- npm (v7+)
 - Firebase CLI
 
-### Development Setup
+---
+
+### Development
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
-```
 
-### Environment Configuration
-The application supports three environments:
-
-1. **Development**
-```bash
-# Run development server
-npm run dev
-```
-
-2. **Staging**
-```bash
-# Build staging
-npm run build:staging
-
-# Preview staging build
-npm run preview:staging
-```
-
-3. **Production**
-```bash
-# Build production
-npm run build:prod
-
-# Preview production build
-npm run preview:prod
 ```
 
 ### Environment Variables
@@ -131,51 +170,6 @@ src/
 ├── types/         # TypeScript types
 └── utils/         # Utility functions
 ```
-
-## Build and Deployment
-
-### Build Commands
-```bash
-# Development build
-npm run dev
-
-# Staging build
-npm run build:staging
-
-# Production build
-npm run build:prod
-```
-
-### Deployment Checklist
-- [ ] Run all tests
-- [ ] Check environment variables
-- [ ] Build for target environment
-- [ ] Verify Firebase configuration
-- [ ] Check Sentry integration
-- [ ] Verify security rules
-- [ ] Test offline functionality
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build:staging` - Build staging version
-- `npm run build:prod` - Build production version
-- `npm run preview:staging` - Preview staging build
-- `npm run preview:prod` - Preview production build
-- `npm test` - Run tests
-- `npm run test:watch` - Run tests in watch mode
-- `npm run test:coverage` - Generate test coverage
-- `npm run lint` - Run linter
-- `npm run type-check` - Run TypeScript checks
-
-## Contributing
-
-1. Create feature branch from `develop`
-2. Make changes and add tests
-3. Run tests and linting
-4. Create pull request
-5. Get code review
-6. Merge to `develop`
 
 ## License
 
