@@ -7,7 +7,7 @@
 ## ⚠️ **CRITICAL WARNING**
 
 This process will:
-- ✅ **KEEP** your admin user: `admin@agency.com` with password `YOUR_ADMIN_PASSWORD`
+- ✅ **KEEP** your admin user: `admin@agency.com` with password `[REDACTED - set via ADMIN_PASSWORD env var]`
 - 🗑️ **DELETE** all other users
 - 🗑️ **DELETE** all applicants, agents, branches, communications, etc.
 - 🆕 **CREATE** fresh sample data for testing
@@ -60,7 +60,7 @@ Even though this is development, you might want to backup:
 
 Verify you can login with:
 - Email: `admin@agency.com`
-- Password: `YOUR_ADMIN_PASSWORD`
+- Password: `[REDACTED - set via ADMIN_PASSWORD env var]`
 
 If these credentials are different, update the script first.
 
@@ -111,11 +111,11 @@ npm run init-database
 After the reset, you'll have:
 
 ### **Users:**
-- ✅ **Admin** (preserved): `admin@agency.com` / `YOUR_ADMIN_PASSWORD`
-- 🆕 **President**: `president@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
-- 🆕 **HO Recruitment Officer 1**: `recruitment1@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
-- 🆕 **HO Recruitment Officer 2**: `recruitment2@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
-- 🆕 **HO Accountant**: `accountant@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
+- ✅ **Admin** (preserved): `admin@agency.com` / `[REDACTED - set via ADMIN_PASSWORD env var]`
+- 🆕 **President**: `president@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
+- 🆕 **HO Recruitment Officer 1**: `recruitment1@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
+- 🆕 **HO Recruitment Officer 2**: `recruitment2@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
+- 🆕 **HO Accountant**: `accountant@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
 
 ### **Branches:**
 - 🆕 Head Office (HO)
@@ -124,10 +124,10 @@ After the reset, you'll have:
 - 🆕 East Branch (EB)
 
 ### **Branch Managers:**
-- 🆕 `manager.ho@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
-- 🆕 `manager.nb@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
-- 🆕 `manager.sb@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
-- 🆕 `manager.eb@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
+- 🆕 `manager.ho@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
+- 🆕 `manager.nb@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
+- 🆕 `manager.sb@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
+- 🆕 `manager.eb@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
 
 ### **Sample Data:**
 - 🆕 ~14 Agents (3-4 per branch)
@@ -154,7 +154,7 @@ Verify:
 ### 2. **Test Login**
 ```
 Email: admin@agency.com
-Password: YOUR_ADMIN_PASSWORD
+Password: [REDACTED - set via ADMIN_PASSWORD env var]
 ```
 
 Should login successfully.
@@ -165,7 +165,7 @@ Try logging in as:
 - Branch Manager
 - HO Recruitment Officer
 
-Use password: `YOUR_DEFAULT_USER_PASSWORD`
+Use password: `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
 
 ### 4. **Verify Data Access**
 - Admin should see all data
@@ -321,7 +321,7 @@ Once your database is reset and fresh data is created:
 
 3. **Change Default Passwords**
    - Login as each user
-   - Change from `YOUR_DEFAULT_USER_PASSWORD` to secure passwords
+   - Change from `[REDACTED - set via DEFAULT_USER_PASSWORD env var]` to secure passwords
 
 ---
 

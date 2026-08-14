@@ -4,16 +4,18 @@
  * This script will:
  * 1. Clear all existing data (except admin user)
  * 2. Reinitialize with fresh sample data
- * 3. Preserve admin@agency.com with password YOUR_ADMIN_PASSWORD
+ * 3. Preserve admin@agency.com with password from ADMIN_PASSWORD env var
  * 
  * ⚠️ WARNING: This is DESTRUCTIVE! Use only in development!
  */
 
 import { clearDatabase } from './clearAndReinitialize';
 import { initializeDatabase } from './initializeDatabase';
+import { randomBytes } from 'node:crypto';
 
-const ADMIN_EMAIL = 'admin@agency.com';
-const ADMIN_PASSWORD = 'YOUR_ADMIN_PASSWORD';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@agency.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || randomBytes(12).toString('base64url');
+const DEFAULT_USER_PASSWORD = process.env.DEFAULT_USER_PASSWORD || randomBytes(12).toString('base64url');
 
 const runCompleteReset = async () => {
   console.log('╔═══════════════════════════════════════════════════════════╗');
@@ -47,7 +49,7 @@ const runCompleteReset = async () => {
     // Set environment variables for initialization
     process.env.ADMIN_EMAIL = ADMIN_EMAIL;
     process.env.ADMIN_PASSWORD = ADMIN_PASSWORD;
-    process.env.DEFAULT_USER_PASSWORD = 'YOUR_DEFAULT_USER_PASSWORD';
+    process.env.DEFAULT_USER_PASSWORD = DEFAULT_USER_PASSWORD;
     
     await initializeDatabase();
     console.log('');
@@ -63,16 +65,16 @@ const runCompleteReset = async () => {
     console.log('');
     console.log('🔐 Login Credentials:');
     console.log('   Email:    admin@agency.com');
-    console.log('   Password: YOUR_ADMIN_PASSWORD');
+    console.log('   Password: (from ADMIN_PASSWORD env var - see .env.development)');
     console.log('');
     console.log('👥 Additional Users Created:');
-    console.log('   - President: president@agency.com / YOUR_DEFAULT_USER_PASSWORD');
-    console.log('   - HO Officer 1: recruitment1@agency.com / YOUR_DEFAULT_USER_PASSWORD');
-    console.log('   - HO Officer 2: recruitment2@agency.com / YOUR_DEFAULT_USER_PASSWORD');
-    console.log('   - Accountant: accountant@agency.com / YOUR_DEFAULT_USER_PASSWORD');
+    console.log('   - President: president@agency.com');
+    console.log('   - HO Officer 1: recruitment1@agency.com');
+    console.log('   - HO Officer 2: recruitment2@agency.com');
+    console.log('   - Accountant: accountant@agency.com');
     console.log('   - Branch Managers: manager.ho@agency.com, manager.nb@agency.com, etc.');
     console.log('');
-    console.log('⚠️  IMPORTANT: Change default passwords after first login!');
+    console.log('⚠️  IMPORTANT: Set DEFAULT_USER_PASSWORD in your environment and change passwords after first login!');
     console.log('');
     console.log('📊 Data Created:');
     console.log('   - 4 Branches (HO, North, South, East)');

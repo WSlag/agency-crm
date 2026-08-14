@@ -161,7 +161,7 @@ firebase deploy --only hosting
 ```
 URL: https://console.firebase.google.com/project/crm-agency-22f30/authentication/users
 Email: admin@agency.com
-Password: YOUR_ADMIN_PASSWORD
+Password: [REDACTED - set via ADMIN_PASSWORD env var]
 ```
 
 ### **2. Test Security Rules**
@@ -212,7 +212,7 @@ Password: YOUR_ADMIN_PASSWORD
 ### **2. Default Passwords**
 If new users were created, they all have default passwords:
 
-**Default Password:** `YOUR_DEFAULT_USER_PASSWORD`
+**Default Password:** `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
 
 **Users with default passwords:**
 - president@agency.com
@@ -228,7 +228,7 @@ If new users were created, they all have default passwords:
 
 ### **3. Your Admin is Safe**
 - ✅ Email: admin@agency.com
-- ✅ Password: YOUR_ADMIN_PASSWORD
+- ✅ Password: [REDACTED - set via ADMIN_PASSWORD env var]
 - ✅ Fully preserved and working
 - ✅ All permissions intact
 

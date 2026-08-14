@@ -31,3 +31,6 @@ dist-ssr
 # Firebase
 .firebase/
 *.log
+
+# Firebase Admin SDK service account (contains private key - never commit)
+service-account.json

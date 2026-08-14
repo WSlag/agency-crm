@@ -93,7 +93,7 @@ Firebase Auth custom claims are only loaded when you sign in. To see the fix:
 
 1. **Click "Sign Out"** in the app
 2. **Close the browser tab** (optional but recommended)
-3. **Log back in** with: `admin@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
+3. **Log back in** with: `admin@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
 4. **Go to Commissions page**
 5. **Click on any pending commission**
 6. ✅ **You should now see the "Record Payment" button!**
@@ -141,8 +141,8 @@ Open browser console and check for logs like:
 
 ### Test 3: Other Roles
 Test with other authorized roles:
-- ✅ `president@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
-- ✅ `accountant@agency.com` / `YOUR_DEFAULT_USER_PASSWORD`
+- ✅ `president@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
+- ✅ `accountant@agency.com` / `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
 
 All should see "Record Payment" button on pending commissions.
 

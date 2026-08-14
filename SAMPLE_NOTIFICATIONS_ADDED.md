@@ -171,28 +171,28 @@ Expected: 7 notifications (variety of types)
 #### As President:
 ```
 Email: president@agency.com
-Password: YOUR_DEFAULT_USER_PASSWORD (change after login)
+Password: [REDACTED - set via DEFAULT_USER_PASSWORD env var] (change after login)
 Expected: 4 notifications (high-level approvals)
 ```
 
 #### As HO Recruitment Officer 1:
 ```
 Email: recruitment1@agency.com
-Password: YOUR_DEFAULT_USER_PASSWORD (change after login)
+Password: [REDACTED - set via DEFAULT_USER_PASSWORD env var] (change after login)
 Expected: 4 notifications (applicant/document focus)
 ```
 
 #### As HO Recruitment Officer 2:
 ```
 Email: recruitment2@agency.com
-Password: YOUR_DEFAULT_USER_PASSWORD (change after login)
+Password: [REDACTED - set via DEFAULT_USER_PASSWORD env var] (change after login)
 Expected: 3 notifications (task and processing)
 ```
 
 #### As HO Accountant:
 ```
 Email: accountant@agency.com
-Password: YOUR_DEFAULT_USER_PASSWORD (change after login)
+Password: [REDACTED - set via DEFAULT_USER_PASSWORD env var] (change after login)
 Expected: 3 notifications (financial focus)
 ```
 

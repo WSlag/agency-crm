@@ -77,7 +77,7 @@ VITE_STATIC_CACHE_VERSION=1
 # Use strong passwords and CHANGE IMMEDIATELY after first login!
 # NEVER commit .env.local with real credentials to version control!
 ADMIN_EMAIL=admin@youragency.com
-ADMIN_PASSWORD=ChangeThisStrongPassword123!
+ADMIN_PASSWORD=CHANGE_ME
 ADMIN_DISPLAY_NAME=System Administrator
 
 # ==========================================

@@ -168,7 +168,7 @@ const clearDatabase = async () => {
     console.log('');
     console.log('💡 Next steps:');
     console.log('   1. Run initialization script to create fresh data');
-    console.log('   2. Login with: admin@agency.com / YOUR_ADMIN_PASSWORD');
+    console.log('   2. Login with: admin@agency.com (password from ADMIN_PASSWORD env var)');
     console.log('');
   } catch (error) {
     console.error('❌ Error clearing database:', error);

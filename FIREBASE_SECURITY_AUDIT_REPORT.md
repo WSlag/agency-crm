@@ -353,7 +353,7 @@ allow update: if hasRole('branch_manager') && belongsToBranch(branchId);
 `src/scripts/initializeDatabase.ts` lines 20-22:
 ```typescript
 const adminEmail = 'admin@agency.com';
-const adminPassword = 'YOUR_ADMIN_PASSWORD';
+const adminPassword = '[REDACTED - set via ADMIN_PASSWORD env var]';
 ```
 
 **Risk:**

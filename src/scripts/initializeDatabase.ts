@@ -7,11 +7,17 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { randomBytes } from 'node:crypto';
 import { environment } from './scriptEnvironment';
 
 const app = initializeApp(environment.firebase);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+// SECURITY: Never hardcode passwords. Use DEFAULT_USER_PASSWORD from the
+// environment, or generate a strong random password at runtime.
+const defaultPassword =
+  process.env.DEFAULT_USER_PASSWORD || randomBytes(12).toString('base64url');
 
 // Helper function to authenticate as admin
 const authenticateAsAdmin = async () => {
@@ -85,10 +91,8 @@ const initializeUsers = async () => {
   // 3. Enable multi-factor authentication (MFA)
   // 4. Use Firebase Admin SDK with service accounts instead
   
-  const defaultPassword = process.env.DEFAULT_USER_PASSWORD || 'YOUR_DEFAULT_USER_PASSWORD';
-  
   if (!process.env.DEFAULT_USER_PASSWORD) {
-    console.warn('⚠️  DEFAULT_USER_PASSWORD not set. Using temporary password.');
+    console.warn('⚠️  DEFAULT_USER_PASSWORD not set. Using generated temporary password.');
     console.warn('⚠️  IMPORTANT: Change all user passwords after initialization!');
   }
 
@@ -219,7 +223,7 @@ const initializeBranches = async () => {
       // Create branch manager for each branch
       const manager = {
         email: `manager.${branch.code.toLowerCase()}@agency.com`,
-        password: process.env.DEFAULT_USER_PASSWORD || 'YOUR_DEFAULT_USER_PASSWORD',
+        password: defaultPassword,
         data: {
           displayName: `${branch.name} Manager`,
           role: 'branch_manager',

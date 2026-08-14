@@ -6,7 +6,7 @@ Your database is ready with fresh data! Now deploy the security updates.
 
 ## ✅ **Current Status**
 
-- ✅ Admin user preserved: `admin@agency.com` / `YOUR_ADMIN_PASSWORD`
+- ✅ Admin user preserved: `admin@agency.com` / `[REDACTED - set via ADMIN_PASSWORD env var]`
 - ✅ Fresh sample data created
 - ✅ 4 Branches, 16 Agents, 20 Applicants
 - ✅ Firebase project: crm-agency-22f30 (development)
@@ -68,7 +68,7 @@ firebase deploy --only hosting
 1. **Login as Admin:**
    ```
    Email: admin@agency.com
-   Password: YOUR_ADMIN_PASSWORD
+   Password: [REDACTED - set via ADMIN_PASSWORD env var]
    ```
 
 2. **Verify Data Access:**
@@ -94,7 +94,7 @@ firebase deploy --only hosting
 
 If the script created new users (president, recruitment officers, etc.), they all have the default password:
 
-**Default Password:** `YOUR_DEFAULT_USER_PASSWORD`
+**Default Password:** `[REDACTED - set via DEFAULT_USER_PASSWORD env var]`
 
 **Users to Update:**
 - president@agency.com

@@ -10,6 +10,7 @@ import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
+import { randomBytes } from 'crypto';
 
 // Get current directory in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -41,7 +42,7 @@ async function initializeDatabase() {
     // Step 1: Create admin user
     console.log('📝 Step 1: Creating admin user...');
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@agency.com';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'YOUR_ADMIN_PASSWORD';
+    const adminPassword = process.env.ADMIN_PASSWORD || randomBytes(12).toString('base64url');
     const adminDisplayName = process.env.ADMIN_DISPLAY_NAME || 'Super Admin';
 
     let adminUid: string;
@@ -88,7 +89,7 @@ async function initializeDatabase() {
 
     // Step 2: Create additional users
     console.log('📝 Step 2: Creating additional users...');
-    const defaultPassword = process.env.DEFAULT_USER_PASSWORD || 'YOUR_DEFAULT_USER_PASSWORD';
+    const defaultPassword = process.env.DEFAULT_USER_PASSWORD || randomBytes(12).toString('base64url');
 
     const users = [
       {

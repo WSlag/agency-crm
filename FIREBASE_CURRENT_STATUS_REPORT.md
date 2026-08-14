@@ -158,7 +158,7 @@ Headers ready to deploy:
 Project: crm-agency-22f30
 Project Number: 1098885434205
 Firebase Config:
-- API Key: YOUR_FIREBASE_API_KEY
+- API Key: [ROTATED - do not commit API keys, see .env.example]
 - Auth Domain: crm-agency-22f30.firebaseapp.com
 - Storage: crm-agency-22f30.firebasestorage.app
 ```
