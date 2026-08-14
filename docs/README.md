@@ -1,19 +1,48 @@
-# Agency CRM Documentation
+# 📚 Agency CRM Documentation
 
-## Overview
-Agency CRM is a comprehensive customer relationship management system built with React, TypeScript, and Firebase. This documentation covers all components, features, and best practices for development.
+Everything you need to understand, develop, deploy, and maintain the Agency CRM platform.
 
-## Table of Contents
-1. [Getting Started](./getting-started.md)
-2. [Components](./components/README.md)
-3. [Features](./features/README.md)
-4. [Architecture](./architecture/README.md)
-5. [Best Practices](./best-practices.md)
+## 👨‍💻 Development
 
-## Quick Links
-- [Component Documentation](./components/README.md)
-- [Offline Capabilities](./features/offline.md)
-- [Analytics System](./features/analytics.md)
-- [Commission Management](./features/commissions.md)
-- [Security Guidelines](./architecture/security.md)
-- [Testing Guide](./testing/README.md)
+| Document | Description |
+| --- | --- |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Environment setup, dev workflow, and code conventions |
+| [TESTING_CHECKLIST.md](TESTING_CHECKLIST.md) | Testing approach and checklist |
+| [IMPLEMENTATION_CHECKLIST.md](IMPLEMENTATION_CHECKLIST.md) | Feature implementation checklist |
+
+## 🚀 Deployment
+
+| Document | Description |
+| --- | --- |
+| [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Full deployment guide for staging and production |
+
+## 📖 Product & Requirements
+
+| Document | Description |
+| --- | --- |
+| [PRODUCT_PITCH.md](PRODUCT_PITCH.md) | Product overview and value proposition |
+
+## 🧩 Component Documentation
+
+| Document | Description |
+| --- | --- |
+| [components/README.md](components/README.md) | Component library index |
+| [components/forms.md](components/forms.md) | Form components and validation patterns |
+
+## ✨ Feature Documentation
+
+| Document | Description |
+| --- | --- |
+| [features/analytics.md](features/analytics.md) | Analytics system |
+| [features/commissions.md](features/commissions.md) | Commission management |
+| [features/hybrid-dashboard.md](features/hybrid-dashboard.md) | Dashboard architecture |
+| [features/offline.md](features/offline.md) | Offline / PWA capabilities |
+| [accessibility.md](accessibility.md) | Accessibility guidelines |
+
+## 🗄 Archived Change Reports
+
+The [reports/](reports/) directory contains the historical, per-feature change and fix reports from the development process. These are retained for reference and are **not** part of the current user-facing documentation.
+
+---
+
+Looking for the main project readme? See the repository [README](../README.md).
