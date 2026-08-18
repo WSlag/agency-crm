@@ -1,6 +1,15 @@
+<p align="center">
+  <img src="banner.png" width="100%" alt="Agency CRM — Applicant → Deployment">
+</p>
+
+<div align="center">
+
 # 🏢 Agency CRM
 
-> A production-ready recruitment agency management platform that digitizes the end-to-end recruitment workflow across multiple branches — from lead and applicant tracking, to approvals, commissions, expenses, and reporting.
+**A production-ready recruitment agency management platform.**
+
+Digitizes the end-to-end recruitment workflow across multiple branches — from
+lead and applicant tracking, to approvals, commissions, expenses, and reporting.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
@@ -9,11 +18,14 @@
 ![Firebase](https://img.shields.io/badge/Firebase-9-orange)
 ![PWA](https://img.shields.io/badge/PWA-ready-green)
 
+</div>
+
 ---
 
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
+- [The Workflow](#-the-workflow)
 - [Key Features](#-key-features)
 - [Tech Stack](#-tech-stack)
 - [Role-Based Access](#-role-based-access)
@@ -24,21 +36,43 @@
 - [Deployment](#-deployment)
 - [Security](#-security)
 - [Documentation](#-documentation)
-- [License](#-license)
 
 ---
 
 ## 🧠 Overview
 
-Recruitment agencies often rely on manual processes — spreadsheets, paper, and scattered chat threads — which makes it difficult to track applicants, coordinate branches, and see what's happening in real time.
-
-**Agency CRM** replaces that with a centralized digital workflow platform:
+Recruitment agencies often run on spreadsheets, paper, and scattered chat
+threads — making it hard to track applicants, coordinate branches, and see the
+big picture in real time. **Agency CRM** replaces that with a centralized
+digital workflow platform:
 
 - **Applicant lifecycle management** from lead to deployment
 - **Multi-branch operations** with branch-level isolation and targets
 - **Role-based access control** across every workflow stage
 - **Financial tracking** for commissions and expenses
 - **Mobile-first PWA** so field staff can work from any device
+
+---
+
+## 🔄 The Workflow
+
+```mermaid
+flowchart LR
+    A[Lead] --> B[Applicant Screening]
+    B --> C[Document Verification]
+    C --> D[Interview & Approval]
+    D --> E[Deployment]
+    E --> F[Commissions & Expenses]
+    F --> G[Reporting]
+
+    subgraph Oversight [HQ]
+        H[Branch Manager]
+        I[HQ Officer]
+        J[HQ Accountant]
+        K[President]
+    end
+    G --> Oversight
+```
 
 ---
 
@@ -80,7 +114,8 @@ Recruitment agencies often rely on manual processes — spreadsheets, paper, and
 | **HQ Accountant** | Financial workflows — commissions and expenses |
 | **Branch Manager** | Branch-scoped applicants, targets, and dashboards |
 
-Access is enforced server-side through Firebase custom claims and Firestore security rules, in addition to UI-level routing guards.
+Access is enforced server-side through Firebase custom claims and Firestore
+security rules, in addition to UI-level routing guards.
 
 ---
 
@@ -114,9 +149,11 @@ cp .env.example .env.development
 npm run dev
 ```
 
-The app starts at `http://localhost:5173` (see `vite.config.ts` for the configured port).
+The app starts at `http://localhost:5173`.
 
-> ⚠️ **Note:** This application requires a configured Firebase project (Auth, Firestore, Storage) to function. The repository never contains real credentials — see [.env.example](.env.example).
+> ⚠️ **Note:** A configured Firebase project (Auth, Firestore, Storage) is
+> required. The repository never contains real credentials — see
+> [.env.example](.env.example).
 
 ---
 
@@ -165,13 +202,8 @@ agency-crm/
 ## 🧪 Testing
 
 ```bash
-# Run all tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage report
+npm test            # all tests
+npm run test:watch  # watch mode
 npm run test:coverage
 ```
 
@@ -182,17 +214,10 @@ npm run test:coverage
 
 ## ☁️ Deployment
 
-Firebase Hosting is used for web deployment:
-
 ```bash
-# Deploy the frontend
-firebase deploy --only hosting
-
-# Deploy security rules
-npm run migrate:rules
-
-# Deploy Cloud Functions
-npm run deploy:functions
+firebase deploy --only hosting       # deploy the frontend
+npm run migrate:rules                # deploy security rules
+npm run deploy:functions             # deploy Cloud Functions
 ```
 
 See [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed instructions.
@@ -217,6 +242,8 @@ See [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) for detailed instructions.
 | [DEVELOPMENT.md](docs/DEVELOPMENT.md) | Developer setup and workflow |
 | [DEPLOYMENT_GUIDE.md](docs/DEPLOYMENT_GUIDE.md) | Deployment instructions |
 | [SECURITY.md](SECURITY.md) | Security policy |
+
+---
 
 ## 🤝 Contributing
 
